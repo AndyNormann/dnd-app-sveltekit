@@ -1,8 +1,10 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from 'svelte-adapter-bun';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+	// bun:sqlite is provided by the Bun runtime; never bundle it.
+	build: { rollupOptions: { external: ['bun:sqlite'] } },
 	plugins: [
 		sveltekit({
 			compilerOptions: {

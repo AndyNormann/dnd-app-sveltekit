@@ -34,8 +34,17 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			// Internal app links use plain dynamic hrefs; resolve() is unnecessary here.
+			'svelte/no-navigation-without-resolve': 'off'
+		}
+	},
+	{
+		// RenderedDoc intentionally hydrates server-rendered markdown HTML imperatively.
+		files: ['src/lib/components/RenderedDoc.svelte'],
+		rules: {
+			'svelte/no-dom-manipulating': 'off',
+			'svelte/prefer-svelte-reactivity': 'off'
+		}
 	}
 );
