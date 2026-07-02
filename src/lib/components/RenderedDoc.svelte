@@ -49,7 +49,10 @@
 	}
 
 	function collectHeadings(): HeadingEl[] {
-		const nodes = Array.from(container.querySelectorAll('[data-heading-id]')) as HTMLElement[];
+		// scope to heading tags: wiki links also carry data-heading-id
+		const nodes = Array.from(
+			container.querySelectorAll('h1,h2,h3,h4,h5,h6')
+		).filter((el) => el.hasAttribute('data-heading-id')) as HTMLElement[];
 		const list: HeadingEl[] = [];
 		const stack: number[] = [];
 		for (const el of nodes) {
@@ -292,8 +295,11 @@
 
 <style>
 	.rendered {
-		line-height: 1.6;
+		line-height: 1.55;
 		word-wrap: break-word;
+		font-family: var(--font-body);
+		font-size: 1.08rem;
+		color: var(--ink);
 	}
 	.rendered :global(h1),
 	.rendered :global(h2),
@@ -302,6 +308,50 @@
 	.rendered :global(h5),
 	.rendered :global(h6) {
 		position: relative;
+		font-family: var(--font-display);
+		color: var(--accent);
+		letter-spacing: 0.02em;
+	}
+	.rendered :global(h1) {
+		border-bottom: 1px solid var(--gold);
+		padding-bottom: 0.25rem;
+	}
+	.rendered :global(h3),
+	.rendered :global(h4),
+	.rendered :global(h5),
+	.rendered :global(h6) {
+		color: var(--ink);
+	}
+	/* drop cap on the first paragraph of each top-level section */
+	.rendered :global(h1 + p)::first-letter {
+		font-family: var(--font-display);
+		font-size: 3.1em;
+		font-weight: 700;
+		float: left;
+		line-height: 0.85;
+		padding: 0.05em 0.12em 0 0;
+		color: var(--accent);
+	}
+	/* ornamental divider: type --- in markdown. --page-bg is set by the host page. */
+	.rendered :global(hr) {
+		border: 0;
+		height: 1px;
+		background: var(--rule);
+		position: relative;
+		margin: 2.2rem 0;
+		overflow: visible;
+	}
+	.rendered :global(hr)::after {
+		content: '❖';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background: var(--page-bg, var(--parchment-light));
+		padding: 0 0.7rem;
+		color: var(--gold);
+		font-size: 0.95rem;
+		line-height: 1;
 	}
 	.rendered :global(.heading-controls) {
 		display: inline-flex;
@@ -327,41 +377,53 @@
 		height: auto;
 	}
 	.rendered :global(pre) {
-		background: #f4f4f5;
+		background: var(--parchment-deep);
+		border: 1px solid var(--rule);
 		padding: 0.8rem;
 		border-radius: 6px;
 		overflow: auto;
+		font-size: 0.85em;
 	}
 	.rendered :global(code) {
 		font-family: ui-monospace, monospace;
 	}
 	.rendered :global(.dice-inline) {
-		border: 1px solid #c4b5fd;
-		background: #f5f3ff;
-		color: #5b21b6;
+		border: 1px solid var(--gold);
+		background: var(--parchment-deep);
+		color: var(--accent);
 		border-radius: 4px;
-		padding: 0 0.3rem;
+		padding: 0 0.35rem;
 		font: inherit;
 		font-size: 0.9em;
+		font-weight: 600;
 		cursor: pointer;
 	}
 	.rendered :global(.dice-inline:hover) {
-		background: #ede9fe;
+		background: var(--rule);
 	}
 	.rendered :global(a.wiki-link) {
-		color: #5b21b6;
+		color: var(--accent);
 		text-decoration: none;
-		border-bottom: 1px solid #c4b5fd;
+		border-bottom: 1px solid var(--gold);
 		cursor: pointer;
 	}
 	.rendered :global(.wiki-missing) {
-		color: #dc2626;
-		border-bottom: 1px dashed #fca5a5;
+		color: var(--accent-soft);
+		border-bottom: 1px dashed var(--accent-soft);
 	}
+	/* stat-block: classic 5e monster panel via blockquote */
 	.rendered :global(blockquote) {
-		border-left: 3px solid #ddd;
-		margin-left: 0;
-		padding-left: 1rem;
-		color: #555;
+		margin: 1.4rem 0;
+		padding: 0.7rem 1.1rem;
+		background: var(--parchment-deep);
+		border-top: 3px solid var(--accent);
+		border-bottom: 3px solid var(--accent);
+		box-shadow: 0 1px 4px rgba(43, 35, 23, 0.12);
+		color: var(--ink);
+	}
+	.rendered :global(blockquote p:first-child strong:first-child) {
+		font-family: var(--font-display);
+		color: var(--accent);
+		font-size: 1.15em;
 	}
 </style>

@@ -30,7 +30,11 @@
 	export function applyOp(op: RevealOp) {
 		if (reveals.some((r) => r.id === op.id)) return;
 		reveals = [...reveals, op].sort((a, b) => a.seq - b.seq);
-		paint();
+		if (!dm) {
+			animateOp(op.id);
+		} else {
+			paint();
+		}
 	}
 
 	export const mapId = map.id;
@@ -80,6 +84,14 @@
 		ctx.stroke();
 	}
 
+	// offscreen fog buffer, padded so the edge-feathering blur doesn't leak at borders
+	const FOG_PAD = 24;
+	const FOG_BLUR = 6;
+	let fogBuffer: HTMLCanvasElement | null = null;
+	// reveal/hide op currently fading in on the player view
+	let anim: { id: number; start: number } | null = null;
+	const ANIM_MS = 450;
+
 	function paint() {
 		if (!canvas || !img) return;
 		const w = img.clientWidth;
@@ -89,32 +101,72 @@
 			canvas.width = w;
 			canvas.height = h;
 		}
-		const ctx = canvas.getContext('2d')!;
-		ctx.clearRect(0, 0, w, h);
-
-		// base fog: opaque black for players, translucent dim for the DM
-		ctx.globalCompositeOperation = 'source-over';
-		ctx.fillStyle = fogColor();
-		ctx.fillRect(0, 0, w, h);
-
-		for (const op of reveals) {
-			drawOp(ctx, w, h, op.kind, op.shape ?? 'rect', op);
+		if (!fogBuffer) fogBuffer = document.createElement('canvas');
+		const bw = w + FOG_PAD * 2;
+		const bh = h + FOG_PAD * 2;
+		if (fogBuffer.width !== bw || fogBuffer.height !== bh) {
+			fogBuffer.width = bw;
+			fogBuffer.height = bh;
 		}
 
-		// live previews (DM only)
+		// 1. compose the fog (base + ops) into the padded offscreen buffer
+		const fctx = fogBuffer.getContext('2d')!;
+		fctx.setTransform(1, 0, 0, 1, 0, 0);
+		fctx.clearRect(0, 0, bw, bh);
+		fctx.globalCompositeOperation = 'source-over';
+		fctx.fillStyle = fogColor();
+		fctx.fillRect(0, 0, bw, bh);
+		fctx.translate(FOG_PAD, FOG_PAD);
+
+		for (const op of reveals) {
+			if (anim && op.id === anim.id) {
+				const t = Math.min(1, (performance.now() - anim.start) / ANIM_MS);
+				fctx.globalAlpha = t;
+				drawOp(fctx, w, h, op.kind, op.shape ?? 'rect', op);
+				fctx.globalAlpha = 1;
+			} else {
+				drawOp(fctx, w, h, op.kind, op.shape ?? 'rect', op);
+			}
+		}
+
+		// live brush preview participates in the fog so the DM sees the real effect
 		if (dm && stroke.length && isBrushMode) {
-			drawOp(ctx, w, h, isErase ? 'hide' : 'reveal', 'brush', {
+			drawOp(fctx, w, h, isErase ? 'hide' : 'reveal', 'brush', {
 				path: stroke,
 				radius: brushSize / w
 			});
 		}
+
+		// 2. blit the fog with a feathering blur
+		const ctx = canvas.getContext('2d')!;
+		ctx.clearRect(0, 0, w, h);
+		ctx.globalCompositeOperation = 'source-over';
+		ctx.filter = `blur(${FOG_BLUR}px)`;
+		ctx.drawImage(fogBuffer, -FOG_PAD, -FOG_PAD);
+		ctx.filter = 'none';
+
+		// 3. crisp overlays (DM rect preview)
 		if (dm && dragRect) {
-			ctx.globalCompositeOperation = 'source-over';
 			ctx.strokeStyle = isErase ? '#ef4444' : '#22c55e';
 			ctx.lineWidth = 2;
 			ctx.strokeRect(dragRect.x, dragRect.y, dragRect.w, dragRect.h);
 		}
-		ctx.globalCompositeOperation = 'source-over';
+	}
+
+	/** Fade a freshly-arrived op in on the player view. */
+	function animateOp(id: number) {
+		anim = { id, start: performance.now() };
+		const tick = () => {
+			if (!anim) return;
+			paint();
+			if (performance.now() - anim.start >= ANIM_MS) {
+				anim = null;
+				paint();
+				return;
+			}
+			requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
 	}
 
 	function pointerPos(e: PointerEvent) {
@@ -276,23 +328,24 @@
 	}
 	.toolbar button {
 		padding: 0.3rem 0.7rem;
-		border: 1px solid #ccc;
-		background: #f8f8f8;
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		color: var(--ink-soft);
 		border-radius: 5px;
 		cursor: pointer;
 		font-size: 0.8rem;
 	}
 	.toolbar button.active {
-		background: #5b21b6;
-		color: white;
-		border-color: #5b21b6;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-color: var(--accent);
 	}
 	.size {
 		display: flex;
 		align-items: center;
 		gap: 0.35rem;
 		font-size: 0.78rem;
-		color: #4b5563;
+		color: var(--ink-soft);
 		margin-left: 0.5rem;
 	}
 	.size input {

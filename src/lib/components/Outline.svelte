@@ -38,14 +38,17 @@
 		overflow-y: auto;
 	}
 	.label {
+		font-family: var(--font-display);
 		font-weight: 700;
 		text-transform: uppercase;
 		font-size: 0.7rem;
-		color: #9ca3af;
+		letter-spacing: 0.08em;
+		color: var(--gold);
 		padding: 0.5rem;
 	}
 	.empty {
-		color: #9ca3af;
+		color: var(--ink-soft);
+		font-style: italic;
 		padding: 0 0.5rem;
 		margin: 0;
 	}
@@ -56,7 +59,7 @@
 		border: 0;
 		background: none;
 		padding: 0.25rem 0.5rem;
-		color: #374151;
+		color: var(--ink-soft);
 		cursor: pointer;
 		border-radius: 4px;
 		white-space: nowrap;
@@ -64,7 +67,7 @@
 		text-overflow: ellipsis;
 	}
 	button:hover {
-		background: #f3f4f6;
-		color: #111827;
+		background: var(--parchment-deep);
+		color: var(--accent);
 	}
 </style>

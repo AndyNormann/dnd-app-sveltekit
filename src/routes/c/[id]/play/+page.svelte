@@ -16,8 +16,11 @@
 	let rollLog: RollLog;
 
 	function refreshOutline(container: HTMLElement) {
+		const sel = 'h1,h2,h3,h4,h5,h6';
 		outlineItems = (
-			Array.from(container.querySelectorAll('[data-heading-id]')) as HTMLElement[]
+			Array.from(container.querySelectorAll(sel)).filter((el) =>
+				el.hasAttribute('data-heading-id')
+			) as HTMLElement[]
 		).map((el) => ({
 			id: el.getAttribute('data-heading-id') || '',
 			level: Number(el.getAttribute('data-level')) || 1,
@@ -79,8 +82,9 @@
 		display: grid;
 		grid-template-columns: 12rem minmax(0, 50rem);
 		justify-content: center;
-		gap: 1rem;
-		font-family: system-ui, sans-serif;
+		gap: 1.25rem;
+		font-family: var(--font-body);
+		padding: 0 1rem;
 	}
 	.rail {
 		position: sticky;
@@ -88,15 +92,28 @@
 		align-self: start;
 		max-height: calc(100vh - 2rem);
 		overflow-y: auto;
-		padding-top: 1rem;
+		padding-top: 1.5rem;
 	}
 	main {
-		padding: 1rem 1.25rem 4rem;
+		--page-bg: var(--parchment-light);
+		background: var(--parchment-light);
+		border-left: 1px solid var(--rule);
+		border-right: 1px solid var(--rule);
+		box-shadow: 0 0 18px rgba(43, 35, 23, 0.1);
+		padding: 1.5rem 2.5rem 4rem;
+		margin: 1rem 0 3rem;
 		line-height: 1.6;
 		min-width: 0;
 	}
 	.campaign-title {
 		margin-top: 0.5rem;
+		font-family: var(--font-display);
+		font-weight: 700;
+		color: var(--accent);
+		text-align: center;
+		letter-spacing: 0.04em;
+		border-bottom: 3px double var(--gold);
+		padding-bottom: 0.6rem;
 	}
 	@media (max-width: 46rem) {
 		.page {
@@ -104,6 +121,9 @@
 		}
 		.rail {
 			display: none;
+		}
+		main {
+			padding: 1rem 1.25rem 3rem;
 		}
 	}
 </style>

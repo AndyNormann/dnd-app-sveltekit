@@ -247,7 +247,8 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.6rem 1rem;
-		border-bottom: 1px solid #e5e7eb;
+		background: var(--parchment-light);
+		border-bottom: 2px solid var(--rule);
 		font-family: system-ui, sans-serif;
 	}
 	.bar h1 {
@@ -255,32 +256,37 @@
 		margin: 0;
 	}
 	.title-btn {
-		font: inherit;
+		font-family: var(--font-display);
+		font-size: 1.05rem;
 		font-weight: 700;
+		color: var(--accent);
 		border: 0;
 		background: none;
 		cursor: text;
 		padding: 0;
 	}
 	.title-input {
+		font-family: var(--font-display);
 		font-size: 1.05rem;
 		font-weight: 700;
+		color: var(--accent);
+		background: #fff;
 		padding: 0.15rem 0.3rem;
-		border: 1px solid #c4b5fd;
+		border: 1px solid var(--gold);
 		border-radius: 5px;
 	}
 	.save-state {
 		font-size: 0.78rem;
-		color: #9ca3af;
+		color: var(--ink-soft);
 		min-width: 4.5rem;
 	}
 	.save-state.error {
-		color: #dc2626;
+		color: var(--accent);
 	}
 	.back {
 		text-decoration: none;
 		font-size: 1.2rem;
-		color: #374151;
+		color: var(--ink-soft);
 	}
 	.spacer {
 		flex: 1;
@@ -290,37 +296,44 @@
 	.bar a[target] {
 		font-size: 0.85rem;
 		padding: 0.4rem 0.7rem;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--rule);
 		border-radius: 6px;
-		background: #fff;
+		background: var(--parchment-light);
 		cursor: pointer;
 		text-decoration: none;
-		color: #374151;
+		color: var(--ink-soft);
+	}
+	.bar button:hover,
+	.bar .upload:hover,
+	.bar a[target]:hover {
+		border-color: var(--gold);
+		color: var(--ink);
 	}
 	.toggle {
 		font-size: 0.95rem;
 		padding: 0.25rem 0.55rem;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--rule);
 		border-radius: 6px;
-		background: #fff;
-		color: #9ca3af;
+		background: var(--parchment-light);
+		color: var(--rule);
 		cursor: pointer;
 	}
 	.toggle.on {
-		color: #5b21b6;
-		border-color: #c4b5fd;
-		background: #f5f3ff;
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
 	}
 	.layout {
 		display: grid;
 		grid-template-columns: 13rem 1fr;
-		height: calc(100vh - 3.2rem);
+		height: calc(100vh - 3.3rem);
 	}
 	.layout.no-rail {
 		grid-template-columns: 1fr;
 	}
 	.rail {
-		border-right: 1px solid #e5e7eb;
+		border-right: 1px solid var(--rule);
+		background: var(--parchment);
 		overflow-y: auto;
 		padding: 0.25rem;
 	}
@@ -343,10 +356,13 @@
 		min-width: 0;
 	}
 	.source {
-		border-right: 1px solid #e5e7eb;
+		border-right: 1px solid var(--rule);
+		background: #fdfbf5;
 	}
 	.preview {
-		padding: 1rem 1.5rem;
-		font-family: system-ui, sans-serif;
+		--page-bg: var(--parchment-light);
+		background: var(--parchment-light);
+		padding: 1rem 1.75rem 3rem;
+		font-family: var(--font-body);
 	}
 </style>
