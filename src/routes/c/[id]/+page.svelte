@@ -14,8 +14,37 @@
 	let title = $state(data.title);
 	let editingTitle = $state(false);
 	let saveState = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
-	let editor: Editor;
+	let showOutline = $state(true);
+	let showEditor = $state(true);
+	let editor: Editor | undefined = $state();
 	let rollLog: RollLog;
+
+	const uiKey = `dnd-ui-${data.campaignId}`;
+
+	function persistUi() {
+		localStorage.setItem(uiKey, JSON.stringify({ showOutline, showEditor }));
+	}
+
+	function toggleOutline() {
+		showOutline = !showOutline;
+		persistUi();
+	}
+
+	function toggleEditor() {
+		showEditor = !showEditor;
+		persistUi();
+	}
+
+	function onKeydown(e: KeyboardEvent) {
+		if (!(e.ctrlKey || e.metaKey)) return;
+		if (e.key === '\\') {
+			e.preventDefault();
+			toggleEditor();
+		} else if (e.key === '.') {
+			e.preventDefault();
+			toggleOutline();
+		}
+	}
 
 	// debounced live preview
 	let previewSource = $state(data.content);
@@ -111,6 +140,14 @@
 	}
 
 	onMount(() => {
+		// restore panel visibility
+		try {
+			const saved = JSON.parse(localStorage.getItem(uiKey) ?? '{}');
+			if (typeof saved.showOutline === 'boolean') showOutline = saved.showOutline;
+			if (typeof saved.showEditor === 'boolean') showEditor = saved.showEditor;
+		} catch {
+			// corrupt localStorage entry; keep defaults
+		}
 		// listen for rolls made by players (and co-DM tabs)
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onmessage = (e) => {
@@ -121,10 +158,26 @@
 	});
 </script>
 
+<svelte:window onkeydown={onKeydown} />
+
 <svelte:head><title>{title} — DM</title></svelte:head>
 
 <header class="bar">
 	<a href="/" class="back">←</a>
+	<button
+		type="button"
+		class="toggle"
+		class:on={showOutline}
+		title="Toggle outline (Ctrl+.)"
+		onclick={toggleOutline}>☰</button
+	>
+	<button
+		type="button"
+		class="toggle"
+		class:on={showEditor}
+		title="Toggle markdown editor (Ctrl+\)"
+		onclick={toggleEditor}>✎</button
+	>
 	{#if editingTitle}
 		<!-- svelte-ignore a11y_autofocus -->
 		<input
@@ -160,15 +213,19 @@
 	<a href={`/c/${data.campaignId}/play`} target="_blank" rel="noreferrer">Open player view</a>
 </header>
 
-<div class="layout">
-	<aside class="rail">
-		<Outline items={outlineItems} />
-	</aside>
-	<div class="split">
-		<section class="pane source">
-			<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
-		</section>
-		<section class="pane preview">
+<div class="layout" class:no-rail={!showOutline}>
+	{#if showOutline}
+		<aside class="rail">
+			<Outline items={outlineItems} />
+		</aside>
+	{/if}
+	<div class="split" class:solo={!showEditor}>
+		{#if showEditor}
+			<section class="pane source">
+				<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
+			</section>
+		{/if}
+		<section class="pane preview" class:full={!showEditor}>
 			<RenderedDoc
 				html={previewHtml}
 				dm
@@ -239,10 +296,27 @@
 		text-decoration: none;
 		color: #374151;
 	}
+	.toggle {
+		font-size: 0.95rem;
+		padding: 0.25rem 0.55rem;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		background: #fff;
+		color: #9ca3af;
+		cursor: pointer;
+	}
+	.toggle.on {
+		color: #5b21b6;
+		border-color: #c4b5fd;
+		background: #f5f3ff;
+	}
 	.layout {
 		display: grid;
 		grid-template-columns: 13rem 1fr;
 		height: calc(100vh - 3.2rem);
+	}
+	.layout.no-rail {
+		grid-template-columns: 1fr;
 	}
 	.rail {
 		border-right: 1px solid #e5e7eb;
@@ -253,6 +327,14 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		min-width: 0;
+	}
+	.split.solo {
+		grid-template-columns: 1fr;
+	}
+	.preview.full {
+		max-width: 60rem;
+		width: 100%;
+		margin: 0 auto;
 	}
 	.pane {
 		overflow: auto;
