@@ -22,7 +22,19 @@
 			{#each data.campaigns as c (c.id)}
 				<li>
 					<a href={`/c/${c.id}`} class="title">{c.title}</a>
-					<a href={`/c/${c.id}/play`} class="play">player view</a>
+					<span class="actions">
+						<a href={`/c/${c.id}/play`} class="play">player view</a>
+						<form
+							method="POST"
+							action="?/delete"
+							use:enhance={({ cancel }) => {
+								if (!confirm(`Delete "${c.title}"? This removes its maps and rolls too.`)) cancel();
+							}}
+						>
+							<input type="hidden" name="id" value={c.id} />
+							<button type="submit" class="delete" title="Delete campaign">✕</button>
+						</form>
+					</span>
 				</li>
 			{/each}
 		</ul>
@@ -80,6 +92,22 @@
 	.play {
 		font-size: 0.85rem;
 		color: #6b7280;
+	}
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.delete {
+		border: 0;
+		background: none;
+		color: #9ca3af;
+		cursor: pointer;
+		font-size: 0.9rem;
+		padding: 0.2rem;
+	}
+	.delete:hover {
+		color: #dc2626;
 	}
 	.empty {
 		color: #6b7280;

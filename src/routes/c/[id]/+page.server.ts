@@ -1,4 +1,11 @@
-import { getCampaign, getHeadingMeta, listMaps, listReveals, updateContent } from '$lib/server/db';
+import {
+	getCampaign,
+	getHeadingMeta,
+	listMaps,
+	listReveals,
+	listRolls,
+	updateContent
+} from '$lib/server/db';
 import { ensureHeadingIds } from '$lib/markdown';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -21,11 +28,22 @@ export const load: PageServerLoad = ({ params }) => {
 		reveals: listReveals(m.id)
 	}));
 
+	const rolls = listRolls(params.id, true).map((r) => ({
+		id: r.id,
+		roller: r.roller,
+		expression: r.expression,
+		result: r.result,
+		breakdown: r.breakdown,
+		secret: !!r.secret,
+		created_at: r.created_at
+	}));
+
 	return {
 		campaignId: campaign.id,
 		title: campaign.title,
 		content,
 		meta,
-		maps
+		maps,
+		rolls
 	};
 };

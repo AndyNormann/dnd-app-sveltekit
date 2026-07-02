@@ -44,6 +44,17 @@ db.exec(`
 		h REAL NOT NULL,
 		seq INTEGER NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS rolls (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		campaign_id TEXT NOT NULL,
+		roller TEXT NOT NULL,
+		expression TEXT NOT NULL,
+		result INTEGER NOT NULL,
+		breakdown TEXT NOT NULL,
+		secret INTEGER NOT NULL DEFAULT 0,
+		created_at INTEGER NOT NULL
+	);
 `);
 
 export interface Campaign {
@@ -102,6 +113,25 @@ export function createCampaign(title: string): Campaign {
 
 export function updateContent(id: string, content: string): void {
 	db.query('UPDATE campaigns SET content = ? WHERE id = ?').run(content, id);
+}
+
+export function updateTitle(id: string, title: string): void {
+	db.query('UPDATE campaigns SET title = ? WHERE id = ?').run(title, id);
+}
+
+/** Delete a campaign and all dependent rows; returns upload filenames to unlink. */
+export function deleteCampaign(id: string): string[] {
+	const files = (
+		db.query('SELECT filename FROM maps WHERE campaign_id = ?').all(id) as { filename: string }[]
+	).map((r) => r.filename);
+	db.query(
+		'DELETE FROM map_reveals WHERE map_id IN (SELECT id FROM maps WHERE campaign_id = ?)'
+	).run(id);
+	db.query('DELETE FROM maps WHERE campaign_id = ?').run(id);
+	db.query('DELETE FROM heading_meta WHERE campaign_id = ?').run(id);
+	db.query('DELETE FROM rolls WHERE campaign_id = ?').run(id);
+	db.query('DELETE FROM campaigns WHERE id = ?').run(id);
+	return files;
 }
 
 // --- Heading meta ---
@@ -179,6 +209,54 @@ export function addReveal(
 		)
 		.get(mapId, kind, rect.x, rect.y, rect.w, rect.h, seq) as RevealOp;
 	return result;
+}
+
+// --- Rolls ---
+
+export interface RollRow {
+	id: number;
+	campaign_id: string;
+	roller: string;
+	expression: string;
+	result: number;
+	breakdown: string;
+	secret: number;
+	created_at: number;
+}
+
+export function addRoll(
+	campaignId: string,
+	roller: string,
+	expression: string,
+	result: number,
+	breakdown: string,
+	secret: boolean
+): RollRow {
+	const row = db
+		.query(
+			`INSERT INTO rolls (campaign_id, roller, expression, result, breakdown, secret, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+		)
+		.get(campaignId, roller, expression, result, breakdown, secret ? 1 : 0, Date.now()) as RollRow;
+	// keep only the most recent 200 rolls per campaign
+	db.query(
+		`DELETE FROM rolls WHERE campaign_id = ? AND id NOT IN
+		 (SELECT id FROM rolls WHERE campaign_id = ? ORDER BY id DESC LIMIT 200)`
+	).run(campaignId, campaignId);
+	return row;
+}
+
+export function listRolls(campaignId: string, includeSecret: boolean): RollRow[] {
+	const rows = includeSecret
+		? db
+				.query('SELECT * FROM rolls WHERE campaign_id = ? ORDER BY id DESC LIMIT 100')
+				.all(campaignId)
+		: db
+				.query(
+					'SELECT * FROM rolls WHERE campaign_id = ? AND secret = 0 ORDER BY id DESC LIMIT 100'
+				)
+				.all(campaignId);
+	return (rows as RollRow[]).reverse();
 }
 
 export default db;

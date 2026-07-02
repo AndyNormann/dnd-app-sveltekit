@@ -17,6 +17,7 @@ export interface HeadingNode {
 	level: number;
 	line: number; // line index of the heading
 	parent: number | null; // index into the headings array
+	text: string; // heading text without #s or id marker
 }
 
 /** Shared state of a heading: inherit from ancestors, explicitly shared, or explicitly hidden. */
@@ -81,7 +82,8 @@ export function parseHeadings(markdown: string): HeadingNode[] {
 			stack.pop();
 		}
 		const parent = stack.length ? stack[stack.length - 1] : null;
-		headings.push({ id, level, line: i, parent });
+		const text = m[2].replace(ID_MARKER, '').trim();
+		headings.push({ id, level, line: i, parent, text });
 		stack.push(headings.length - 1);
 	}
 	return headings;
@@ -125,7 +127,8 @@ export function computeSharedMarkdown(markdown: string, meta: MetaMap): string {
 		}
 		if (fence) inFence = !inFence;
 		if (owner !== null && effectiveShared(owner, headings, meta)) {
-			out.push(stripMarker(lines[i]));
+			// keep id markers so the player renderer can anchor headings
+			out.push(lines[i]);
 		}
 	}
 	return out.join('\n');
@@ -142,11 +145,60 @@ export function createRenderer(): MarkdownIt {
 	return new MarkdownIt({ html: true, linkify: true, breaks: false });
 }
 
+function escapeHtml(s: string): string {
+	return s
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;');
+}
+
+/** Resolves a wiki-link name to a heading id, or null if unknown/unavailable. */
+export type WikiResolver = (name: string) => string | null;
+
+/** Build a case-insensitive heading-text → id resolver from a heading list. */
+export function makeWikiResolver(headings: HeadingNode[]): WikiResolver {
+	const byText = new Map<string, string>();
+	for (const h of headings) {
+		const key = h.text.toLowerCase();
+		if (!byText.has(key)) byText.set(key, h.id);
+	}
+	return (name) => byText.get(name.trim().toLowerCase()) ?? null;
+}
+
 /**
- * Render markdown for the DM. Headings get `data-heading-id`/`data-level`
- * attributes so the Svelte layer can attach share + collapse controls.
+ * Replace `[[Name]]` with anchor HTML. Unresolved links render as a broken-link
+ * span (`'broken'`) or as the bare text (`'plain'`, used for players so hidden
+ * section names don't leak as links).
  */
-export function renderForDM(markdown: string): string {
+export function expandWikiLinks(
+	markdown: string,
+	resolve: WikiResolver,
+	unresolved: 'broken' | 'plain'
+): string {
+	const lines = markdown.split('\n');
+	let inFence = false;
+	for (let i = 0; i < lines.length; i++) {
+		if (isFence(lines[i])) {
+			inFence = !inFence;
+			continue;
+		}
+		if (inFence) continue;
+		lines[i] = lines[i].replace(/\[\[([^\][]+)\]\]/g, (_m, name: string) => {
+			const id = resolve(name);
+			const label = escapeHtml(name.trim());
+			if (id) return `<a class="wiki-link" href="#h-${id}" data-heading-id="${id}">${label}</a>`;
+			return unresolved === 'broken' ? `<span class="wiki-missing">${label}</span>` : label;
+		});
+	}
+	return lines.join('\n');
+}
+
+/**
+ * Render markdown whose headings carry id markers. Headings get
+ * `id="h-<id>"`, `data-heading-id`, and `data-level` attributes.
+ */
+export function renderWithAnchors(markdown: string): string {
 	// Pull ids out in heading order, then strip the markers from the source.
 	const ids: string[] = [];
 	const stripped = markdown
@@ -172,12 +224,22 @@ export function renderForDM(markdown: string): string {
 		const id = ids[counter] ?? '';
 		counter++;
 		const level = tokens[idx].tag.slice(1);
+		if (id) tokens[idx].attrSet('id', `h-${id}`);
 		tokens[idx].attrSet('data-heading-id', id);
 		tokens[idx].attrSet('data-level', level);
 		return defaultHeadingOpen(tokens, idx, options, env, self);
 	};
 
 	return md.render(expandMapDirectives(stripped));
+}
+
+/**
+ * Render markdown for the DM. All wiki links resolve against the full
+ * document; unknown targets render broken.
+ */
+export function renderForDM(markdown: string): string {
+	const resolver = makeWikiResolver(parseHeadings(markdown));
+	return renderWithAnchors(expandWikiLinks(markdown, resolver, 'broken'));
 }
 
 /** Build a MetaMap from DB heading_meta rows. */

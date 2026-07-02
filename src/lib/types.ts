@@ -18,3 +18,13 @@ export interface MapData {
 	src: string;
 	reveals: RevealOp[];
 }
+
+export interface RollData {
+	id: number;
+	roller: string;
+	expression: string;
+	result: number;
+	breakdown: string;
+	secret: boolean;
+	created_at: number;
+}

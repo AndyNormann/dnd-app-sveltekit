@@ -1,13 +1,21 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Editor from '$lib/components/Editor.svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
-	import { renderForDM } from '$lib/markdown';
+	import RollLog from '$lib/components/RollLog.svelte';
+	import Outline from '$lib/components/Outline.svelte';
+	import { parseHeadings, renderForDM } from '$lib/markdown';
+	import type { RollData } from '$lib/types';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	let content = $state(data.content);
+	let title = $state(data.title);
+	let editingTitle = $state(false);
+	let saveState = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
 	let editor: Editor;
+	let rollLog: RollLog;
 
 	// debounced live preview
 	let previewSource = $state(data.content);
@@ -21,6 +29,9 @@
 	);
 
 	const previewHtml = $derived(renderForDM(previewSource));
+	const outlineItems = $derived(
+		parseHeadings(previewSource).map((h) => ({ id: h.id, level: h.level, text: h.text }))
+	);
 
 	function onEdit(v: string) {
 		content = v;
@@ -31,12 +42,17 @@
 	}
 
 	async function save() {
-		const res = await fetch(`/c/${data.campaignId}/content`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ content })
-		});
-		if (res.ok) {
+		saveState = 'saving';
+		try {
+			const res = await fetch(`/c/${data.campaignId}/content`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ content })
+			});
+			if (!res.ok) {
+				saveState = 'error';
+				return;
+			}
 			const { content: canonical } = (await res.json()) as { content: string };
 			// resync editor if the server injected heading ids
 			if (canonical !== content) {
@@ -44,7 +60,26 @@
 				editor?.setValue(canonical);
 				previewSource = canonical;
 			}
+			saveState = 'saved';
+		} catch {
+			saveState = 'error';
 		}
+	}
+
+	async function saveTitle() {
+		editingTitle = false;
+		const next = title.trim();
+		if (!next || next === data.title) {
+			title = data.title;
+			return;
+		}
+		const res = await fetch(`/c/${data.campaignId}/title`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ title: next })
+		});
+		if (res.ok) data.title = next;
+		else title = data.title;
 	}
 
 	function playerUrl() {
@@ -74,13 +109,48 @@
 		}
 		input.value = '';
 	}
+
+	onMount(() => {
+		// listen for rolls made by players (and co-DM tabs)
+		const es = new EventSource(`/c/${data.campaignId}/events`);
+		es.onmessage = (e) => {
+			const ev = JSON.parse(e.data);
+			if (ev.type === 'roll') rollLog?.addRoll(ev.roll as RollData);
+		};
+		return () => es.close();
+	});
 </script>
 
-<svelte:head><title>{data.title} — DM</title></svelte:head>
+<svelte:head><title>{title} — DM</title></svelte:head>
 
 <header class="bar">
 	<a href="/" class="back">←</a>
-	<h1>{data.title}</h1>
+	{#if editingTitle}
+		<!-- svelte-ignore a11y_autofocus -->
+		<input
+			class="title-input"
+			bind:value={title}
+			onblur={saveTitle}
+			onkeydown={(e) => {
+				if (e.key === 'Enter') saveTitle();
+				if (e.key === 'Escape') {
+					title = data.title;
+					editingTitle = false;
+				}
+			}}
+			autofocus
+		/>
+	{:else}
+		<h1>
+			<button type="button" class="title-btn" title="Rename" onclick={() => (editingTitle = true)}>
+				{title}
+			</button>
+		</h1>
+	{/if}
+	<span class="save-state" class:error={saveState === 'error'}>
+		{#if saveState === 'saving'}Saving…{:else if saveState === 'saved'}Saved{:else if saveState === 'error'}Save
+			failed{/if}
+	</span>
 	<div class="spacer"></div>
 	<label class="upload">
 		Add map
@@ -90,20 +160,28 @@
 	<a href={`/c/${data.campaignId}/play`} target="_blank" rel="noreferrer">Open player view</a>
 </header>
 
-<div class="split">
-	<section class="pane source">
-		<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
-	</section>
-	<section class="pane preview">
-		<RenderedDoc
-			html={previewHtml}
-			dm
-			campaignId={data.campaignId}
-			maps={data.maps}
-			meta={metaRecord}
-		/>
-	</section>
+<div class="layout">
+	<aside class="rail">
+		<Outline items={outlineItems} />
+	</aside>
+	<div class="split">
+		<section class="pane source">
+			<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
+		</section>
+		<section class="pane preview">
+			<RenderedDoc
+				html={previewHtml}
+				dm
+				campaignId={data.campaignId}
+				maps={data.maps}
+				meta={metaRecord}
+				onroll={(r) => rollLog?.addRoll(r)}
+			/>
+		</section>
+	</div>
 </div>
+
+<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
 
 <style>
 	.bar {
@@ -117,6 +195,29 @@
 	.bar h1 {
 		font-size: 1.1rem;
 		margin: 0;
+	}
+	.title-btn {
+		font: inherit;
+		font-weight: 700;
+		border: 0;
+		background: none;
+		cursor: text;
+		padding: 0;
+	}
+	.title-input {
+		font-size: 1.05rem;
+		font-weight: 700;
+		padding: 0.15rem 0.3rem;
+		border: 1px solid #c4b5fd;
+		border-radius: 5px;
+	}
+	.save-state {
+		font-size: 0.78rem;
+		color: #9ca3af;
+		min-width: 4.5rem;
+	}
+	.save-state.error {
+		color: #dc2626;
 	}
 	.back {
 		text-decoration: none;
@@ -138,14 +239,25 @@
 		text-decoration: none;
 		color: #374151;
 	}
+	.layout {
+		display: grid;
+		grid-template-columns: 13rem 1fr;
+		height: calc(100vh - 3.2rem);
+	}
+	.rail {
+		border-right: 1px solid #e5e7eb;
+		overflow-y: auto;
+		padding: 0.25rem;
+	}
 	.split {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		height: calc(100vh - 3.2rem);
+		min-width: 0;
 	}
 	.pane {
 		overflow: auto;
 		height: 100%;
+		min-width: 0;
 	}
 	.source {
 		border-right: 1px solid #e5e7eb;

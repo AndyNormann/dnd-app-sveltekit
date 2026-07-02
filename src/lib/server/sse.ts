@@ -1,12 +1,14 @@
 import type { RevealOp } from './db';
-import type { MapData } from '$lib/types';
+import type { MapData, RollData } from '$lib/types';
 
 export type CampaignEvent =
 	| { type: 'doc-updated'; html: string }
 	| { type: 'share-changed'; html: string }
 	| { type: 'map-added'; map: MapData }
 	| { type: 'map-revealed'; mapId: string; op: RevealOp }
-	| { type: 'map-hidden'; mapId: string; op: RevealOp };
+	| { type: 'map-hidden'; mapId: string; op: RevealOp }
+	| { type: 'roll'; roll: RollData }
+	| { type: 'title-changed'; title: string };
 
 type Subscriber = (event: CampaignEvent) => void;
 

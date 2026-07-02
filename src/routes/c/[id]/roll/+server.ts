@@ -1,0 +1,34 @@
+import { addRoll, getCampaign } from '$lib/server/db';
+import { broadcast } from '$lib/server/sse';
+import { rollDice } from '$lib/dice';
+import { error, json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import type { RollData } from '$lib/types';
+
+export const POST: RequestHandler = async ({ params, request }) => {
+	const campaign = getCampaign(params.id);
+	if (!campaign) throw error(404, 'Campaign not found');
+
+	const body = (await request.json()) as { roller?: string; expression?: string; secret?: boolean };
+	const roller = (body.roller ?? '').trim().slice(0, 40) || 'Anonymous';
+	const expression = (body.expression ?? '').trim().slice(0, 100);
+	const secret = !!body.secret;
+
+	const result = rollDice(expression);
+	if (!result) throw error(400, 'Invalid dice expression');
+
+	const row = addRoll(params.id, roller, expression, result.total, result.breakdown, secret);
+	const roll: RollData = {
+		id: row.id,
+		roller: row.roller,
+		expression: row.expression,
+		result: row.result,
+		breakdown: row.breakdown,
+		secret: !!row.secret,
+		created_at: row.created_at
+	};
+
+	if (!secret) broadcast(params.id, { type: 'roll', roll });
+
+	return json(roll);
+};

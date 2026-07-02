@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
-import { createCampaign, listCampaigns } from '$lib/server/db';
+import { createCampaign, deleteCampaign, listCampaigns } from '$lib/server/db';
+import { unlink } from 'node:fs/promises';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -12,5 +13,13 @@ export const actions: Actions = {
 		const title = (data.get('title') as string)?.trim() || 'Untitled Campaign';
 		const campaign = createCampaign(title);
 		throw redirect(303, `/c/${campaign.id}`);
+	},
+	delete: async ({ request }) => {
+		const data = await request.formData();
+		const id = data.get('id') as string;
+		if (!id) return { ok: false };
+		const files = deleteCampaign(id);
+		await Promise.allSettled(files.map((f) => unlink(`static/uploads/${f}`)));
+		return { ok: true };
 	}
 };
