@@ -8,16 +8,23 @@
 		campaignId
 	}: { map: MapData; dm?: boolean; campaignId: string } = $props();
 
-	let reveals = $state<RevealOp[]>([...map.reveals]);
-	let mode = $state<'off' | 'reveal' | 'erase'>('off');
+	type Mode = 'off' | 'rect-reveal' | 'rect-erase' | 'brush-reveal' | 'brush-erase';
 
-	let wrap: HTMLDivElement;
+	let reveals = $state<RevealOp[]>([...map.reveals]);
+	let mode = $state<Mode>('off');
+	let brushSize = $state(40); // brush radius in display px
+
 	let img: HTMLImageElement;
 	let canvas: HTMLCanvasElement;
 
-	// in-progress drag rectangle in displayed pixels
+	// in-progress rect drag in displayed pixels
 	let dragging = $state(false);
 	let dragRect = $state<{ x: number; y: number; w: number; h: number } | null>(null);
+	// in-progress brush stroke, normalized 0..1 coords
+	let stroke: [number, number][] = [];
+
+	const isBrushMode = $derived(mode === 'brush-reveal' || mode === 'brush-erase');
+	const isErase = $derived(mode === 'rect-erase' || mode === 'brush-erase');
 
 	/** Append an op coming from SSE or local action and repaint. */
 	export function applyOp(op: RevealOp) {
@@ -27,6 +34,51 @@
 	}
 
 	export const mapId = map.id;
+
+	function fogColor() {
+		return dm ? 'rgba(0,0,0,0.6)' : '#000';
+	}
+
+	/** Apply one reveal/hide op (rect or brush stroke) to the fog canvas. */
+	function drawOp(
+		ctx: CanvasRenderingContext2D,
+		w: number,
+		h: number,
+		kind: 'reveal' | 'hide',
+		shape: 'rect' | 'brush',
+		op: {
+			x?: number;
+			y?: number;
+			w?: number;
+			h?: number;
+			path?: [number, number][];
+			radius?: number;
+		}
+	) {
+		ctx.globalCompositeOperation = kind === 'reveal' ? 'destination-out' : 'source-over';
+		ctx.fillStyle = fogColor();
+		ctx.strokeStyle = fogColor();
+		if (shape === 'rect') {
+			ctx.fillRect((op.x ?? 0) * w, (op.y ?? 0) * h, (op.w ?? 0) * w, (op.h ?? 0) * h);
+			return;
+		}
+		const path = op.path ?? [];
+		if (!path.length) return;
+		const r = (op.radius ?? 0.02) * w;
+		if (path.length === 1) {
+			ctx.beginPath();
+			ctx.arc(path[0][0] * w, path[0][1] * h, r, 0, Math.PI * 2);
+			ctx.fill();
+			return;
+		}
+		ctx.lineWidth = r * 2;
+		ctx.lineCap = 'round';
+		ctx.lineJoin = 'round';
+		ctx.beginPath();
+		ctx.moveTo(path[0][0] * w, path[0][1] * h);
+		for (const [x, y] of path.slice(1)) ctx.lineTo(x * w, y * h);
+		ctx.stroke();
+	}
 
 	function paint() {
 		if (!canvas || !img) return;
@@ -42,28 +94,23 @@
 
 		// base fog: opaque black for players, translucent dim for the DM
 		ctx.globalCompositeOperation = 'source-over';
-		ctx.fillStyle = dm ? 'rgba(0,0,0,0.6)' : '#000';
+		ctx.fillStyle = fogColor();
 		ctx.fillRect(0, 0, w, h);
 
 		for (const op of reveals) {
-			const rx = op.x * w;
-			const ry = op.y * h;
-			const rw = op.w * w;
-			const rh = op.h * h;
-			if (op.kind === 'reveal') {
-				ctx.globalCompositeOperation = 'destination-out';
-				ctx.fillRect(rx, ry, rw, rh);
-			} else {
-				ctx.globalCompositeOperation = 'source-over';
-				ctx.fillStyle = dm ? 'rgba(0,0,0,0.6)' : '#000';
-				ctx.fillRect(rx, ry, rw, rh);
-			}
+			drawOp(ctx, w, h, op.kind, op.shape ?? 'rect', op);
 		}
 
-		// live drag preview (DM only)
+		// live previews (DM only)
+		if (dm && stroke.length && isBrushMode) {
+			drawOp(ctx, w, h, isErase ? 'hide' : 'reveal', 'brush', {
+				path: stroke,
+				radius: brushSize / w
+			});
+		}
 		if (dm && dragRect) {
 			ctx.globalCompositeOperation = 'source-over';
-			ctx.strokeStyle = mode === 'erase' ? '#ef4444' : '#22c55e';
+			ctx.strokeStyle = isErase ? '#ef4444' : '#22c55e';
 			ctx.lineWidth = 2;
 			ctx.strokeRect(dragRect.x, dragRect.y, dragRect.w, dragRect.h);
 		}
@@ -84,21 +131,55 @@
 		canvas.setPointerCapture(e.pointerId);
 		const p = pointerPos(e);
 		dragging = true;
-		dragRect = { x: p.x, y: p.y, w: 0, h: 0 };
+		if (isBrushMode) {
+			stroke = [[p.x / img.clientWidth, p.y / img.clientHeight]];
+			paint();
+		} else {
+			dragRect = { x: p.x, y: p.y, w: 0, h: 0 };
+		}
 	}
 
 	function onPointerMove(e: PointerEvent) {
-		if (!dragging || !dragRect) return;
+		if (!dragging) return;
 		const p = pointerPos(e);
-		dragRect = { x: dragRect.x, y: dragRect.y, w: p.x - dragRect.x, h: p.y - dragRect.y };
-		paint();
+		if (isBrushMode) {
+			stroke.push([p.x / img.clientWidth, p.y / img.clientHeight]);
+			paint();
+		} else if (dragRect) {
+			dragRect = { x: dragRect.x, y: dragRect.y, w: p.x - dragRect.x, h: p.y - dragRect.y };
+			paint();
+		}
 	}
 
 	async function onPointerUp(e: PointerEvent) {
-		if (!dragging || !dragRect) return;
+		if (!dragging) return;
 		dragging = false;
 		canvas.releasePointerCapture(e.pointerId);
+		if (isBrushMode) {
+			await finishStroke();
+		} else {
+			await finishRect();
+		}
+	}
 
+	async function finishStroke() {
+		const path = stroke;
+		stroke = [];
+		if (!path.length || !img.clientWidth) {
+			paint();
+			return;
+		}
+		const payload = {
+			kind: isErase ? 'hide' : 'reveal',
+			shape: 'brush',
+			path,
+			radius: Math.min(0.25, Math.max(0.001, brushSize / img.clientWidth))
+		};
+		await postOp(payload);
+	}
+
+	async function finishRect() {
+		if (!dragRect) return;
 		// normalize to top-left origin + 0..1 coords
 		const w = img.clientWidth;
 		const h = img.clientHeight;
@@ -117,17 +198,26 @@
 			paint();
 			return;
 		}
+		await postOp({
+			kind: isErase ? 'hide' : 'reveal',
+			shape: 'rect',
+			x: x / w,
+			y: y / h,
+			w: rw / w,
+			h: rh / h
+		});
+	}
 
-		const kind = mode === 'erase' ? 'hide' : 'reveal';
-		const payload = { kind, x: x / w, y: y / h, w: rw / w, h: rh / h };
+	async function postOp(payload: unknown) {
 		const res = await fetch(`/c/${campaignId}/maps/${map.id}/reveal`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)
 		});
 		if (res.ok) {
-			const op = (await res.json()) as RevealOp;
-			applyOp(op);
+			applyOp((await res.json()) as RevealOp);
+		} else {
+			paint();
 		}
 	}
 
@@ -139,12 +229,28 @@
 	});
 </script>
 
-<div class="map" bind:this={wrap}>
+<div class="map">
 	{#if dm}
 		<div class="toolbar">
 			<button class:active={mode === 'off'} onclick={() => (mode = 'off')}>Off</button>
-			<button class:active={mode === 'reveal'} onclick={() => (mode = 'reveal')}>Reveal</button>
-			<button class:active={mode === 'erase'} onclick={() => (mode = 'erase')}>Erase</button>
+			<button class:active={mode === 'rect-reveal'} onclick={() => (mode = 'rect-reveal')}>
+				▭ Reveal
+			</button>
+			<button class:active={mode === 'rect-erase'} onclick={() => (mode = 'rect-erase')}>
+				▭ Erase
+			</button>
+			<button class:active={mode === 'brush-reveal'} onclick={() => (mode = 'brush-reveal')}>
+				🖌 Reveal
+			</button>
+			<button class:active={mode === 'brush-erase'} onclick={() => (mode = 'brush-erase')}>
+				🖌 Erase
+			</button>
+			{#if isBrushMode}
+				<label class="size">
+					Size
+					<input type="range" min="10" max="120" bind:value={brushSize} />
+				</label>
+			{/if}
 		</div>
 	{/if}
 	<div class="stage" class:drawing={dm && mode !== 'off'}>
@@ -164,6 +270,7 @@
 	}
 	.toolbar {
 		display: flex;
+		align-items: center;
 		gap: 0.25rem;
 		margin-bottom: 0.4rem;
 	}
@@ -179,6 +286,17 @@
 		background: #5b21b6;
 		color: white;
 		border-color: #5b21b6;
+	}
+	.size {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.78rem;
+		color: #4b5563;
+		margin-left: 0.5rem;
+	}
+	.size input {
+		width: 7rem;
 	}
 	.stage {
 		position: relative;

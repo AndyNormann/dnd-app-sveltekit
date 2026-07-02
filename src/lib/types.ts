@@ -4,10 +4,13 @@ export interface RevealOp {
 	id: number;
 	map_id: string;
 	kind: 'reveal' | 'hide';
+	shape: 'rect' | 'brush';
 	x: number;
 	y: number;
 	w: number;
 	h: number;
+	path?: [number, number][];
+	radius?: number;
 	seq: number;
 }
 

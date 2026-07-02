@@ -57,6 +57,18 @@ db.exec(`
 	);
 `);
 
+// migrate pre-brush databases: add shape/path/radius to map_reveals
+{
+	const cols = (db.query('PRAGMA table_info(map_reveals)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!cols.includes('shape')) {
+		db.exec(`ALTER TABLE map_reveals ADD COLUMN shape TEXT NOT NULL DEFAULT 'rect'`);
+		db.exec(`ALTER TABLE map_reveals ADD COLUMN path TEXT`);
+		db.exec(`ALTER TABLE map_reveals ADD COLUMN radius REAL`);
+	}
+}
+
 export interface Campaign {
 	id: string;
 	title: string;
@@ -83,11 +95,28 @@ export interface RevealOp {
 	id: number;
 	map_id: string;
 	kind: 'reveal' | 'hide';
+	shape: 'rect' | 'brush';
 	x: number;
 	y: number;
 	w: number;
 	h: number;
+	path?: [number, number][];
+	radius?: number;
 	seq: number;
+}
+
+/** Raw map_reveals row: path is a JSON string. */
+interface RevealRow extends Omit<RevealOp, 'path' | 'radius'> {
+	path: string | null;
+	radius: number | null;
+}
+
+function toRevealOp(row: RevealRow): RevealOp {
+	return {
+		...row,
+		path: row.path ? (JSON.parse(row.path) as [number, number][]) : undefined,
+		radius: row.radius ?? undefined
+	};
 }
 
 // --- Campaigns ---
@@ -189,26 +218,43 @@ export function createMap(
 // --- Reveal ops ---
 
 export function listReveals(mapId: string): RevealOp[] {
-	return db
+	const rows = db
 		.query('SELECT * FROM map_reveals WHERE map_id = ? ORDER BY seq')
-		.all(mapId) as RevealOp[];
+		.all(mapId) as RevealRow[];
+	return rows.map(toRevealOp);
 }
 
 export function addReveal(
 	mapId: string,
 	kind: 'reveal' | 'hide',
-	rect: { x: number; y: number; w: number; h: number }
+	op:
+		| { shape: 'rect'; x: number; y: number; w: number; h: number }
+		| { shape: 'brush'; path: [number, number][]; radius: number }
 ): RevealOp {
+	const next = (
+		db
+			.query('SELECT COALESCE(MAX(seq), 0) + 1 AS next FROM map_reveals WHERE map_id = ?')
+			.get(mapId) as { next: number }
+	).next;
+	const isBrush = op.shape === 'brush';
 	const row = db
-		.query('SELECT COALESCE(MAX(seq), 0) + 1 AS next FROM map_reveals WHERE map_id = ?')
-		.get(mapId) as { next: number };
-	const seq = row.next;
-	const result = db
 		.query(
-			'INSERT INTO map_reveals (map_id, kind, x, y, w, h, seq) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *'
+			`INSERT INTO map_reveals (map_id, kind, shape, x, y, w, h, path, radius, seq)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
 		)
-		.get(mapId, kind, rect.x, rect.y, rect.w, rect.h, seq) as RevealOp;
-	return result;
+		.get(
+			mapId,
+			kind,
+			op.shape,
+			isBrush ? 0 : op.x,
+			isBrush ? 0 : op.y,
+			isBrush ? 0 : op.w,
+			isBrush ? 0 : op.h,
+			isBrush ? JSON.stringify(op.path) : null,
+			isBrush ? op.radius : null,
+			next
+		) as RevealRow;
+	return toRevealOp(row);
 }
 
 // --- Rolls ---
