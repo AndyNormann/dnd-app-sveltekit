@@ -233,6 +233,7 @@
 				maps={data.maps}
 				meta={metaRecord}
 				onroll={(r) => rollLog?.addRoll(r)}
+				getSecret={() => rollLog?.isSecret() ?? false}
 			/>
 		</section>
 	</div>

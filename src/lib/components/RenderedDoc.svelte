@@ -11,7 +11,8 @@
 		maps = [],
 		meta = {},
 		onrender,
-		onroll
+		onroll,
+		getSecret
 	}: {
 		html: string;
 		dm?: boolean;
@@ -20,6 +21,7 @@
 		meta?: Record<string, { shared: number; collapsed: number }>;
 		onrender?: (container: HTMLElement) => void;
 		onroll?: (roll: RollData) => void;
+		getSecret?: () => boolean;
 	} = $props();
 
 	let container: HTMLDivElement;
@@ -234,7 +236,7 @@
 		const res = await fetch(`/c/${campaignId}/roll`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ roller, expression, secret: false })
+			body: JSON.stringify({ roller, expression, secret: getSecret?.() ?? false })
 		});
 		if (res.ok) onroll?.((await res.json()) as RollData);
 	}

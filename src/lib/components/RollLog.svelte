@@ -26,6 +26,11 @@
 		listEl?.scrollTo({ top: listEl.scrollHeight });
 	}
 
+	/** Whether the DM's secret toggle is currently checked (always false for players). */
+	export function isSecret(): boolean {
+		return dm && secret;
+	}
+
 	/** Append a roll arriving over SSE (deduped against our own POST echoes). */
 	export function addRoll(roll: RollData) {
 		if (rolls.some((r) => r.id === roll.id)) return;
