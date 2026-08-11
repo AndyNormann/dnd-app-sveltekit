@@ -5,7 +5,8 @@ import {
 	listReveals,
 	listRolls,
 	updateContent,
-	listInitiative
+	listInitiative,
+	getInitiativeRound
 } from '$lib/server/db';
 import { ensureHeadingIds } from '$lib/markdown';
 import { isDM } from '$lib/server/auth';
@@ -53,6 +54,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		meta,
 		maps,
 		rolls,
-		initiative: listInitiative(params.id)
+		initiative: listInitiative(params.id),
+		initiativeRound: getInitiativeRound(params.id)
 	};
 };

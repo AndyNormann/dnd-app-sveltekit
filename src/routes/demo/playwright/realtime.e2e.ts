@@ -131,3 +131,30 @@ test('realtime: secret rolls never reach players, public rolls do', async ({ bro
 	await anon.close();
 	await dm.close();
 });
+
+test('realtime: DM can reveal a secret roll to players', async ({ browser }) => {
+	const anon = await browser.newContext();
+	const id = await createCampaign(anon.request);
+	const { dm, cookieHeader } = await loginDM(browser);
+	const player = await openPlayer(anon, id);
+
+	// DM makes a secret roll — players must not see it yet
+	const secret = await dm.request.post(`/c/${id}/roll`, {
+		data: { expression: '1d20', secret: true, label: 'SECRET-ROLL' },
+		headers: { cookie: cookieHeader }
+	});
+	expect(secret.status()).toBe(200);
+	const roll = (await secret.json()) as { id: number };
+	await expect(player.getByText('SECRET-ROLL')).not.toBeVisible();
+
+	// DM reveals it — now it must reach the player live via SSE
+	const revealed = await dm.request.post(`/c/${id}/roll/${roll.id}`, {
+		data: { action: 'reveal' },
+		headers: { cookie: cookieHeader }
+	});
+	expect(revealed.status()).toBe(200);
+	await expect(player.getByText('SECRET-ROLL')).toBeVisible();
+
+	await anon.close();
+	await dm.close();
+});

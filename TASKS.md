@@ -62,6 +62,17 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       e2e proving DM note edits reach an open player page, reconnecting players
       get a fresh snapshot, and secret rolls never reach players.
 
+## Core-flow polish (the four flows in active use)
+
+- [x] **16. Map reveal undo + clear layer**
+      Undo the last reveal/hide op (and clear a whole layer's fog) per map, so
+      an accidental reveal is recoverable.
+- [x] **17. Initiative round counter**
+      Track the combat round; "Next" auto-increments it when wrapping from last
+      to first. Shown in the panel.
+- [x] **18. Reveal a secret roll to players**
+      DM can deliberately show a previously-secret roll to players.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**

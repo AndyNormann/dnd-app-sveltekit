@@ -32,11 +32,26 @@
 		return dm && secret;
 	}
 
-	/** Append a roll arriving over SSE (deduped against our own POST echoes). */
+	/** Append a roll arriving over SSE (update in place if it already exists). */
 	export function addRoll(roll: RollData) {
-		if (rolls.some((r) => r.id === roll.id)) return;
-		rolls = [...rolls, roll];
+		const idx = rolls.findIndex((r) => r.id === roll.id);
+		if (idx >= 0) {
+			// a revealed secret roll updates the existing (secret) entry in place
+			rolls = rolls.map((r) => (r.id === roll.id ? roll : r));
+		} else {
+			rolls = [...rolls, roll];
+		}
 		scrollToEnd();
+	}
+
+	/** Ask the server to reveal a secret roll to players, then clear its secret flag locally. */
+	export async function revealRoll(roll: RollData) {
+		await fetch(`/c/${campaignId}/roll/${roll.id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'reveal' })
+		});
+		rolls = rolls.map((r) => (r.id === roll.id ? { ...r, secret: false } : r));
 	}
 
 	/** Replace the whole roll list (e.g. on SSE snapshot after a reconnect). */
@@ -98,6 +113,11 @@
 			{#each rolls as r (r.id)}
 				<div class="roll" class:secret={r.secret}>
 					<span class="who">{r.roller}{r.secret ? ' 🤫' : ''}</span>
+					{#if dm && r.secret}
+						<button type="button" class="reveal" title="Show to players" onclick={() => revealRoll(r)}>
+							👁
+						</button>
+					{/if}
 					<span class="total">{r.result}</span>
 					{#if r.label}<span class="label">{r.label}</span>{/if}
 					<span class="detail">{r.breakdown}</span>
@@ -191,6 +211,16 @@
 	.who {
 		font-weight: 600;
 		color: var(--ink);
+	}
+	.reveal {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 3px;
+		cursor: pointer;
+		font-size: 0.75rem;
+		line-height: 1;
+		padding: 0.1rem 0.3rem;
+		color: var(--accent);
 	}
 	.total {
 		font-family: var(--font-display);

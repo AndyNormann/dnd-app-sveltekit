@@ -22,7 +22,6 @@
 	let rollLog: RollLog;
 	let initiative: Initiative;
 	let doc: RenderedDoc;
-
 	const uiKey = `dnd-ui-${data.campaignId}`;
 
 	function persistUi() {
@@ -173,10 +172,12 @@
 				doc?.applySnapshot(ev.maps, ev.tokens);
 			} else if (ev.type === 'map-added') {
 				if (!data.maps.some((m: { id: string }) => m.id === ev.map.id)) data.maps = [...data.maps, ev.map];
-			} else if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries);
+			} else if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries, ev.round);
 			else if (ev.type === 'tokens-updated') doc?.applyTokens(ev.mapId, ev.tokens);
 			else if (ev.type === 'grid-updated') doc?.applyGrid(ev.mapId, ev.grid_size);
 			else if (ev.type === 'layer-changed') doc?.applyLayer(ev.mapId, ev.layer);
+			else if (ev.type === 'reveal-undone') doc?.applyRevealRemoved(ev.mapId, ev.opId);
+			else if (ev.type === 'reveals-cleared') doc?.applyLayerCleared(ev.mapId, ev.layer);
 		};
 		return () => es.close();
 	});
@@ -273,7 +274,7 @@
 </div>
 
 <RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
-<Initiative bind:this={initiative} campaignId={data.campaignId} dm initial={data.initiative} />
+<Initiative bind:this={initiative} campaignId={data.campaignId} dm initial={data.initiative} initialRound={data.initiativeRound} />
 
 <style>
 	.bar {

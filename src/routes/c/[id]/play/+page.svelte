@@ -66,7 +66,13 @@
 					rollLog?.addRoll(ev.roll as RollData);
 					break;
 				case 'initiative-updated':
-					initiative?.applyEntries(ev.entries);
+					initiative?.applyEntries(ev.entries, ev.round);
+					break;
+				case 'reveal-undone':
+					doc?.applyRevealRemoved(ev.mapId, ev.opId);
+					break;
+				case 'reveals-cleared':
+					doc?.applyLayerCleared(ev.mapId, ev.layer);
 					break;
 				case 'handout-revealed':
 					// the shared html will have been delivered; scroll to + flash the heading
@@ -110,7 +116,12 @@
 </div>
 
 <RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
-<Initiative bind:this={initiative} campaignId={data.campaignId} initial={data.initiative} />
+<Initiative
+	bind:this={initiative}
+	campaignId={data.campaignId}
+	initial={data.initiative}
+	initialRound={data.initiativeRound}
+/>
 
 <style>
 	.page {

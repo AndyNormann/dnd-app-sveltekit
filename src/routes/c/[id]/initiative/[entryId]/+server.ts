@@ -1,4 +1,11 @@
-import { getCampaign, getInitiative, listInitiative, updateInitiative, removeInitiative } from '$lib/server/db';
+import {
+	getCampaign,
+	getInitiative,
+	getInitiativeRound,
+	listInitiative,
+	updateInitiative,
+	removeInitiative
+} from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
 import { error, json } from '@sveltejs/kit';
@@ -26,6 +33,10 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		if (!updated) throw error(404, 'Entry not found');
 	}
 
-	broadcast(params.id, { type: 'initiative-updated', entries: listInitiative(params.id) });
+	broadcast(params.id, {
+		type: 'initiative-updated',
+		entries: listInitiative(params.id),
+		round: getInitiativeRound(params.id)
+	});
 	return json({ ok: true });
 };

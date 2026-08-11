@@ -12,10 +12,12 @@ export type CampaignEvent =
 	| { type: 'roll'; roll: RollData }
 	| { type: 'title-changed'; title: string }
 	| { type: 'handout-revealed'; headingId: string }
-	| { type: 'initiative-updated'; entries: InitEntry[] }
+	| { type: 'initiative-updated'; entries: InitEntry[]; round: number }
 	| { type: 'tokens-updated'; mapId: string; tokens: TokenRow[] }
 	| { type: 'grid-updated'; mapId: string; grid_size: number }
 	| { type: 'layer-changed'; mapId: string; layer: number }
+	| { type: 'reveal-undone'; mapId: string; layer: number; opId: number }
+	| { type: 'reveals-cleared'; mapId: string; layer: number }
 	| {
 			type: 'snapshot';
 			title: string;

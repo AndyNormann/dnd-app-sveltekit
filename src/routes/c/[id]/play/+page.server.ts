@@ -1,4 +1,12 @@
-import { getCampaign, getHeadingMeta, listMaps, listReveals, listRolls, listInitiative } from '$lib/server/db';
+import {
+	getCampaign,
+	getHeadingMeta,
+	listMaps,
+	listReveals,
+	listRolls,
+	listInitiative,
+	getInitiativeRound
+} from '$lib/server/db';
 import { toMetaMap } from '$lib/markdown';
 import { renderSharedForPlayer } from '$lib/server/markdown.server';
 import { error } from '@sveltejs/kit';
@@ -33,5 +41,13 @@ export const load: PageServerLoad = ({ params }) => {
 		created_at: r.created_at
 	}));
 
-	return { campaignId: campaign.id, title: campaign.title, html, maps, rolls, initiative: listInitiative(params.id) };
+	return {
+		campaignId: campaign.id,
+		title: campaign.title,
+		html,
+		maps,
+		rolls,
+		initiative: listInitiative(params.id),
+		initiativeRound: getInitiativeRound(params.id)
+	};
 };

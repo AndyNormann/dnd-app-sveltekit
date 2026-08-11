@@ -56,6 +56,16 @@
 		inst?.applyLayer?.(layer);
 	}
 
+	export function applyRevealRemoved(mapId: string, opId: number) {
+		const inst = mapInstances.get(mapId) as { applyRevealRemoved?: (id: number) => void } | undefined;
+		inst?.applyRevealRemoved?.(opId);
+	}
+
+	export function applyLayerCleared(mapId: string, layer: number) {
+		const inst = mapInstances.get(mapId) as { applyLayerCleared?: (l: number) => void } | undefined;
+		inst?.applyLayerCleared?.(layer);
+	}
+
 	/** Apply a full snapshot (reveals/grid/layer + tokens) to every mounted map. */
 	export function applySnapshot(
 		maps: MapData[],

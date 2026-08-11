@@ -4,18 +4,21 @@
 	let {
 		campaignId,
 		dm = false,
-		initial = []
-	}: { campaignId: string; dm?: boolean; initial?: InitEntry[] } = $props();
+		initial = [],
+		initialRound = 1
+	}: { campaignId: string; dm?: boolean; initial?: InitEntry[]; initialRound?: number } = $props();
 
 	let entries = $state<InitEntry[]>([...initial]);
+	let round = $state(initialRound);
 	let open = $state(true);
 	let name = $state('');
 	let init = $state('');
 	let hp = $state('');
 
-	/** Apply the latest list from the server (SSE). */
-	export function applyEntries(next: InitEntry[]) {
+	/** Apply the latest list + round from the server (SSE). */
+	export function applyEntries(next: InitEntry[], nextRound: number = round) {
 		entries = [...next];
+		round = nextRound;
 	}
 
 	async function post(url: string, payload: unknown) {
@@ -54,7 +57,7 @@
 
 <div class="initiative" class:open>
 	<button type="button" class="header" onclick={() => (open = !open)}>
-		⚔ Initiative {open ? '▾' : '▴'}
+		⚔ Initiative · Round {round} {open ? '▾' : '▴'}
 	</button>
 	{#if open}
 		<div class="list">

@@ -17,7 +17,8 @@ db.exec(`
 		title TEXT NOT NULL,
 		content TEXT NOT NULL DEFAULT '',
 		created_at INTEGER NOT NULL,
-		rev INTEGER NOT NULL DEFAULT 0
+		rev INTEGER NOT NULL DEFAULT 0,
+		initiative_round INTEGER NOT NULL DEFAULT 1
 	);
 
 	CREATE TABLE IF NOT EXISTS heading_meta (
@@ -120,6 +121,9 @@ db.exec(`
 	);
 	if (!campCols.includes('rev')) {
 		db.exec(`ALTER TABLE campaigns ADD COLUMN rev INTEGER NOT NULL DEFAULT 0`);
+	}
+	if (!campCols.includes('initiative_round')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN initiative_round INTEGER NOT NULL DEFAULT 1`);
 	}
 }
 
@@ -507,6 +511,24 @@ export function addReveal(
 	return toRevealOp(row);
 }
 
+// --- Reveal undo / clear ---
+
+/** Delete the most recent reveal/hide op on a map+layer; returns its id (or null). */
+export function removeLastReveal(mapId: string, layer: number): number | null {
+	const row = db
+		.query('SELECT id FROM map_reveals WHERE map_id = ? AND layer = ? ORDER BY seq DESC LIMIT 1')
+		.get(mapId, layer) as { id: number } | null;
+	if (!row) return null;
+	db.query('DELETE FROM map_reveals WHERE id = ?').run(row.id);
+	return row.id;
+}
+
+/** Delete every reveal/hide op on a map+layer; returns how many were removed. */
+export function clearLayerReveals(mapId: string, layer: number): number {
+	return db.query('DELETE FROM map_reveals WHERE map_id = ? AND layer = ?').run(mapId, layer)
+		.changes;
+}
+
 // --- Rolls ---
 
 export interface RollRow {
@@ -564,6 +586,19 @@ export function listRolls(campaignId: string, includeSecret: boolean): RollRow[]
 				)
 				.all(campaignId);
 	return (rows as RollRow[]).reverse();
+}
+
+/** Fetch a single roll by id (for scoping checks). */
+export function getRoll(id: number): (RollRow & { campaign_id: string }) | null {
+	return (db.query('SELECT * FROM rolls WHERE id = ?').get(id) as RollRow & {
+		campaign_id: string;
+	}) ?? null;
+}
+
+/** Clear the secret flag on a roll so it can be shown to players. */
+export function unsecretRoll(id: number): RollRow | null {
+	db.query('UPDATE rolls SET secret = 0 WHERE id = ?').run(id);
+	return (db.query('SELECT * FROM rolls WHERE id = ?').get(id) as RollRow) ?? null;
 }
 
 // --- Initiative ---
@@ -627,6 +662,23 @@ export function removeInitiative(id: number): void {
 
 export function clearInitiative(campaignId: string): void {
 	db.query('DELETE FROM initiative_entries WHERE campaign_id = ?').run(campaignId);
+}
+
+// --- Initiative round ---
+
+export function getInitiativeRound(campaignId: string): number {
+	return (
+		(db.query('SELECT initiative_round FROM campaigns WHERE id = ?').get(campaignId) as {
+			initiative_round: number;
+		} | null)?.initiative_round ?? 1
+	);
+}
+
+export function setInitiativeRound(campaignId: string, round: number): void {
+	db.query('UPDATE campaigns SET initiative_round = ? WHERE id = ?').run(
+		Math.max(1, Math.floor(round)),
+		campaignId
+	);
 }
 
 // --- Map tokens ---

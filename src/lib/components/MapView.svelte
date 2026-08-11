@@ -55,6 +55,19 @@
 		paint();
 	}
 
+	/** Remove a single reveal/hide op (undo). */
+	export function applyRevealRemoved(opId: number) {
+		if (!reveals.some((r) => r.id === opId)) return;
+		reveals = reveals.filter((r) => r.id !== opId);
+		paint();
+	}
+
+	/** Remove all reveals/hides on a layer (clear layer). */
+	export function applyLayerCleared(target: number) {
+		reveals = reveals.filter((r) => r.layer !== target);
+		paint();
+	}
+
 	/** Replace full map state (reconnects / snapshot). */
 	export function applyState(mapData: MapData, tokenList: TokenData[]) {
 		reveals = [...mapData.reveals];
@@ -391,6 +404,27 @@
 		});
 	}
 
+	async function undoLast() {
+		const res = await fetch(`/c/${campaignId}/maps/${map.id}/reveals`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'undo', layer })
+		});
+		if (res.ok) {
+			const { opId } = (await res.json()) as { opId: number | null };
+			if (opId != null) applyRevealRemoved(opId);
+		}
+	}
+
+	async function clearLayer() {
+		const res = await fetch(`/c/${campaignId}/maps/${map.id}/reveals`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'clear', layer })
+		});
+		if (res.ok) applyLayerCleared(layer);
+	}
+
 	onMount(() => {
 		const ro = new ResizeObserver(() => paint());
 		ro.observe(img);
@@ -444,6 +478,8 @@
 					{/each}
 				</select>
 			</label>
+			<button onclick={undoLast} title="Undo last reveal on this layer">↩ Undo</button>
+			<button onclick={clearLayer} title="Clear all reveals on this layer">🧹 Clear</button>
 			<button class:active={placingToken} onclick={() => (placingToken = !placingToken)}>
 				🎭 Token
 			</button>
