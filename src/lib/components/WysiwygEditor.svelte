@@ -2,19 +2,22 @@
 	import { onMount } from 'svelte';
 	import type { MilkdownHandle } from './milkdown/editor';
 	import type { HeadingMeta } from './milkdown/interactive';
+	import type { MapData, TokenData } from '$lib/types';
 
 	let {
 		value = $bindable(''),
 		onchange,
 		campaignId,
 		isSecret,
-		meta
+		meta,
+		getMaps
 	}: {
 		value: string;
 		onchange?: (v: string) => void;
 		campaignId: string;
 		isSecret?: () => boolean;
 		meta?: Map<string, HeadingMeta>;
+		getMaps?: () => MapData[];
 	} = $props();
 
 	let host: HTMLDivElement;
@@ -30,6 +33,7 @@
 				campaignId,
 				isSecret,
 				meta,
+				getMaps,
 				onChange: (md) => {
 					value = md;
 					onchange?.(md);
@@ -45,6 +49,26 @@
 	/** Replace the document contents (e.g. after server canonicalizes ids). */
 	export function setValue(next: string) {
 		handle?.setValue(next);
+	}
+
+	/** Forward realtime map updates to mounted MapView instances. */
+	export function applyTokens(mapId: string, tokens: TokenData[]) {
+		handle?.applyTokens(mapId, tokens);
+	}
+	export function applyGrid(mapId: string, grid: number) {
+		handle?.applyGrid(mapId, grid);
+	}
+	export function applyLayer(mapId: string, layer: number) {
+		handle?.applyLayer(mapId, layer);
+	}
+	export function applyRevealRemoved(mapId: string, opId: number) {
+		handle?.applyRevealRemoved(mapId, opId);
+	}
+	export function applyLayerCleared(mapId: string, layer: number) {
+		handle?.applyLayerCleared(mapId, layer);
+	}
+	export function applyState(maps: MapData[], tokenList: { mapId: string; tokens: TokenData[] }[]) {
+		handle?.applyState(maps, tokenList);
 	}
 </script>
 
@@ -122,5 +146,11 @@
 		color: var(--accent);
 		border-bottom: 1px solid var(--gold);
 		cursor: pointer;
+	}
+	:global(.map-widget) {
+		margin: 0.75rem 0;
+	}
+	:global(.collapsed-child) {
+		display: none !important;
 	}
 </style>

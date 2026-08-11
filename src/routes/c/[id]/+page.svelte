@@ -2,11 +2,10 @@
 	import { onMount } from 'svelte';
 	import Editor from '$lib/components/Editor.svelte';
 	import WysiwygEditor from '$lib/components/WysiwygEditor.svelte';
-	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import Outline from '$lib/components/Outline.svelte';
-	import { parseHeadings, renderForDM } from '$lib/markdown';
+	import { parseHeadings } from '$lib/markdown';
 	import type { RollData } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -23,7 +22,6 @@
 	let wysiwyg: WysiwygEditor | undefined = $state();
 	let rollLog: RollLog;
 	let initiative: Initiative;
-	let doc: RenderedDoc;
 	const uiKey = `dnd-ui-${data.campaignId}`;
 
 	// shared heading meta for the WYSIWYG heading controls (mutated in place)
@@ -55,26 +53,15 @@
 		}
 	}
 
-	// debounced live preview
-	let previewSource = $state(data.content);
-	let previewTimer: ReturnType<typeof setTimeout>;
+	// debounced save
 	let saveTimer: ReturnType<typeof setTimeout>;
 
-	const metaRecord = $derived(
-		Object.fromEntries(
-			data.meta.map((m) => [m.heading_id, { shared: m.shared, collapsed: m.collapsed }])
-		)
-	);
-
-	const previewHtml = $derived(renderForDM(previewSource));
 	const outlineItems = $derived(
-		parseHeadings(previewSource).map((h) => ({ id: h.id, level: h.level, text: h.text }))
+		parseHeadings(content).map((h) => ({ id: h.id, level: h.level, text: h.text }))
 	);
 
 	function onEdit(v: string) {
 		content = v;
-		clearTimeout(previewTimer);
-		previewTimer = setTimeout(() => (previewSource = v), 200);
 		clearTimeout(saveTimer);
 		saveTimer = setTimeout(save, 600);
 	}
@@ -105,7 +92,6 @@
 			if (canonical !== content) {
 				content = canonical;
 				(sourceMode ? editor : wysiwyg)?.setValue(canonical);
-				previewSource = canonical;
 			}
 			saveState = 'saved';
 		} catch {
@@ -145,13 +131,14 @@
 		const res = await fetch(`/c/${data.campaignId}/maps`, { method: 'POST', body: fd });
 		if (res.ok) {
 			const map = await res.json();
-			// append the embed directive + push map into local list
-			data.maps = [...data.maps, map];
+			// append the embed directive + push map into local list (deduped vs SSE)
+			if (!data.maps.some((m: { id: string }) => m.id === map.id)) {
+				data.maps = [...data.maps, map];
+			}
 			const insert = `\n\n::map{id=${map.id}}\n`;
 			const next = content + insert;
 			content = next;
 			(sourceMode ? editor : wysiwyg)?.setValue(next);
-			previewSource = next;
 			save();
 		}
 		input.value = '';
@@ -174,15 +161,15 @@
 				rollLog?.setRolls(ev.rolls);
 				data.maps = ev.maps;
 				rev = ev.rev;
-				doc?.applySnapshot(ev.maps, ev.tokens);
+				wysiwyg?.applyState(ev.maps, ev.tokens);
 			} else if (ev.type === 'map-added') {
 				if (!data.maps.some((m: { id: string }) => m.id === ev.map.id)) data.maps = [...data.maps, ev.map];
 			} else if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries, ev.round);
-			else if (ev.type === 'tokens-updated') doc?.applyTokens(ev.mapId, ev.tokens);
-			else if (ev.type === 'grid-updated') doc?.applyGrid(ev.mapId, ev.grid_size);
-			else if (ev.type === 'layer-changed') doc?.applyLayer(ev.mapId, ev.layer);
-			else if (ev.type === 'reveal-undone') doc?.applyRevealRemoved(ev.mapId, ev.opId);
-			else if (ev.type === 'reveals-cleared') doc?.applyLayerCleared(ev.mapId, ev.layer);
+			else if (ev.type === 'tokens-updated') wysiwyg?.applyTokens(ev.mapId, ev.tokens);
+			else if (ev.type === 'grid-updated') wysiwyg?.applyGrid(ev.mapId, ev.grid_size);
+			else if (ev.type === 'layer-changed') wysiwyg?.applyLayer(ev.mapId, ev.layer);
+			else if (ev.type === 'reveal-undone') wysiwyg?.applyRevealRemoved(ev.mapId, ev.opId);
+			else if (ev.type === 'reveals-cleared') wysiwyg?.applyLayerCleared(ev.mapId, ev.layer);
 		};
 		return () => es.close();
 	});
@@ -268,21 +255,10 @@
 					campaignId={data.campaignId}
 					isSecret={() => rollLog?.isSecret() ?? false}
 					meta={metaMap}
+					getMaps={() => data.maps}
 					onchange={onEdit}
 				/>
 			{/if}
-		</section>
-		<section class="pane preview">
-			<RenderedDoc
-				bind:this={doc}
-				html={previewHtml}
-				dm
-				campaignId={data.campaignId}
-				maps={data.maps}
-				meta={metaRecord}
-				onroll={(r) => rollLog?.addRoll(r)}
-				getSecret={() => rollLog?.isSecret() ?? false}
-			/>
 		</section>
 	</div>
 </div>
@@ -406,7 +382,7 @@
 	}
 	.split {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr;
 		min-width: 0;
 	}
 	.pane {
@@ -415,13 +391,6 @@
 		min-width: 0;
 	}
 	.source {
-		border-right: 1px solid var(--rule);
 		background: #fdfbf5;
-	}
-	.preview {
-		--page-bg: var(--parchment-light);
-		background: var(--parchment-light);
-		padding: 1rem 1.75rem 3rem;
-		font-family: var(--font-body);
 	}
 </style>

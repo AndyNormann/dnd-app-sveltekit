@@ -1,4 +1,4 @@
-import { Editor, rootCtx, defaultValueCtx, parserCtx, editorViewCtx } from '@milkdown/core';
+import { Editor, rootCtx, defaultValueCtx, parserCtx, editorViewCtx, remarkPluginsCtx } from '@milkdown/core';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { history } from '@milkdown/kit/plugin/history';
@@ -8,6 +8,8 @@ import { trailing } from '@milkdown/kit/plugin/trailing';
 import { getMarkdown } from '@milkdown/utils';
 import { nord } from '@milkdown/theme-nord';
 import { buildInteractivePlugin, type HeadingMeta } from './interactive';
+import { mapBlock, mapBlockView, mapDirectiveTransformer, mapApi, configureMaps } from './mapNode';
+import type { MapData, TokenData } from '$lib/types';
 
 export interface MilkdownHandle {
 	/** Current document serialized to markdown. */
@@ -16,6 +18,12 @@ export interface MilkdownHandle {
 	setValue(markdown: string): void;
 	/** Tear down the editor. */
 	destroy(): Promise<void>;
+	applyTokens(mapId: string, tokens: TokenData[]): void;
+	applyGrid(mapId: string, grid: number): void;
+	applyLayer(mapId: string, layer: number): void;
+	applyRevealRemoved(mapId: string, opId: number): void;
+	applyLayerCleared(mapId: string, layer: number): void;
+	applyState(maps: MapData[], tokenList: { mapId: string; tokens: TokenData[] }[]): void;
 }
 
 export interface CreateEditorOptions {
@@ -25,6 +33,7 @@ export interface CreateEditorOptions {
 	campaignId: string;
 	isSecret?: () => boolean;
 	meta?: Map<string, HeadingMeta>;
+	getMaps?: () => MapData[];
 }
 
 /**
@@ -43,6 +52,11 @@ function fixSerializedMarkdown(markdown: string): string {
 export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<MilkdownHandle> {
 	let lastMarkdown = opts.value;
 
+	configureMaps({
+		campaignId: opts.campaignId,
+		getMaps: opts.getMaps ?? (() => [])
+	});
+
 	const interactive = buildInteractivePlugin({
 		campaignId: opts.campaignId,
 		isSecret: opts.isSecret,
@@ -52,11 +66,21 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 	const editor = await Editor.make()
 		.config((ctx) => {
 			ctx.set(rootCtx, opts.root);
-			ctx.set(defaultValueCtx, opts.value);
+			ctx.set(defaultValueCtx, opts.value === '' ? '\n' : opts.value);
+		})
+		.config((ctx) => {
+			// turn ::map{id=...} paragraphs into a distinct mapDirective node before
+			// commonmark parses them, so mapBlock can be registered after commonmark
+			ctx.set(remarkPluginsCtx, [
+				...(ctx.get(remarkPluginsCtx) ?? []),
+				{ plugin: mapDirectiveTransformer, options: {} }
+			]);
 		})
 		.config(nord)
 		.use(commonmark)
 		.use(gfm)
+		.use(mapBlock)
+		.use(mapBlockView)
 		.use(history)
 		.use(cursor)
 		.use(trailing)
@@ -89,6 +113,12 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 		},
 		destroy: async () => {
 			await editor.destroy();
-		}
+		},
+		applyTokens: (mapId, tokens) => mapApi.applyTokens(mapId, tokens),
+		applyGrid: (mapId, grid) => mapApi.applyGrid(mapId, grid),
+		applyLayer: (mapId, layer) => mapApi.applyLayer(mapId, layer),
+		applyRevealRemoved: (mapId, opId) => mapApi.applyRevealRemoved(mapId, opId),
+		applyLayerCleared: (mapId, layer) => mapApi.applyLayerCleared(mapId, layer),
+		applyState: (maps, tokenList) => mapApi.applyState(maps, tokenList)
 	};
 }

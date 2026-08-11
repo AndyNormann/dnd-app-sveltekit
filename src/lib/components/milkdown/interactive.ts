@@ -2,7 +2,7 @@ import { $prose } from '@milkdown/utils';
 import type { MilkdownPlugin } from '@milkdown/ctx';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, PluginKey } from '@milkdown/prose/state';
-import { Decoration, DecorationSet } from '@milkdown/prose/view';
+import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { INLINE_DICE_RE } from '$lib/dice';
 
 export interface HeadingMeta {
@@ -46,6 +46,7 @@ function headingId(node: ProseNode): string | null {
 export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin {
 	const { campaignId } = opts;
 	const meta = opts.meta;
+	let currentView: EditorView | undefined;
 
 	const key = new PluginKey('dnd-interactive');
 
@@ -77,6 +78,8 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ headingId: id, collapsed: next })
 			});
+			// recompute decorations so the hidden content shows/hides
+			currentView?.dispatch(currentView.state.tr);
 		};
 
 		const share = document.createElement('input');
@@ -144,18 +147,13 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		void ctx;
 		return new Plugin({
 			key,
-			state: {
-				init: () => DecorationSet.empty,
-				apply(tr, set) {
-					if (!tr.docChanged) return set.map(tr.mapping, tr.doc);
-					return set;
-				}
-			},
 			props: {
 				decorations(state) {
 					const decos: Decoration[] = [];
+					const headings: { pos: number; node: ProseNode }[] = [];
 					state.doc.descendants((node, pos) => {
 						if (node.type.name === 'heading') {
+							headings.push({ pos, node });
 							const id = headingId(node);
 							if (id) {
 								decos.push(
@@ -189,13 +187,34 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 						}
 						return true;
 					});
+					// collapse: hide content below a collapsed heading until the next heading of <= level
+					for (let i = 0; i < headings.length; i++) {
+						const { pos, node } = headings[i];
+						const id = headingId(node);
+						if (!id || !meta.get(id)?.collapsed) continue;
+						const level = node.attrs.level as number;
+						let j = i + 1;
+						while (j < headings.length && (headings[j].node.attrs.level as number) > level) j++;
+						const from = pos + node.nodeSize;
+						const to = j < headings.length ? headings[j].pos : state.doc.content.size;
+						if (to <= from) continue;
+						state.doc.nodesBetween(from, to, (child, cpos) => {
+							if (!child.isInline && !child.isText) {
+								decos.push(
+									Decoration.node(cpos, cpos + child.nodeSize, { class: 'collapsed-child' })
+								);
+							}
+						});
+					}
 					return DecorationSet.create(state.doc, decos);
 				}
 			},
 			view(view) {
+				currentView = view;
 				const onMouseDown = (e: MouseEvent) => {
 					const target = e.target as HTMLElement;
-					if (target.closest('.dm-heading-controls')) return; // widget handles its own clicks
+					// widgets handle their own clicks
+					if (target.closest('.map-widget, .dm-heading-controls')) return;
 					const dice = target.closest('.dice-dec') as HTMLElement | null;
 					if (dice) {
 						e.preventDefault();
@@ -213,7 +232,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 				};
 				view.dom.addEventListener('mousedown', onMouseDown);
 				return {
-					destroy: () => view.dom.removeEventListener('mousedown', onMouseDown)
+					destroy: () => {
+						view.dom.removeEventListener('mousedown', onMouseDown);
+						currentView = undefined;
+					}
 				};
 			}
 		});

@@ -1,10 +1,15 @@
 import { expect, test, type Browser } from '@playwright/test';
 
 const PASSCODE = 'test-passcode';
+// 1x1 red PNG
+const PNG = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+	'base64'
+);
 
 async function createCampaign(request: import('@playwright/test').APIRequestContext): Promise<string> {
 	const res = await request.post('/?/create', {
-		form: { title: 'Wysiwyg Campaign' },
+		form: { title: 'Map Campaign' },
 		maxRedirects: 0,
 		headers: { Origin: 'http://localhost:4173' }
 	});
@@ -24,9 +29,7 @@ async function loginDM(browser: Browser) {
 	return { dm, page };
 }
 
-test('WYSIWYG editor renders interactive markdown, saves, and collapse hides content', async ({
-	browser
-}) => {
+test('uploaded map renders as an interactive widget in the editor', async ({ browser }) => {
 	const anon = await browser.newContext();
 	const id = await createCampaign(anon.request);
 	const { dm, page } = await loginDM(browser);
@@ -34,34 +37,23 @@ test('WYSIWYG editor renders interactive markdown, saves, and collapse hides con
 	await page.goto(`/c/${id}`);
 	const editor = page.locator('.mdx-host .ProseMirror');
 	await expect(editor).toBeVisible({ timeout: 10000 });
-	await editor.click();
-	await page.keyboard.type('# New Section');
-	await page.keyboard.press('Enter');
-	await page.keyboard.type('Roll 2d6+3 and see [[Tavern]]');
 
-	await expect(editor.locator('.dice-dec')).toHaveCount(1);
-	await expect(editor.locator('.wiki-dec')).toHaveCount(1);
-	await expect(page.getByText('Saved')).toBeVisible({ timeout: 5000 });
+	// upload via the header "Add map" file input
+	await page.locator('.bar input[type=file]').setInputFiles({
+		name: 'map.png',
+		mimeType: 'image/png',
+		buffer: PNG
+	});
 
-	// server injects a heading id -> heading gets its DM controls
-	const controls = editor.locator('.dm-heading-controls');
-	await expect(controls).toHaveCount(1, { timeout: 5000 });
+	// the ::map{id=...} directive becomes a mounted MapView canvas
+	const widget = page.locator('.mdx-host .map-widget');
+	await expect(widget).toBeVisible({ timeout: 10000 });
+	await expect(widget.locator('canvas').first()).toBeVisible();
 
-	// collapse: hides the paragraph below the heading
-	const body = editor.locator('p', { hasText: '2d6+3' });
-	await expect(body).toBeVisible();
-	await controls.locator('.dhc-collapse').click();
-	await expect(body).toBeHidden();
-
-	// expand again
-	await controls.locator('.dhc-collapse').click();
-	await expect(body).toBeVisible();
-
-	// reload and confirm the WYSIWYG persisted the typed markdown
+	// reload persists the embed directive and re-renders the widget
 	await page.reload();
 	await expect(editor).toBeVisible({ timeout: 10000 });
-	await expect(editor).toContainText('New Section');
-	await expect(editor).toContainText('2d6+3');
+	await expect(page.locator('.mdx-host .map-widget')).toBeVisible({ timeout: 10000 });
 
 	await anon.close();
 	await dm.close();

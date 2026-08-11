@@ -91,7 +91,7 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       click-to-jump anchors. Keep the raw CodeMirror editor behind the existing
       "source" toggle (Ctrl+\) as a fallback for the round-trip risk. Save flow
       unchanged (Milkdown emits markdown → debounced POST + revision guard).
-- [ ] **20. Map embed via `/map` + interactive canvas in-editor**
+- [ ] **20. Map embed via `/map` + interactive canvas in-editor** — in-editor canvas DONE (custom mapBlock node mounts MapView; header "Add map" embeds at end). Remaining: the `/map` slash command (upload at the caret).
       `/map` slash command opens the image picker, uploads, and inserts a
       full-width map block at the caret (one upload per embed; keep the header
       "Add map" too). The block is an interactive canvas in the editor with the
