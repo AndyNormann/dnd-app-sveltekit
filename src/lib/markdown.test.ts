@@ -7,6 +7,7 @@ import {
 	expandWikiLinks,
 	makeWikiResolver,
 	renderWithAnchors,
+	expandMapDirectives,
 	SHARE_SHARED,
 	SHARE_HIDDEN,
 	type MetaMap
@@ -93,4 +94,16 @@ test('renderWithAnchors adds heading ids', () => {
 	expect(html).toContain('data-heading-id');
 	expect(html).toMatch(/id="h-[^"]+"/);
 	expect(html).toContain('data-level');
+});
+
+test('expandMapDirectives handles a backslash-escaped underscore id', () => {
+	// Milkdown serializes `::map{id=X_Y}` as `::map{id=X\\_Y}`; both must work.
+	const plain = expandMapDirectives('::map{id=lfU4CYQ-nx}\n');
+	expect(plain).toContain('data-map-id="lfU4CYQ-nx"');
+	const escaped = expandMapDirectives('::map{id=YsWkPf\\_V1n}\n');
+	expect(escaped).toContain('data-map-id="YsWkPf_V1n"');
+	expect(escaped).not.toContain('YsWkPf\\_V1n');
+	// an inline (non-own-line) directive must NOT expand
+	const inline = expandMapDirectives('x ::map{id=lfU4CYQ-nx}');
+	expect(inline).not.toContain('map-embed');
 });

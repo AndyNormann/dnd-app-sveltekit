@@ -136,8 +136,9 @@ export function computeSharedMarkdown(markdown: string, meta: MetaMap): string {
 
 /** Replace `::map{id=xxx}` directives with a hydration placeholder div. */
 export function expandMapDirectives(markdown: string): string {
-	return markdown.replace(/^::map\{id=([A-Za-z0-9_-]+)\}\s*$/gm, (_m, id) => {
-		return `<div class="map-embed" data-map-id="${id}"></div>`;
+	// id may contain a backslash-escaped underscore (Milkdown writes `_` as `\_`)
+	return markdown.replace(/^::map\{id=([A-Za-z0-9_\\-]+)\}\s*$/gm, (_m, id) => {
+		return `<div class="map-embed" data-map-id="${id.replace(/\\/g, '')}"></div>`;
 	});
 }
 

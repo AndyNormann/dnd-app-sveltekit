@@ -41,7 +41,13 @@ export interface CreateEditorOptions {
  * (`\[[Name]]`); restore it so the app's `[[Name]]` parsing keeps matching.
  */
 function fixSerializedMarkdown(markdown: string): string {
-	return markdown.replace(/\\\[\\\[/g, '[[').replace(/\\\]\\\]/g, ']]');
+	// Milkdown escapes the opening `[` of `[[Name]]` wiki links (`\[[Name]]`)
+	// and underscores inside `::map{id=...}` ids (`::map{id=X_Y}` -> `X\_Y`).
+	// Restore both so the app's parsing keeps matching.
+	return markdown
+		.replace(/\\\[\\\[/g, '[[')
+		.replace(/\\\]\\\]/g, ']]')
+		.replace(/::map\{id=([^}]*)\}/g, (_m, id: string) => `::map{id=${id.replace(/\\/g, '')}}`);
 }
 
 /**

@@ -35,7 +35,8 @@ export const mapDirectiveTransformer: () => (tree: { children?: unknown[] }) => 
 				.trim();
 			const m = text.match(DIRECTIVE_RE);
 			if (m) {
-				out.push({ type: 'mapDirective', value: m[1] });
+				// Milkdown may escape `_` in the id as `\_`; restore it
+				out.push({ type: 'mapDirective', value: m[1].replace(/\\/g, '') });
 				continue;
 			}
 		}

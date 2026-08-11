@@ -100,6 +100,8 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ headingId: id, state: next })
 			});
+			// recompute decorations so the re-rendered checkbox reflects the new state
+			currentView?.dispatch(currentView.state.tr);
 		};
 
 		const handout = document.createElement('button');
