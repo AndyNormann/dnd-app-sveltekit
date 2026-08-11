@@ -1,5 +1,6 @@
 import { getCampaign, createMap } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
+import { isDM } from '$lib/server/auth';
 import { error, json } from '@sveltejs/kit';
 import { mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
@@ -9,7 +10,8 @@ import type { RequestHandler } from './$types';
 
 const UPLOAD_DIR = 'static/uploads';
 
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async ({ params, request, cookies }) => {
+	if (!isDM(cookies)) throw error(401, 'DM login required');
 	const campaign = getCampaign(params.id);
 	if (!campaign) throw error(404, 'Campaign not found');
 

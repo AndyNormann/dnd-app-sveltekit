@@ -211,6 +211,9 @@
 	</label>
 	<button onclick={() => navigator.clipboard?.writeText(playerUrl())}>Copy player link</button>
 	<a href={`/c/${data.campaignId}/play`} target="_blank" rel="noreferrer">Open player view</a>
+	<form method="POST" action="/logout" class="logout">
+		<button type="submit" title="Log out as DM">Log out</button>
+	</form>
 </header>
 
 <div class="layout" class:no-rail={!showOutline}>
@@ -308,6 +311,13 @@
 	.bar a[target]:hover {
 		border-color: var(--gold);
 		color: var(--ink);
+	}
+	.logout {
+		margin: 0;
+	}
+	.logout button {
+		border-color: var(--accent-soft);
+		color: var(--accent-soft);
 	}
 	.toggle {
 		font-size: 0.95rem;

@@ -7,11 +7,14 @@ import {
 	updateContent
 } from '$lib/server/db';
 import { ensureHeadingIds } from '$lib/markdown';
-import { error } from '@sveltejs/kit';
+import { isDM } from '$lib/server/auth';
+import { redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import type { MapData } from '$lib/types';
 
-export const load: PageServerLoad = ({ params }) => {
+export const load: PageServerLoad = ({ params, cookies, url }) => {
+	// The DM editor page exposes content editing and secret rolls — DM only.
+	if (!isDM(cookies)) throw redirect(303, `/login?redirect=${encodeURIComponent(url.pathname)}`);
 	const campaign = getCampaign(params.id);
 	if (!campaign) throw error(404, 'Campaign not found');
 
