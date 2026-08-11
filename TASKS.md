@@ -73,6 +73,31 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - [x] **18. Reveal a secret roll to players**
       DM can deliberately show a previously-secret roll to players.
 
+## DM editor: markdown-native WYSIWYG (edit-what-you-see)
+
+> Goal: the DM editor and the rendered output are the same surface — type
+> markdown, see it live-rendered. Markdown stays the canonical stored / exported
+> / shared form (DB, export, share, sanitize, player view all unchanged).
+> Built on Milkdown (ProseMirror-based, markdown-native) mounted client-side like
+> CodeMirror is today.
+
+- [x] **19. WYSIWYG core swap**
+      Replace `Editor.svelte` with a Milkdown editor as the DM editing surface.
+      Live-render headings (keep `<!--id:…-->` markers in stored markdown via a
+      heading-node `id` attribute, serialized back out; server `ensureHeadingIds`
+      backstops new headings) with the DM controls attached inline (share /
+      collapse / 📢 handout, parity with today's preview); dice expressions as
+      click-to-roll pills (arrow-in or delete to edit); `[[Wiki Link]]` as
+      click-to-jump anchors. Keep the raw CodeMirror editor behind the existing
+      "source" toggle (Ctrl+\) as a fallback for the round-trip risk. Save flow
+      unchanged (Milkdown emits markdown → debounced POST + revision guard).
+- [ ] **20. Map embed via `/map` + interactive canvas in-editor**
+      `/map` slash command opens the image picker, uploads, and inserts a
+      full-width map block at the caret (one upload per embed; keep the header
+      "Add map" too). The block is an interactive canvas in the editor with the
+      DM fog / grid / token / layer tools — parity with the player-facing map.
+      The stored form stays `::map{id=…}`.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**

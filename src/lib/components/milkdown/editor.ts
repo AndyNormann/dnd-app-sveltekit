@@ -1,0 +1,94 @@
+import { Editor, rootCtx, defaultValueCtx, parserCtx, editorViewCtx } from '@milkdown/core';
+import { commonmark } from '@milkdown/kit/preset/commonmark';
+import { gfm } from '@milkdown/kit/preset/gfm';
+import { history } from '@milkdown/kit/plugin/history';
+import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
+import { cursor } from '@milkdown/kit/plugin/cursor';
+import { trailing } from '@milkdown/kit/plugin/trailing';
+import { getMarkdown } from '@milkdown/utils';
+import { nord } from '@milkdown/theme-nord';
+import { buildInteractivePlugin, type HeadingMeta } from './interactive';
+
+export interface MilkdownHandle {
+	/** Current document serialized to markdown. */
+	getMarkdown(): string;
+	/** Replace the whole document with the given markdown. */
+	setValue(markdown: string): void;
+	/** Tear down the editor. */
+	destroy(): Promise<void>;
+}
+
+export interface CreateEditorOptions {
+	root: HTMLElement;
+	value: string;
+	onChange?: (markdown: string) => void;
+	campaignId: string;
+	isSecret?: () => boolean;
+	meta?: Map<string, HeadingMeta>;
+}
+
+/**
+ * Milkdown escapes the opening `[` of `[[Name]]` wiki links when serializing
+ * (`\[[Name]]`); restore it so the app's `[[Name]]` parsing keeps matching.
+ */
+function fixSerializedMarkdown(markdown: string): string {
+	return markdown.replace(/\\\[\\\[/g, '[[').replace(/\\\]\\\]/g, ']]');
+}
+
+/**
+ * Create a markdown-native WYSIWYG editor (Milkdown / ProseMirror) mounted in
+ * `root`. This module is imported dynamically by the Svelte component so that
+ * no ProseMirror code runs during SSR.
+ */
+export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<MilkdownHandle> {
+	let lastMarkdown = opts.value;
+
+	const interactive = buildInteractivePlugin({
+		campaignId: opts.campaignId,
+		isSecret: opts.isSecret,
+		meta: opts.meta ?? new Map()
+	});
+
+	const editor = await Editor.make()
+		.config((ctx) => {
+			ctx.set(rootCtx, opts.root);
+			ctx.set(defaultValueCtx, opts.value);
+		})
+		.config(nord)
+		.use(commonmark)
+		.use(gfm)
+		.use(history)
+		.use(cursor)
+		.use(trailing)
+		.use(listener)
+		.use(interactive)
+		.config((ctx) => {
+			const lm = ctx.get(listenerCtx);
+			lm.markdownUpdated((_ctx, markdown) => {
+				lastMarkdown = markdown;
+				opts.onChange?.(fixSerializedMarkdown(markdown));
+			});
+		})
+		.create();
+
+	return {
+		getMarkdown: () => fixSerializedMarkdown(editor.action(getMarkdown()) ?? lastMarkdown),
+		setValue(markdown) {
+			editor.action((ctx) => {
+				const view = ctx.get(editorViewCtx);
+				const parser = ctx.get(parserCtx);
+				const doc = parser(markdown);
+				const tr = view.state.tr.replaceWith(
+					0,
+					view.state.doc.content.size,
+					doc.content
+				);
+				view.dispatch(tr);
+				lastMarkdown = markdown;
+			});
+		},
+		destroy: async () => {
+			await editor.destroy();
+		}
+	};
+}

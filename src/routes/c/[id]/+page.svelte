@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Editor from '$lib/components/Editor.svelte';
+	import WysiwygEditor from '$lib/components/WysiwygEditor.svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
@@ -17,15 +18,21 @@
 	let editingTitle = $state(false);
 	let saveState = $state<'idle' | 'saving' | 'saved' | 'error' | 'conflict'>('idle');
 	let showOutline = $state(true);
-	let showEditor = $state(true);
+	let sourceMode = $state(false); // false = WYSIWYG, true = raw CodeMirror
 	let editor: Editor | undefined = $state();
+	let wysiwyg: WysiwygEditor | undefined = $state();
 	let rollLog: RollLog;
 	let initiative: Initiative;
 	let doc: RenderedDoc;
 	const uiKey = `dnd-ui-${data.campaignId}`;
 
+	// shared heading meta for the WYSIWYG heading controls (mutated in place)
+	const metaMap = new Map(
+		data.meta.map((m) => [m.heading_id, { shared: m.shared, collapsed: !!m.collapsed }])
+	);
+
 	function persistUi() {
-		localStorage.setItem(uiKey, JSON.stringify({ showOutline, showEditor }));
+		localStorage.setItem(uiKey, JSON.stringify({ showOutline }));
 	}
 
 	function toggleOutline() {
@@ -33,16 +40,15 @@
 		persistUi();
 	}
 
-	function toggleEditor() {
-		showEditor = !showEditor;
-		persistUi();
+	function toggleSource() {
+		sourceMode = !sourceMode;
 	}
 
 	function onKeydown(e: KeyboardEvent) {
 		if (!(e.ctrlKey || e.metaKey)) return;
 		if (e.key === '\\') {
 			e.preventDefault();
-			toggleEditor();
+			toggleSource();
 		} else if (e.key === '.') {
 			e.preventDefault();
 			toggleOutline();
@@ -98,7 +104,7 @@
 			// resync editor if the server injected heading ids
 			if (canonical !== content) {
 				content = canonical;
-				editor?.setValue(canonical);
+				(sourceMode ? editor : wysiwyg)?.setValue(canonical);
 				previewSource = canonical;
 			}
 			saveState = 'saved';
@@ -144,7 +150,7 @@
 			const insert = `\n\n::map{id=${map.id}}\n`;
 			const next = content + insert;
 			content = next;
-			editor?.setValue(next);
+			(sourceMode ? editor : wysiwyg)?.setValue(next);
 			previewSource = next;
 			save();
 		}
@@ -156,7 +162,6 @@
 		try {
 			const saved = JSON.parse(localStorage.getItem(uiKey) ?? '{}');
 			if (typeof saved.showOutline === 'boolean') showOutline = saved.showOutline;
-			if (typeof saved.showEditor === 'boolean') showEditor = saved.showEditor;
 		} catch {
 			// corrupt localStorage entry; keep defaults
 		}
@@ -199,9 +204,9 @@
 	<button
 		type="button"
 		class="toggle"
-		class:on={showEditor}
-		title="Toggle markdown editor (Ctrl+\)"
-		onclick={toggleEditor}>✎</button
+		class:on={sourceMode}
+		title="Toggle raw markdown source (Ctrl+\)"
+		onclick={toggleSource}>✎</button
 	>
 	{#if editingTitle}
 		<!-- svelte-ignore a11y_autofocus -->
@@ -252,13 +257,22 @@
 			<Outline items={outlineItems} />
 		</aside>
 	{/if}
-	<div class="split" class:solo={!showEditor}>
-		{#if showEditor}
-			<section class="pane source">
+	<div class="split">
+		<section class="pane source">
+			{#if sourceMode}
 				<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
-			</section>
-		{/if}
-		<section class="pane preview" class:full={!showEditor}>
+			{:else}
+				<WysiwygEditor
+					bind:this={wysiwyg}
+					value={content}
+					campaignId={data.campaignId}
+					isSecret={() => rollLog?.isSecret() ?? false}
+					meta={metaMap}
+					onchange={onEdit}
+				/>
+			{/if}
+		</section>
+		<section class="pane preview">
 			<RenderedDoc
 				bind:this={doc}
 				html={previewHtml}
@@ -394,14 +408,6 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		min-width: 0;
-	}
-	.split.solo {
-		grid-template-columns: 1fr;
-	}
-	.preview.full {
-		max-width: 60rem;
-		width: 100%;
-		margin: 0 auto;
 	}
 	.pane {
 		overflow: auto;
