@@ -49,6 +49,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		campaignId: campaign.id,
 		title: campaign.title,
 		content,
+		rev: campaign.rev,
 		meta,
 		maps,
 		rolls,

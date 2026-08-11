@@ -20,6 +20,7 @@ export type CampaignEvent =
 			type: 'snapshot';
 			title: string;
 			html: string;
+			rev: number;
 			maps: MapData[];
 			tokens: { mapId: string; tokens: TokenRow[] }[];
 			rolls: RollData[];

@@ -13,8 +13,9 @@
 
 	let content = $state(data.content);
 	let title = $state(data.title);
+	let rev = $state(data.rev);
 	let editingTitle = $state(false);
-	let saveState = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
+	let saveState = $state<'idle' | 'saving' | 'saved' | 'error' | 'conflict'>('idle');
 	let showOutline = $state(true);
 	let showEditor = $state(true);
 	let editor: Editor | undefined = $state();
@@ -79,13 +80,22 @@
 			const res = await fetch(`/c/${data.campaignId}/content`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ content })
+				body: JSON.stringify({ content, rev })
 			});
+			if (res.status === 409) {
+				// Another tab/editor saved newer content; refuse to clobber it.
+				saveState = 'conflict';
+				return;
+			}
 			if (!res.ok) {
 				saveState = 'error';
 				return;
 			}
-			const { content: canonical } = (await res.json()) as { content: string };
+			const { content: canonical, rev: nextRev } = (await res.json()) as {
+				content: string;
+				rev: number;
+			};
+			rev = nextRev;
 			// resync editor if the server injected heading ids
 			if (canonical !== content) {
 				content = canonical;
@@ -159,6 +169,7 @@
 			else if (ev.type === 'snapshot') {
 				rollLog?.setRolls(ev.rolls);
 				data.maps = ev.maps;
+				rev = ev.rev;
 				doc?.applySnapshot(ev.maps, ev.tokens);
 			} else if (ev.type === 'map-added') {
 				if (!data.maps.some((m: { id: string }) => m.id === ev.map.id)) data.maps = [...data.maps, ev.map];
@@ -213,9 +224,13 @@
 			</button>
 		</h1>
 	{/if}
-	<span class="save-state" class:error={saveState === 'error'}>
-		{#if saveState === 'saving'}Saving…{:else if saveState === 'saved'}Saved{:else if saveState === 'error'}Save
-			failed{/if}
+	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
+		{#if saveState === 'saving'}Saving…
+		{:else if saveState === 'saved'}Saved
+		{:else if saveState === 'conflict'}Out of sync ·
+			<button type="button" class="reload" onclick={() => location.reload()}>Reload</button>
+		{:else if saveState === 'error'}Save failed
+		{/if}
 	</span>
 	<div class="spacer"></div>
 	<label class="upload">
@@ -301,6 +316,16 @@
 	}
 	.save-state.error {
 		color: var(--accent);
+	}
+	.reload {
+		margin-left: 0.2rem;
+		padding: 0 0.35rem;
+		border: 1px solid var(--accent-soft);
+		border-radius: 4px;
+		background: none;
+		color: var(--accent);
+		cursor: pointer;
+		font-size: 0.78rem;
 	}
 	.back {
 		text-decoration: none;

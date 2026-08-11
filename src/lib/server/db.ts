@@ -16,7 +16,8 @@ db.exec(`
 		id TEXT PRIMARY KEY,
 		title TEXT NOT NULL,
 		content TEXT NOT NULL DEFAULT '',
-		created_at INTEGER NOT NULL
+		created_at INTEGER NOT NULL,
+		rev INTEGER NOT NULL DEFAULT 0
 	);
 
 	CREATE TABLE IF NOT EXISTS heading_meta (
@@ -113,6 +114,13 @@ db.exec(`
 	if (!mapCols.includes('active_layer')) {
 		db.exec(`ALTER TABLE maps ADD COLUMN active_layer INTEGER NOT NULL DEFAULT 0`);
 	}
+	// migrate pre-rev databases: add rev (optimistic-concurrency guard) to campaigns
+	const campCols = (db.query('PRAGMA table_info(campaigns)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!campCols.includes('rev')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN rev INTEGER NOT NULL DEFAULT 0`);
+	}
 }
 
 export interface Campaign {
@@ -120,6 +128,7 @@ export interface Campaign {
 	title: string;
 	content: string;
 	created_at: number;
+	rev: number;
 }
 
 export interface HeadingMeta {
@@ -189,8 +198,40 @@ export function createCampaign(title: string): Campaign {
 	return getCampaign(id)!;
 }
 
+/** Write content and bump the revision (unconditional; used by restore/canonicalize). */
 export function updateContent(id: string, content: string): void {
-	db.query('UPDATE campaigns SET content = ? WHERE id = ?').run(content, id);
+	db.query('UPDATE campaigns SET content = ?, rev = rev + 1 WHERE id = ?').run(content, id);
+}
+
+/**
+ * Write content only if the campaign is still at `expectedRev`. Returns false
+ * (and does not write) when another writer has bumped the revision — the caller
+ * should return 409 so a stale editor tab can't clobber newer content.
+ */
+export function updateContentConditional(
+	id: string,
+	content: string,
+	expectedRev: number
+): boolean {
+	const res = db
+		.query('UPDATE campaigns SET content = ?, rev = rev + 1 WHERE id = ? AND rev = ?')
+		.run(content, id, expectedRev);
+	return res.changes > 0;
+}
+
+/** Current content revision for a campaign (0 if missing). */
+export function getCampaignRev(id: string): number {
+	return (db.query('SELECT rev FROM campaigns WHERE id = ?').get(id) as { rev: number } | undefined)
+		?.rev ?? 0;
+}
+
+/** Force a WAL checkpoint so committed data is flushed to the main .db file. */
+export function checkpoint(): void {
+	try {
+		db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+	} catch {
+		// checkpoint is best-effort; ignore transient busy errors
+	}
 }
 
 export function updateTitle(id: string, title: string): void {

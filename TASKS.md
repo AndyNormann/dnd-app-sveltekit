@@ -46,6 +46,22 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - [x] **10. Map upgrades**
       Grid + snapping, DM tokens, multiple reveal layers.
 
+## Core reliability hardening (before more features)
+
+- [x] **12. Automatic backups + WAL checkpointing**
+      Scheduled SQLite checkpoint + `VACUUM INTO` snapshot to `data/backups`
+      (retain N), so the whole campaign survives a crash / volume loss.
+- [x] **13. Content revision guard (concurrency)**
+      Per-campaign `rev`; the content POST carries its base `rev` and returns
+      409 on a stale write so two open editor tabs can't silently clobber each
+      other.
+- [x] **14. SSE heartbeat + reconnect race fix**
+      Periodic `: ping` keeps connections alive through proxies; build the
+      snapshot *after* subscribing so no event is missed on connect.
+- [x] **15. Realtime e2e tests**
+      e2e proving DM note edits reach an open player page, reconnecting players
+      get a fresh snapshot, and secret rolls never reach players.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**
