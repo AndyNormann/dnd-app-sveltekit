@@ -11,6 +11,7 @@ export interface RevealOp {
 	h: number;
 	path?: [number, number][];
 	radius?: number;
+	layer: number;
 	seq: number;
 }
 
@@ -20,6 +21,17 @@ export interface MapData {
 	height: number;
 	src: string;
 	reveals: RevealOp[];
+	grid_size: number;
+	active_layer: number;
+}
+
+export interface TokenData {
+	id: string;
+	map_id: string;
+	label: string;
+	color: string;
+	x: number;
+	y: number;
 }
 
 export interface RollData {
@@ -29,5 +41,6 @@ export interface RollData {
 	result: number;
 	breakdown: string;
 	secret: boolean;
+	label?: string;
 	created_at: number;
 }

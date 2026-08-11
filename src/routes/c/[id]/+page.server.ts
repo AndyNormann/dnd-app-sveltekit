@@ -4,7 +4,8 @@ import {
 	listMaps,
 	listReveals,
 	listRolls,
-	updateContent
+	updateContent,
+	listInitiative
 } from '$lib/server/db';
 import { ensureHeadingIds } from '$lib/markdown';
 import { isDM } from '$lib/server/auth';
@@ -28,7 +29,9 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		width: m.width,
 		height: m.height,
 		src: `/uploads/${m.filename}`,
-		reveals: listReveals(m.id)
+		reveals: listReveals(m.id),
+		grid_size: m.grid_size,
+		active_layer: m.active_layer
 	}));
 
 	const rolls = listRolls(params.id, true).map((r) => ({
@@ -38,6 +41,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		result: r.result,
 		breakdown: r.breakdown,
 		secret: !!r.secret,
+		label: r.label ?? undefined,
 		created_at: r.created_at
 	}));
 
@@ -47,6 +51,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		content,
 		meta,
 		maps,
-		rolls
+		rolls,
+		initiative: listInitiative(params.id)
 	};
 };

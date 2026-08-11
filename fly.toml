@@ -1,0 +1,27 @@
+# fly.toml — Fly.io deployment (adjust app name, primary_region, and env).
+app = "dnd-campaign-notes"
+
+[build]
+
+[env]
+  PORT = "3000"
+  # Storage: DB in /data, uploads in /uploads. Override the passcode at deploy time.
+  DB_PATH = "/data/app.db"
+  UPLOAD_DIR = "/uploads"
+  # DM_PASSCODE = "set-a-strong-passcode-here"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[mounts]]
+  source = "dnd_data"
+  destination = "/data"
+
+[[mounts]]
+  source = "dnd_uploads"
+  destination = "/uploads"

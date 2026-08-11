@@ -3,7 +3,9 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import type { PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
+
+	let q = $state(data.query);
 </script>
 
 <svelte:head><title>D&D Campaigns</title></svelte:head>
@@ -16,7 +18,34 @@
 		<button type="submit">Create</button>
 	</form>
 
-	{#if data.campaigns.length === 0}
+	<form method="POST" action="?/import" use:enhance class="import" enctype="multipart/form-data">
+		<label class="import-label">Restore backup
+			<input type="file" name="file" accept=".json,application/json" />
+		</label>
+		<button type="submit">Import</button>
+	</form>
+	{#if form?.error}<p class="import-error">{form.error}</p>{/if}
+
+	<form method="GET" action="/" class="search">
+		<input name="q" placeholder="Search campaigns &amp; notes…" bind:value={q} />
+		<button type="submit">Search</button>
+	</form>
+
+	{#if data.query}
+		{#if data.results.length === 0}
+			<p class="empty">No matches for “{data.query}”.</p>
+		{:else}
+			<ul class="results">
+				{#each data.results as r (r.id)}
+					<li class="card">
+						<a href={`/c/${r.id}`} class="title">{r.title}</a>
+						<p class="snippet">{r.snippet}</p>
+						<a href={`/c/${r.id}/play`} class="play">player view</a>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	{:else if data.campaigns.length === 0}
 		<p class="empty">No campaigns yet. Create one to get started.</p>
 	{:else}
 		<ul class="grid">
@@ -90,6 +119,60 @@
 	}
 	.create button:hover {
 		background: var(--accent-soft);
+	}
+	.search {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+	}
+	.search input {
+		flex: 1;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		font-size: 1rem;
+		font-family: var(--font-body);
+		background: var(--parchment-light);
+		color: var(--ink);
+	}
+	.search button {
+		padding: 0.6rem 1.2rem;
+		border: 1px solid var(--accent);
+		border-radius: 6px;
+		background: var(--accent);
+		color: var(--parchment-light);
+		font-family: var(--font-display);
+		cursor: pointer;
+	}
+	.snippet {
+		color: var(--ink-soft);
+		font-size: 0.9rem;
+		margin: 0.4rem 0;
+	}
+	.import {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+	}
+	.import-label {
+		font-size: 0.9rem;
+		color: var(--ink-soft);
+		display: inline-flex;
+		gap: 0.4rem;
+		align-items: center;
+	}
+	.import button {
+		padding: 0.4rem 0.9rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		background: var(--parchment-light);
+		color: var(--ink-soft);
+		cursor: pointer;
+	}
+	.import-error {
+		color: var(--accent-soft);
+		margin: 0 0 1rem;
 	}
 	.grid {
 		list-style: none;

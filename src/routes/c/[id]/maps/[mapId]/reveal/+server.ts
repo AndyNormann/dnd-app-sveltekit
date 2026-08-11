@@ -36,10 +36,12 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		h?: number;
 		path?: [number, number][];
 		radius?: number;
+		layer?: number;
 	};
 	if (body.kind !== 'reveal' && body.kind !== 'hide') throw error(400, 'Invalid kind');
 
 	const shape = body.shape ?? 'rect';
+	const layer = Math.max(0, Math.min(9, Math.floor(body.layer ?? 0)));
 	let op;
 	if (shape === 'brush') {
 		const { path, radius } = body;
@@ -54,15 +56,20 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		if (typeof radius !== 'number' || radius < 0.001 || radius > 0.25) {
 			throw error(400, 'Invalid brush radius');
 		}
-		op = addReveal(params.mapId, body.kind, {
-			shape: 'brush',
-			path: downsample(path, radius / 3),
-			radius
-		});
+		op = addReveal(
+			params.mapId,
+			body.kind,
+			{
+				shape: 'brush',
+				path: downsample(path, radius / 3),
+				radius
+			},
+			layer
+		);
 	} else {
 		const { x, y, w, h } = body;
 		if (!in01(x) || !in01(y) || !in01(w) || !in01(h)) throw error(400, 'Invalid rect');
-		op = addReveal(params.mapId, body.kind, { shape: 'rect', x, y, w, h });
+		op = addReveal(params.mapId, body.kind, { shape: 'rect', x, y, w, h }, layer);
 	}
 
 	broadcast(params.id, {

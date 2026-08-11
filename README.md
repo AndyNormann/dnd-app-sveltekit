@@ -1,42 +1,60 @@
-# sv
+# D&D Campaign Notes
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A realtime, remote-co-op campaign manager for Dungeon Masters and players. Built
+with SvelteKit (runes), Bun, `bun:sqlite`, CodeMirror, and SSE.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Markdown campaign notes** with a live CodeMirror editor, outline sidebar,
+  wiki-links (`[[Name]]`), collapsible headings, and stable heading ids.
+- **Share sections with players** per heading (with ancestor inheritance) —
+  players only ever see the sections you share.
+- **Fog-of-war maps** with rectangular and freehand-brush reveal/erase, grid +
+  snapping, DM-placed tokens, and multiple reveal layers.
+- **Initiative tracker**, broadcast live to everyone.
+- **Dice roller** with keep/drop modifiers (`2d20kh1`, `4d6dl1`), named rolls,
+  crit/fumble detection, and inline rolls detected in note text.
+- **Realtime** over SSE with snapshot-on-connect so reconnects self-heal.
+- **Export / restore** campaign bundles (content + maps + reveals + rolls).
+- **DM auth**: a single `DM_PASSCODE` gates DM-only actions.
 
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-bun x sv@0.16.1 create --template minimal --types ts --add prettier eslint playwright --install bun .
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Development
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun install
+bun run dev          # http://localhost:5174
+bun run check        # type-check (svelte-check)
+bun run test:unit    # bun unit tests for dice.ts and markdown.ts
+bun run test:e2e     # Playwright e2e (auth + core flow, isolated test DB)
 ```
 
-## Building
+## Configuration (env vars)
 
-To create a production version of your app:
+| Var             | Default            | Purpose                                    |
+| --------------- | ------------------ | ------------------------------------------ |
+| `DM_PASSCODE`   | *(unset)*          | If set, protects DM actions. Unset = open. |
+| `DB_PATH`       | `data/app.db`      | SQLite database file.                      |
+| `UPLOAD_DIR`    | `static/uploads`   | Where map images are stored/served.        |
+| `PORT`          | `3000`             | HTTP port for the built server.            |
+
+> **Security:** without `DM_PASSCODE` the app is fully open (anyone with the URL
+> can edit/upload). Set a strong passcode before exposing it beyond a trusted
+> network. Set it at deploy time, not in the repo.
+
+## Deployment
+
+Single always-on instance (Fly.io / Railway / VPS). The app uses a persistent
+disk for SQLite and uploads, so a long-running container is the right fit — not
+ephemeral serverless.
 
 ```sh
-npm run build
+# Fly.io example (edit fly.toml app name first)
+fly launch
+fly secrets set DM_PASSCODE='your-passcode'
+fly volumes create dnd_data --size 1
+fly volumes create dnd_uploads --size 1
+fly deploy
 ```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+`Dockerfile` builds the adapter-bun output. `fly.toml` mounts volumes at
+`/data` (DB) and `/uploads` (map images).

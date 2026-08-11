@@ -2,7 +2,7 @@
 	import { mount, unmount } from 'svelte';
 	import MapView from './MapView.svelte';
 	import { INLINE_DICE_RE } from '$lib/dice';
-	import type { MapData, RevealOp, RollData } from '$lib/types';
+	import type { MapData, RevealOp, RollData, TokenData } from '$lib/types';
 
 	let {
 		html,
@@ -39,6 +39,35 @@
 	export function applyMapOp(mapId: string, op: RevealOp) {
 		const inst = mapInstances.get(mapId) as { applyOp?: (o: RevealOp) => void } | undefined;
 		inst?.applyOp?.(op);
+	}
+
+	export function applyTokens(mapId: string, tokens: TokenData[]) {
+		const inst = mapInstances.get(mapId) as { applyTokens?: (t: TokenData[]) => void } | undefined;
+		inst?.applyTokens?.(tokens);
+	}
+
+	export function applyGrid(mapId: string, grid: number) {
+		const inst = mapInstances.get(mapId) as { applyGrid?: (g: number) => void } | undefined;
+		inst?.applyGrid?.(grid);
+	}
+
+	export function applyLayer(mapId: string, layer: number) {
+		const inst = mapInstances.get(mapId) as { applyLayer?: (l: number) => void } | undefined;
+		inst?.applyLayer?.(layer);
+	}
+
+	/** Apply a full snapshot (reveals/grid/layer + tokens) to every mounted map. */
+	export function applySnapshot(
+		maps: MapData[],
+		tokens: { mapId: string; tokens: TokenData[] }[]
+	) {
+		const tokenByMap = new Map(tokens.map((t) => [t.mapId, t.tokens]));
+		for (const m of maps) {
+			const inst = mapInstances.get(m.id) as
+				| { applyState?: (d: MapData, t: TokenData[]) => void }
+				| undefined;
+			inst?.applyState?.(m, tokenByMap.get(m.id) ?? []);
+		}
 	}
 
 	interface HeadingEl {
@@ -82,6 +111,14 @@
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ headingId, state })
+		});
+	}
+
+	async function postHandout(headingId: string) {
+		await fetch(`/c/${campaignId}/handout`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ headingId })
 		});
 	}
 
@@ -153,6 +190,13 @@
 
 			controls.appendChild(collapseBtn);
 			controls.appendChild(share);
+			const handout = document.createElement('button');
+			handout.type = 'button';
+			handout.className = 'handout-btn';
+			handout.title = 'Reveal handout to players now';
+			handout.textContent = '📢';
+			handout.onclick = () => postHandout(h.id);
+			controls.appendChild(handout);
 			h.el.prepend(controls);
 		}
 		applyCollapse(list);
@@ -371,6 +415,30 @@
 	}
 	.rendered :global(.share-box) {
 		cursor: pointer;
+	}
+	.rendered :global(.handout-btn) {
+		border: 1px solid var(--gold);
+		background: var(--parchment-deep);
+		cursor: pointer;
+		border-radius: 4px;
+		font-size: 0.8em;
+		padding: 0 0.25rem;
+		line-height: 1.2;
+	}
+	.rendered :global(.handout-btn:hover) {
+		background: var(--rule);
+	}
+	.rendered :global(.handout-flash) {
+		animation: handout-pulse 2s ease-out;
+	}
+
+	@keyframes handout-pulse {
+		0% {
+			background: var(--gold);
+		}
+		100% {
+			background: transparent;
+		}
 	}
 	.rendered :global(img) {
 		max-width: 100%;

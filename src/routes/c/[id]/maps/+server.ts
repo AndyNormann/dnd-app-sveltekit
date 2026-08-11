@@ -1,6 +1,7 @@
 import { getCampaign, createMap } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
+import { UPLOAD_DIR } from '$lib/server/uploads';
 import { error, json } from '@sveltejs/kit';
 import { mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
@@ -8,7 +9,7 @@ import { extname } from 'node:path';
 import { nanoid } from 'nanoid';
 import type { RequestHandler } from './$types';
 
-const UPLOAD_DIR = 'static/uploads';
+const UPLOAD = UPLOAD_DIR;
 
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	if (!isDM(cookies)) throw error(401, 'DM login required');
@@ -24,10 +25,10 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		throw error(400, 'Missing file or dimensions');
 	}
 
-	mkdirSync(UPLOAD_DIR, { recursive: true });
+	mkdirSync(UPLOAD, { recursive: true });
 	const ext = extname(file.name) || '.png';
 	const filename = `${nanoid(12)}${ext}`;
-	await writeFile(`${UPLOAD_DIR}/${filename}`, Buffer.from(await file.arrayBuffer()));
+	await writeFile(`${UPLOAD}/${filename}`, Buffer.from(await file.arrayBuffer()));
 
 	const map = createMap(params.id, filename, width, height);
 	const data = {
@@ -35,7 +36,9 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		width: map.width,
 		height: map.height,
 		src: `/uploads/${filename}`,
-		reveals: []
+		reveals: [],
+		grid_size: 0,
+		active_layer: 0
 	};
 	broadcast(params.id, { type: 'map-added', map: data });
 

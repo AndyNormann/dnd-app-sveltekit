@@ -1,4 +1,6 @@
 import type { RevealOp } from './db';
+import type { InitEntry } from './db';
+import type { TokenRow } from './db';
 import type { MapData, RollData } from '$lib/types';
 
 export type CampaignEvent =
@@ -8,7 +10,20 @@ export type CampaignEvent =
 	| { type: 'map-revealed'; mapId: string; op: RevealOp }
 	| { type: 'map-hidden'; mapId: string; op: RevealOp }
 	| { type: 'roll'; roll: RollData }
-	| { type: 'title-changed'; title: string };
+	| { type: 'title-changed'; title: string }
+	| { type: 'handout-revealed'; headingId: string }
+	| { type: 'initiative-updated'; entries: InitEntry[] }
+	| { type: 'tokens-updated'; mapId: string; tokens: TokenRow[] }
+	| { type: 'grid-updated'; mapId: string; grid_size: number }
+	| { type: 'layer-changed'; mapId: string; layer: number }
+	| {
+			type: 'snapshot';
+			title: string;
+			html: string;
+			maps: MapData[];
+			tokens: { mapId: string; tokens: TokenRow[] }[];
+			rolls: RollData[];
+	  };
 
 type Subscriber = (event: CampaignEvent) => void;
 

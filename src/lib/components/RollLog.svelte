@@ -11,6 +11,7 @@
 	let rolls = $state<RollData[]>([...initial]);
 	let open = $state(true);
 	let expression = $state('');
+	let label = $state('');
 	let roller = $state('');
 	let secret = $state(false);
 	let errorMsg = $state('');
@@ -38,6 +39,12 @@
 		scrollToEnd();
 	}
 
+	/** Replace the whole roll list (e.g. on SSE snapshot after a reconnect). */
+	export function setRolls(next: RollData[]) {
+		rolls = [...next];
+		scrollToEnd();
+	}
+
 	async function submit(e: Event) {
 		e.preventDefault();
 		errorMsg = '';
@@ -47,11 +54,17 @@
 		const res = await fetch(`/c/${campaignId}/roll`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ roller: roller || (dm ? 'DM' : ''), expression: expr, secret })
+			body: JSON.stringify({
+				roller: roller || (dm ? 'DM' : ''),
+				expression: expr,
+				secret,
+				label: label.trim()
+			})
 		});
 		if (res.ok) {
 			addRoll((await res.json()) as RollData);
 			expression = '';
+			label = '';
 		} else {
 			errorMsg = 'Invalid expression';
 		}
@@ -86,6 +99,7 @@
 				<div class="roll" class:secret={r.secret}>
 					<span class="who">{r.roller}{r.secret ? ' 🤫' : ''}</span>
 					<span class="total">{r.result}</span>
+					{#if r.label}<span class="label">{r.label}</span>{/if}
 					<span class="detail">{r.breakdown}</span>
 				</div>
 			{/each}
@@ -95,6 +109,7 @@
 				<input class="name" placeholder="Name" bind:value={roller} maxlength="40" />
 			{/if}
 			<input class="expr" placeholder="2d6+3" bind:value={expression} maxlength="100" />
+			<input class="expr label" placeholder="optional label" bind:value={label} maxlength="80" />
 			{#if dm}
 				<label class="secret-toggle" title="Hide from players">
 					<input type="checkbox" bind:checked={secret} /> 🤫
@@ -185,6 +200,12 @@
 	.detail {
 		grid-column: 1 / -1;
 		color: var(--ink-soft);
+		font-size: 0.78rem;
+	}
+	.label {
+		grid-column: 1 / -1;
+		color: var(--accent);
+		font-weight: 600;
 		font-size: 0.78rem;
 	}
 	.input {

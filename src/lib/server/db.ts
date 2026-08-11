@@ -33,6 +33,8 @@ db.exec(`
 		filename TEXT NOT NULL,
 		width INTEGER NOT NULL,
 		height INTEGER NOT NULL,
+		grid_size INTEGER NOT NULL DEFAULT 0,
+		active_layer INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL
 	);
 
@@ -44,7 +46,18 @@ db.exec(`
 		y REAL NOT NULL,
 		w REAL NOT NULL,
 		h REAL NOT NULL,
+		layer INTEGER NOT NULL DEFAULT 0,
 		seq INTEGER NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS map_tokens (
+		id TEXT PRIMARY KEY,
+		map_id TEXT NOT NULL,
+		label TEXT NOT NULL,
+		color TEXT NOT NULL,
+		x REAL NOT NULL,
+		y REAL NOT NULL,
+		created_at INTEGER NOT NULL
 	);
 
 	CREATE TABLE IF NOT EXISTS rolls (
@@ -54,7 +67,18 @@ db.exec(`
 		expression TEXT NOT NULL,
 		result INTEGER NOT NULL,
 		breakdown TEXT NOT NULL,
+		label TEXT,
 		secret INTEGER NOT NULL DEFAULT 0,
+		created_at INTEGER NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS initiative_entries (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		campaign_id TEXT NOT NULL,
+		name TEXT NOT NULL,
+		init REAL NOT NULL,
+		hp REAL NOT NULL DEFAULT 0,
+		active INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL
 	);
 `);
@@ -68,6 +92,26 @@ db.exec(`
 		db.exec(`ALTER TABLE map_reveals ADD COLUMN shape TEXT NOT NULL DEFAULT 'rect'`);
 		db.exec(`ALTER TABLE map_reveals ADD COLUMN path TEXT`);
 		db.exec(`ALTER TABLE map_reveals ADD COLUMN radius REAL`);
+	}
+	if (!cols.includes('layer')) {
+		db.exec(`ALTER TABLE map_reveals ADD COLUMN layer INTEGER NOT NULL DEFAULT 0`);
+	}
+	// migrate pre-label databases: add label to rolls (checked against rolls' columns)
+	const rollCols = (db.query('PRAGMA table_info(rolls)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!rollCols.includes('label')) {
+		db.exec(`ALTER TABLE rolls ADD COLUMN label TEXT`);
+	}
+	// migrate pre-grid databases: add grid_size to maps
+	const mapCols = (db.query('PRAGMA table_info(maps)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!mapCols.includes('grid_size')) {
+		db.exec(`ALTER TABLE maps ADD COLUMN grid_size INTEGER NOT NULL DEFAULT 0`);
+	}
+	if (!mapCols.includes('active_layer')) {
+		db.exec(`ALTER TABLE maps ADD COLUMN active_layer INTEGER NOT NULL DEFAULT 0`);
 	}
 }
 
@@ -90,6 +134,8 @@ export interface MapRow {
 	filename: string;
 	width: number;
 	height: number;
+	grid_size: number;
+	active_layer: number;
 	created_at: number;
 }
 
@@ -104,6 +150,7 @@ export interface RevealOp {
 	h: number;
 	path?: [number, number][];
 	radius?: number;
+	layer: number;
 	seq: number;
 }
 
@@ -150,6 +197,37 @@ export function updateTitle(id: string, title: string): void {
 	db.query('UPDATE campaigns SET title = ? WHERE id = ?').run(title, id);
 }
 
+export interface CampaignSearchResult {
+	id: string;
+	title: string;
+	snippet: string;
+}
+
+/** Case-insensitive search over campaign titles and content with a snippet. */
+export function searchCampaigns(q: string): CampaignSearchResult[] {
+	const escaped = q.replace(/[\\%_]/g, (m) => `\\${m}`);
+	const like = `%${escaped}%`;
+	const rows = db
+		.query(
+			"SELECT id, title, content FROM campaigns WHERE title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\' ORDER BY created_at DESC"
+		)
+		.all(like, like) as { id: string; title: string; content: string }[];
+	const lower = q.toLowerCase();
+	return rows.map((r) => {
+		const idx = r.content.toLowerCase().indexOf(lower);
+		let snippet = '';
+		if (idx >= 0) {
+			const start = Math.max(0, idx - 40);
+			const end = Math.min(r.content.length, idx + q.length + 70);
+			snippet =
+				(start > 0 ? '…' : '') +
+				r.content.slice(start, end).replace(/\s+/g, ' ').trim() +
+				(end < r.content.length ? '…' : '');
+		}
+		return { id: r.id, title: r.title, snippet };
+	});
+}
+
 /** Delete a campaign and all dependent rows; returns upload filenames to unlink. */
 export function deleteCampaign(id: string): string[] {
 	const files = (
@@ -163,6 +241,125 @@ export function deleteCampaign(id: string): string[] {
 	db.query('DELETE FROM rolls WHERE campaign_id = ?').run(id);
 	db.query('DELETE FROM campaigns WHERE id = ?').run(id);
 	return files;
+}
+
+/** Restore a full campaign from an exported bundle; returns the new campaign id. */
+export function restoreCampaign(
+	bundle: {
+		title?: string;
+		content?: string;
+		heading_meta?: { heading_id: string; shared?: number; collapsed?: number }[];
+		maps?: { id: string; filename: string; width: number; height: number; grid_size?: number; active_layer?: number }[];
+		tokens?: {
+			map_id: string;
+			label: string;
+			color: string;
+			x: number;
+			y: number;
+		}[];
+		reveals?: {
+			map_id: string;
+			kind?: string;
+			shape?: string;
+			x?: number;
+			y?: number;
+			w?: number;
+			h?: number;
+			path?: [number, number][] | null;
+			radius?: number | null;
+			layer?: number;
+		}[];
+		rolls?: {
+			roller?: string;
+			expression?: string;
+			result?: number;
+			breakdown?: string;
+			secret?: boolean;
+			label?: string;
+		}[];
+	},
+	imageFilenames: string[]
+): string {
+	const campaign = createCampaign((bundle.title ?? 'Imported Campaign').trim() || 'Imported Campaign');
+
+	// create maps and build old-id -> new-id map
+	const idMap: Record<string, string> = {};
+	const maps = bundle.maps ?? [];
+	for (let i = 0; i < maps.length; i++) {
+		const m = maps[i];
+		const nm = createMap(campaign.id, imageFilenames[i] ?? m.filename, m.width, m.height);
+		idMap[m.id] = nm.id;
+		if (m.grid_size) setMapGrid(nm.id, m.grid_size);
+		if (m.active_layer) setMapLayer(nm.id, m.active_layer);
+	}
+
+	// rewrite ::map{id=...} directives to the new map ids
+	let content = bundle.content ?? '';
+	content = content.replace(/::map\{id=([A-Za-z0-9_-]+)\}/g, (match, id: string) => {
+		return idMap[id] ? `::map{id=${idMap[id]}}` : match;
+	});
+	updateContent(campaign.id, content);
+
+	// reveals (added in bundle order, so seq follows the original ordering)
+	for (const r of bundle.reveals ?? []) {
+		const mapId = idMap[r.map_id];
+		if (!mapId) continue;
+		const kind = r.kind === 'hide' ? 'hide' : 'reveal';
+		const layer = r.layer ?? 0;
+		if (r.shape === 'brush') {
+			addReveal(
+				mapId,
+				kind,
+				{
+					shape: 'brush',
+					path: r.path ?? [],
+					radius: r.radius ?? 0.05
+				},
+				layer
+			);
+		} else {
+			addReveal(
+				mapId,
+				kind,
+				{
+					shape: 'rect',
+					x: r.x ?? 0,
+					y: r.y ?? 0,
+					w: r.w ?? 0,
+					h: r.h ?? 0
+				},
+				layer
+			);
+		}
+	}
+
+	// map tokens
+	for (const t of bundle.tokens ?? []) {
+		const mapId = idMap[t.map_id];
+		if (!mapId) continue;
+		addToken(mapId, t.label ?? 'Token', t.color ?? '#8b2020', t.x ?? 0, t.y ?? 0);
+	}
+
+	// heading share/collapse meta (keys are stable id markers preserved in content)
+	for (const hm of bundle.heading_meta ?? []) {
+		if (hm.shared && hm.shared !== 0) setHeadingShared(campaign.id, hm.heading_id, hm.shared);
+		if (hm.collapsed) setHeadingCollapsed(campaign.id, hm.heading_id, !!hm.collapsed);
+	}
+
+	// rolls
+	for (const r of bundle.rolls ?? []) {
+		addRoll(
+			campaign.id,
+			r.roller ?? 'Anonymous',
+			r.expression ?? '',
+			r.result ?? 0,
+			r.breakdown ?? '',
+			!!r.secret,
+			r.label
+		);
+	}
+
+	return campaign.id;
 }
 
 // --- Heading meta ---
@@ -212,9 +409,17 @@ export function createMap(
 ): MapRow {
 	const id = nanoid(10);
 	db.query(
-		'INSERT INTO maps (id, campaign_id, filename, width, height, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+		'INSERT INTO maps (id, campaign_id, filename, width, height, grid_size, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)'
 	).run(id, campaignId, filename, width, height, Date.now());
 	return getMap(id)!;
+}
+
+export function setMapGrid(mapId: string, gridSize: number): void {
+	db.query('UPDATE maps SET grid_size = ? WHERE id = ?').run(Math.max(0, Math.floor(gridSize)), mapId);
+}
+
+export function setMapLayer(mapId: string, layer: number): void {
+	db.query('UPDATE maps SET active_layer = ? WHERE id = ?').run(Math.max(0, Math.floor(layer)), mapId);
 }
 
 // --- Reveal ops ---
@@ -231,7 +436,8 @@ export function addReveal(
 	kind: 'reveal' | 'hide',
 	op:
 		| { shape: 'rect'; x: number; y: number; w: number; h: number }
-		| { shape: 'brush'; path: [number, number][]; radius: number }
+		| { shape: 'brush'; path: [number, number][]; radius: number },
+	layer = 0
 ): RevealOp {
 	const next = (
 		db
@@ -241,8 +447,8 @@ export function addReveal(
 	const isBrush = op.shape === 'brush';
 	const row = db
 		.query(
-			`INSERT INTO map_reveals (map_id, kind, shape, x, y, w, h, path, radius, seq)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+			`INSERT INTO map_reveals (map_id, kind, shape, x, y, w, h, path, radius, layer, seq)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
 		)
 		.get(
 			mapId,
@@ -254,6 +460,7 @@ export function addReveal(
 			isBrush ? 0 : op.h,
 			isBrush ? JSON.stringify(op.path) : null,
 			isBrush ? op.radius : null,
+			layer,
 			next
 		) as RevealRow;
 	return toRevealOp(row);
@@ -269,6 +476,7 @@ export interface RollRow {
 	result: number;
 	breakdown: string;
 	secret: number;
+	label?: string | null;
 	created_at: number;
 }
 
@@ -278,14 +486,24 @@ export function addRoll(
 	expression: string,
 	result: number,
 	breakdown: string,
-	secret: boolean
+	secret: boolean,
+	label?: string
 ): RollRow {
 	const row = db
 		.query(
-			`INSERT INTO rolls (campaign_id, roller, expression, result, breakdown, secret, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`
+			`INSERT INTO rolls (campaign_id, roller, expression, result, breakdown, label, secret, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
 		)
-		.get(campaignId, roller, expression, result, breakdown, secret ? 1 : 0, Date.now()) as RollRow;
+		.get(
+			campaignId,
+			roller,
+			expression,
+			result,
+			breakdown,
+			label || null,
+			secret ? 1 : 0,
+			Date.now()
+		) as RollRow;
 	// keep only the most recent 200 rolls per campaign
 	db.query(
 		`DELETE FROM rolls WHERE campaign_id = ? AND id NOT IN
@@ -305,6 +523,114 @@ export function listRolls(campaignId: string, includeSecret: boolean): RollRow[]
 				)
 				.all(campaignId);
 	return (rows as RollRow[]).reverse();
+}
+
+// --- Initiative ---
+
+export interface InitEntry {
+	id: number;
+	campaign_id: string;
+	name: string;
+	init: number;
+	hp: number;
+	active: number;
+}
+
+const INIT_ORDER = 'ORDER BY init DESC, id ASC';
+
+function rowToInit(row: { hp: number | null } & Omit<InitEntry, 'hp'>): InitEntry {
+	return { ...row, hp: row.hp ?? 0 };
+}
+
+export function listInitiative(campaignId: string): InitEntry[] {
+	return db
+		.query(`SELECT * FROM initiative_entries WHERE campaign_id = ? ${INIT_ORDER}`)
+		.all(campaignId) as InitEntry[];
+}
+
+export function addInitiative(campaignId: string, name: string, init: number, hp: number): InitEntry {
+	const row = db
+		.query(
+			`INSERT INTO initiative_entries (campaign_id, name, init, hp, created_at)
+			 VALUES (?, ?, ?, ?, ?) RETURNING *`
+		)
+		.get(campaignId, name, init, hp, Date.now()) as InitEntry;
+	return rowToInit(row);
+}
+
+export function getInitiative(id: number): InitEntry | null {
+	return (db.query('SELECT * FROM initiative_entries WHERE id = ?').get(id) as InitEntry) ?? null;
+}
+
+export function updateInitiative(
+	id: number,
+	patch: { name?: string; hp?: number; active?: number }
+): InitEntry | null {
+	const current = db.query('SELECT * FROM initiative_entries WHERE id = ?').get(id) as InitEntry | null;
+	if (!current) return null;
+	const name = patch.name ?? current.name;
+	const hp = patch.hp ?? current.hp;
+	const active = patch.active ?? current.active;
+	db.query('UPDATE initiative_entries SET name = ?, hp = ?, active = ? WHERE id = ?').run(
+		name,
+		hp,
+		active,
+		id
+	);
+	return rowToInit(db.query('SELECT * FROM initiative_entries WHERE id = ?').get(id) as InitEntry);
+}
+
+export function removeInitiative(id: number): void {
+	db.query('DELETE FROM initiative_entries WHERE id = ?').run(id);
+}
+
+export function clearInitiative(campaignId: string): void {
+	db.query('DELETE FROM initiative_entries WHERE campaign_id = ?').run(campaignId);
+}
+
+// --- Map tokens ---
+
+export interface TokenRow {
+	id: string;
+	map_id: string;
+	label: string;
+	color: string;
+	x: number;
+	y: number;
+}
+
+export function listTokens(mapId: string): TokenRow[] {
+	return db
+		.query('SELECT * FROM map_tokens WHERE map_id = ? ORDER BY created_at')
+		.all(mapId) as TokenRow[];
+}
+
+export function getToken(id: string): TokenRow | null {
+	return (db.query('SELECT * FROM map_tokens WHERE id = ?').get(id) as TokenRow) ?? null;
+}
+
+export function addToken(mapId: string, label: string, color: string, x: number, y: number): TokenRow {
+	const id = nanoid(10);
+	db.query(
+		'INSERT INTO map_tokens (id, map_id, label, color, x, y, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+	).run(id, mapId, label, color, x, y, Date.now());
+	return db.query('SELECT * FROM map_tokens WHERE id = ?').get(id) as TokenRow;
+}
+
+export function updateToken(id: string, patch: { x?: number; y?: number; label?: string }): TokenRow | null {
+	const cur = db.query('SELECT * FROM map_tokens WHERE id = ?').get(id) as TokenRow | null;
+	if (!cur) return null;
+	db.query('UPDATE map_tokens SET x = ?, y = ?, label = ? WHERE id = ?').run(
+		patch.x ?? cur.x,
+		patch.y ?? cur.y,
+		patch.label ?? cur.label,
+		id
+	);
+	return db.query('SELECT * FROM map_tokens WHERE id = ?').get(id) as TokenRow;
+}
+
+export function removeToken(id: string): void {
+	db.query('DELETE FROM map_tokens WHERE id = ?').run(id);
 }
 
 export default db;

@@ -1,4 +1,4 @@
-import { getCampaign, getHeadingMeta, listMaps, listReveals, listRolls } from '$lib/server/db';
+import { getCampaign, getHeadingMeta, listMaps, listReveals, listRolls, listInitiative } from '$lib/server/db';
 import { toMetaMap } from '$lib/markdown';
 import { renderSharedForPlayer } from '$lib/server/markdown.server';
 import { error } from '@sveltejs/kit';
@@ -17,7 +17,9 @@ export const load: PageServerLoad = ({ params }) => {
 		width: m.width,
 		height: m.height,
 		src: `/uploads/${m.filename}`,
-		reveals: listReveals(m.id)
+		reveals: listReveals(m.id),
+		grid_size: m.grid_size,
+		active_layer: m.active_layer
 	}));
 
 	const rolls = listRolls(params.id, false).map((r) => ({
@@ -27,8 +29,9 @@ export const load: PageServerLoad = ({ params }) => {
 		result: r.result,
 		breakdown: r.breakdown,
 		secret: false,
+		label: r.label ?? undefined,
 		created_at: r.created_at
 	}));
 
-	return { campaignId: campaign.id, title: campaign.title, html, maps, rolls };
+	return { campaignId: campaign.id, title: campaign.title, html, maps, rolls, initiative: listInitiative(params.id) };
 };

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
+	import Initiative from '$lib/components/Initiative.svelte';
 	import Outline from '$lib/components/Outline.svelte';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp, RollData } from '$lib/types';
@@ -14,6 +15,7 @@
 	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
 	let rollLog: RollLog;
+	let initiative: Initiative;
 
 	function refreshOutline(container: HTMLElement) {
 		const sel = 'h1,h2,h3,h4,h5,h6';
@@ -33,6 +35,13 @@
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
 			switch (ev.type) {
+				case 'snapshot':
+					title = ev.title;
+					html = ev.html;
+					maps = ev.maps;
+					if (rollLog) rollLog.setRolls(ev.rolls);
+					doc?.applySnapshot(ev.maps, ev.tokens);
+					break;
 				case 'doc-updated':
 				case 'share-changed':
 					html = ev.html;
@@ -41,11 +50,36 @@
 				case 'map-hidden':
 					doc?.applyMapOp(ev.mapId, ev.op as RevealOp);
 					break;
+				case 'tokens-updated':
+					doc?.applyTokens(ev.mapId, ev.tokens);
+					break;
+				case 'grid-updated':
+					doc?.applyGrid(ev.mapId, ev.grid_size);
+					break;
+				case 'layer-changed':
+					doc?.applyLayer(ev.mapId, ev.layer);
+					break;
 				case 'map-added':
 					if (!maps.some((m) => m.id === ev.map.id)) maps = [...maps, ev.map];
 					break;
 				case 'roll':
 					rollLog?.addRoll(ev.roll as RollData);
+					break;
+				case 'initiative-updated':
+					initiative?.applyEntries(ev.entries);
+					break;
+				case 'handout-revealed':
+					// the shared html will have been delivered; scroll to + flash the heading
+					setTimeout(() => {
+						document
+							.querySelector(`[data-heading-id="${CSS.escape(ev.headingId)}"]`)
+							?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+						const el = document.querySelector(`#h-${CSS.escape(ev.headingId)}`);
+						if (el) {
+							el.classList.add('handout-flash');
+							setTimeout(() => el.classList.remove('handout-flash'), 2000);
+						}
+					}, 120);
 					break;
 				case 'title-changed':
 					title = ev.title;
@@ -76,6 +110,7 @@
 </div>
 
 <RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
+<Initiative bind:this={initiative} campaignId={data.campaignId} initial={data.initiative} />
 
 <style>
 	.page {

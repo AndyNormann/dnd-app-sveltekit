@@ -3,6 +3,7 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
+	import Initiative from '$lib/components/Initiative.svelte';
 	import Outline from '$lib/components/Outline.svelte';
 	import { parseHeadings, renderForDM } from '$lib/markdown';
 	import type { RollData } from '$lib/types';
@@ -18,6 +19,8 @@
 	let showEditor = $state(true);
 	let editor: Editor | undefined = $state();
 	let rollLog: RollLog;
+	let initiative: Initiative;
+	let doc: RenderedDoc;
 
 	const uiKey = `dnd-ui-${data.campaignId}`;
 
@@ -153,6 +156,16 @@
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
 			if (ev.type === 'roll') rollLog?.addRoll(ev.roll as RollData);
+			else if (ev.type === 'snapshot') {
+				rollLog?.setRolls(ev.rolls);
+				data.maps = ev.maps;
+				doc?.applySnapshot(ev.maps, ev.tokens);
+			} else if (ev.type === 'map-added') {
+				if (!data.maps.some((m: { id: string }) => m.id === ev.map.id)) data.maps = [...data.maps, ev.map];
+			} else if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries);
+			else if (ev.type === 'tokens-updated') doc?.applyTokens(ev.mapId, ev.tokens);
+			else if (ev.type === 'grid-updated') doc?.applyGrid(ev.mapId, ev.grid_size);
+			else if (ev.type === 'layer-changed') doc?.applyLayer(ev.mapId, ev.layer);
 		};
 		return () => es.close();
 	});
@@ -210,6 +223,7 @@
 		<input type="file" accept="image/*" onchange={uploadMap} hidden />
 	</label>
 	<button onclick={() => navigator.clipboard?.writeText(playerUrl())}>Copy player link</button>
+	<a href={`/c/${data.campaignId}/export`} class="export">Export</a>
 	<a href={`/c/${data.campaignId}/play`} target="_blank" rel="noreferrer">Open player view</a>
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
@@ -230,6 +244,7 @@
 		{/if}
 		<section class="pane preview" class:full={!showEditor}>
 			<RenderedDoc
+				bind:this={doc}
 				html={previewHtml}
 				dm
 				campaignId={data.campaignId}
@@ -243,6 +258,7 @@
 </div>
 
 <RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
+<Initiative bind:this={initiative} campaignId={data.campaignId} dm initial={data.initiative} />
 
 <style>
 	.bar {
@@ -296,6 +312,7 @@
 	}
 	.bar button,
 	.bar .upload,
+	.bar .export,
 	.bar a[target] {
 		font-size: 0.85rem;
 		padding: 0.4rem 0.7rem;

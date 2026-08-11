@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "bun --bun vite dev",
+		"dev": "bun --bun vite dev --port 5174",
 		"build": "bun --bun vite build",
 		"preview": "bun --bun vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -13,7 +13,8 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:e2e": "playwright install && playwright test",
-		"test": "npm run test:e2e"
+		"test:unit": "bun test src/lib",
+		"test": "bun test src/lib && npm run test:e2e"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
