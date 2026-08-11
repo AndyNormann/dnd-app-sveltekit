@@ -10,7 +10,8 @@
 		campaignId,
 		isSecret,
 		meta,
-		getMaps
+		getMaps,
+		addMap
 	}: {
 		value: string;
 		onchange?: (v: string) => void;
@@ -18,6 +19,7 @@
 		isSecret?: () => boolean;
 		meta?: Map<string, HeadingMeta>;
 		getMaps?: () => MapData[];
+		addMap?: (map: MapData) => void;
 	} = $props();
 
 	let host: HTMLDivElement;
@@ -34,6 +36,7 @@
 				isSecret,
 				meta,
 				getMaps,
+				addMap,
 				onChange: (md) => {
 					value = md;
 					onchange?.(md);
@@ -152,5 +155,56 @@
 	}
 	:global(.collapsed-child) {
 		display: none !important;
+	}
+	:global(.dnd-slash) {
+		position: fixed;
+		z-index: 1000;
+		min-width: 12rem;
+		background: var(--parchment-light);
+		border: 1px solid var(--gold);
+		border-radius: 8px;
+		box-shadow: 0 6px 24px rgba(43, 35, 23, 0.25);
+		padding: 0.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	:global(.dnd-slash-item) {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.45rem 0.6rem;
+		border: 0;
+		border-radius: 5px;
+		background: none;
+		font-family: var(--font-body);
+		font-size: 0.95rem;
+		color: var(--ink);
+		text-align: left;
+		cursor: pointer;
+	}
+	:global(.dnd-slash-item:hover) {
+		background: var(--parchment-deep);
+	}
+	:global(.dnd-slash-map) {
+		color: var(--accent);
+	}
+	:global(.dnd-slash-h1) {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+	}
+	:global(.dnd-slash-h2) {
+		font-family: var(--font-display);
+		font-size: 0.98rem;
+	}
+	:global(.dnd-slash-h3) {
+		font-family: var(--font-display);
+		font-size: 0.92rem;
+	}
+	:global(.dnd-slash-wiki) {
+		color: var(--accent);
+	}
+	:global(.dnd-slash-hr) {
+		color: var(--ink-soft);
 	}
 </style>

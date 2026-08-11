@@ -41,21 +41,23 @@ test('share checkbox toggles and propagates to a live player via SSE', async ({ 
 	const share = controls.locator('.dhc-share');
 	await expect(share).not.toBeChecked();
 
-	// a live player should NOT see the unshared heading
+	// a live player should NOT see the unshared heading — instead the empty state
 	const player = await browser.newPage();
 	await player.goto(`/c/${id}/play`);
 	await player.waitForTimeout(900);
-	await expect(player.locator('.rendered')).not.toContainText('Main Section');
+	await expect(player.getByText("The DM hasn't shared anything yet")).toBeVisible();
+	const docHeading = player.locator('.rendered').getByText('Main Section');
+	await expect(docHeading).toHaveCount(0);
 
 	// share it: checkbox reflects checked AND the live player sees it via SSE
 	await share.click();
 	await expect(share).toBeChecked();
-	await expect(player.locator('.rendered')).toContainText('Main Section', { timeout: 10000 });
+	await expect(docHeading).toBeVisible({ timeout: 10000 });
 
-	// unshare: checkbox reflects unchecked AND the player hides it
+	// unshare: checkbox reflects unchecked AND the player hides it again
 	await share.click();
 	await expect(share).not.toBeChecked();
-	await expect(player.locator('.rendered')).not.toContainText('Main Section', { timeout: 10000 });
+	await expect(docHeading).toHaveCount(0, { timeout: 10000 });
 
 	await anon.close();
 	await dm.close();

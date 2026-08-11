@@ -98,6 +98,31 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       DM fog / grid / token / layer tools — parity with the player-facing map.
       The stored form stays `::map{id=…}`.
 
+## Design & UX pass
+
+> Goal: make the two surfaces (DM editor + player page) feel trustworthy and
+> easy to read during a live session, without touching the data model.
+
+- [x] **20. `/` slash menu (incl. `/map` at the caret)**
+      Typing `/` opens a small command menu near the caret: **Map** (opens the
+      image picker, uploads, and inserts a full-width map block at the caret),
+      **Heading 1/2/3** (set block type), **Wiki link** (insert `[[Name]]`),
+      **Divider**. The header "Add map" stays too. The inserted map is pushed
+      into the live `data.maps` list before the node mounts so it never shows
+      "[missing map]".
+- [x] **21. Realtime connection indicator**
+      A small status dot in the DM header and on the player page reflecting the
+      SSE EventSource state (live / connecting / offline), so a silent disconnect
+      during a session is visible.
+- [x] **22. Save feedback toast**
+      Auto-dismissing toast on save success / failure (the header text is easy to
+      miss). Conflict keeps its non-dismissing reload banner.
+- [x] **23. Copy player link confirmation**
+      Toast "Player link copied" instead of silent copy.
+- [x] **24. Empty states**
+      New/empty campaign editor shows a writing hint (headings, `/map`, dice,
+      wiki links); player page with nothing shared says so instead of blank.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**

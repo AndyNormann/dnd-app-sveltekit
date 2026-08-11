@@ -12,6 +12,7 @@
 	let html = $state(data.html);
 	let title = $state(data.title);
 	let maps = $state<MapData[]>(data.maps);
+	let connected = $state(false);
 	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
 	let rollLog: RollLog;
@@ -32,6 +33,8 @@
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
+		es.onopen = () => (connected = true);
+		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
 			switch (ev.type) {
@@ -104,14 +107,19 @@
 	</aside>
 	<main>
 		<h1 class="campaign-title">{title}</h1>
-		<RenderedDoc
-			bind:this={doc}
-			{html}
-			campaignId={data.campaignId}
-			{maps}
-			onrender={refreshOutline}
-			onroll={(r) => rollLog?.addRoll(r)}
-		/>
+		<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+		{#if html.trim() === ''}
+			<p class="empty">The DM hasn't shared anything yet. Hang tight!</p>
+		{:else}
+			<RenderedDoc
+				bind:this={doc}
+				{html}
+				campaignId={data.campaignId}
+				{maps}
+				onrender={refreshOutline}
+				onroll={(r) => rollLog?.addRoll(r)}
+			/>
+		{/if}
 	</main>
 </div>
 
@@ -150,6 +158,25 @@
 		margin: 1rem 0 3rem;
 		line-height: 1.6;
 		min-width: 0;
+		position: relative;
+	}
+	.conn {
+		position: absolute;
+		top: 0.75rem;
+		right: 0.75rem;
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 50%;
+		background: #c33;
+	}
+	.conn.on {
+		background: #3a9b45;
+	}
+	.empty {
+		text-align: center;
+		color: var(--ink-soft);
+		font-style: italic;
+		padding: 3rem 1rem;
 	}
 	.campaign-title {
 		margin-top: 0.5rem;

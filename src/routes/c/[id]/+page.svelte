@@ -16,6 +16,14 @@
 	let rev = $state(data.rev);
 	let editingTitle = $state(false);
 	let saveState = $state<'idle' | 'saving' | 'saved' | 'error' | 'conflict'>('idle');
+	let connected = $state(false);
+	let toast = $state<{ msg: string; type: 'ok' | 'err' } | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout>;
+	function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
+		toast = { msg, type };
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => (toast = null), 2600);
+	}
 	let showOutline = $state(true);
 	let sourceMode = $state(false); // false = WYSIWYG, true = raw CodeMirror
 	let editor: Editor | undefined = $state();
@@ -77,10 +85,12 @@
 			if (res.status === 409) {
 				// Another tab/editor saved newer content; refuse to clobber it.
 				saveState = 'conflict';
+				showToast('Out of sync — reload to avoid overwriting', 'err');
 				return;
 			}
 			if (!res.ok) {
 				saveState = 'error';
+				showToast('Save failed', 'err');
 				return;
 			}
 			const { content: canonical, rev: nextRev } = (await res.json()) as {
@@ -93,9 +103,11 @@
 				content = canonical;
 				(sourceMode ? editor : wysiwyg)?.setValue(canonical);
 			}
-			saveState = 'saved';
+			saveState = 'idle';
+			showToast('Saved');
 		} catch {
 			saveState = 'error';
+			showToast('Save failed', 'err');
 		}
 	}
 
@@ -117,6 +129,15 @@
 
 	function playerUrl() {
 		return `${location.origin}/c/${data.campaignId}/play`;
+	}
+
+	async function copyPlayerLink() {
+		try {
+			await navigator.clipboard?.writeText(playerUrl());
+			showToast('Player link copied');
+		} catch {
+			showToast('Could not copy link', 'err');
+		}
 	}
 
 	async function uploadMap(e: Event) {
@@ -154,6 +175,8 @@
 		}
 		// listen for rolls made by players (and co-DM tabs)
 		const es = new EventSource(`/c/${data.campaignId}/events`);
+		es.onopen = () => (connected = true);
+		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
 			if (ev.type === 'roll') rollLog?.addRoll(ev.roll as RollData);
@@ -181,6 +204,11 @@
 
 <header class="bar">
 	<a href="/" class="back">←</a>
+	<span
+		class="conn"
+		class:on={connected}
+		title={connected ? 'Realtime connected' : 'Realtime disconnected'}
+	></span>
 	<button
 		type="button"
 		class="toggle"
@@ -219,10 +247,8 @@
 	{/if}
 	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
 		{#if saveState === 'saving'}Saving…
-		{:else if saveState === 'saved'}Saved
 		{:else if saveState === 'conflict'}Out of sync ·
 			<button type="button" class="reload" onclick={() => location.reload()}>Reload</button>
-		{:else if saveState === 'error'}Save failed
 		{/if}
 	</span>
 	<div class="spacer"></div>
@@ -230,7 +256,7 @@
 		Add map
 		<input type="file" accept="image/*" onchange={uploadMap} hidden />
 	</label>
-	<button onclick={() => navigator.clipboard?.writeText(playerUrl())}>Copy player link</button>
+	<button onclick={copyPlayerLink}>Copy player link</button>
 	<a href={`/c/${data.campaignId}/export`} class="export">Export</a>
 	<a href={`/c/${data.campaignId}/play`} target="_blank" rel="noreferrer">Open player view</a>
 	<form method="POST" action="/logout" class="logout">
@@ -246,6 +272,12 @@
 	{/if}
 	<div class="split">
 		<section class="pane source">
+			{#if content.trim() === '' && !sourceMode}
+				<div class="empty-hint" aria-hidden="true">
+					<h2>Start writing…</h2>
+					<p>Type <code># Heading</code>, roll like <code>2d6+3</code>, link a section with <code>[[Name]]</code>, or press <code>/</code> for a command menu (incl. adding a map).</p>
+				</div>
+			{/if}
 			{#if sourceMode}
 				<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
 			{:else}
@@ -256,12 +288,19 @@
 					isSecret={() => rollLog?.isSecret() ?? false}
 					meta={metaMap}
 					getMaps={() => data.maps}
+					addMap={(m) => {
+						if (!data.maps.some((x: { id: string }) => x.id === m.id)) data.maps = [...data.maps, m];
+					}}
 					onchange={onEdit}
 				/>
 			{/if}
 		</section>
 	</div>
 </div>
+
+{#if toast}
+	<div class="toast" class:err={toast.type === 'err'}>{toast.msg}</div>
+{/if}
 
 <RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
 <Initiative bind:this={initiative} campaignId={data.campaignId} dm initial={data.initiative} initialRound={data.initiativeRound} />
@@ -392,5 +431,67 @@
 	}
 	.source {
 		background: #fdfbf5;
+		position: relative;
+	}
+	.conn {
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 50%;
+		background: #c33;
+		flex: none;
+	}
+	.conn.on {
+		background: #3a9b45;
+	}
+	.empty-hint {
+		position: absolute;
+		inset: 1.5rem auto auto 2rem;
+		max-width: 30rem;
+		color: var(--ink-soft);
+		pointer-events: none;
+		opacity: 0.7;
+	}
+	.empty-hint h2 {
+		font-family: var(--font-display);
+		color: var(--accent-soft);
+		margin: 0 0 0.4rem;
+	}
+	.empty-hint p {
+		margin: 0;
+		font-size: 0.95rem;
+	}
+	.empty-hint code {
+		background: var(--parchment-deep);
+		padding: 0 0.25rem;
+		border-radius: 4px;
+	}
+	.toast {
+		position: fixed;
+		right: 1.25rem;
+		bottom: 1.25rem;
+		z-index: 2000;
+		padding: 0.6rem 1rem;
+		background: var(--parchment-light);
+		border: 1px solid var(--gold);
+		border-left: 4px solid #3a9b45;
+		border-radius: 6px;
+		box-shadow: 0 4px 16px rgba(43, 35, 23, 0.25);
+		font-family: var(--font-body);
+		font-size: 0.95rem;
+		color: var(--ink);
+		animation: toast-in 0.18s ease;
+	}
+	.toast.err {
+		border-left-color: var(--accent);
+	}
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 </style>
