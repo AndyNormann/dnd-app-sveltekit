@@ -404,6 +404,10 @@
 				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
 			</div>
 		{/each}
+		{#if draggingId && dragTemp[draggingId]}
+			{@const d = dragTemp[draggingId]}
+			<div class="snap-hl" style="left:{d.x * CELL}px;top:{d.y * CELL}px"></div>
+		{/if}
 		{#if !dm && draggingId && dragCost != null && dragTemp[draggingId]}
 			{@const d = dragTemp[draggingId]}
 			{@const rem = Math.max(0, budgetCells - usedCells - dragCost)}
@@ -522,6 +526,17 @@
 		background: rgba(255, 255, 255, 0.85);
 		padding: 0 0.2rem;
 		border-radius: 3px;
+	}
+	.snap-hl {
+		position: absolute;
+		z-index: 2;
+		width: 40px;
+		height: 40px;
+		box-sizing: border-box;
+		border: 2px solid var(--gold);
+		background: rgba(212, 175, 55, 0.14);
+		border-radius: 3px;
+		pointer-events: none;
 	}
 	.drag-feedback {
 		position: absolute;
