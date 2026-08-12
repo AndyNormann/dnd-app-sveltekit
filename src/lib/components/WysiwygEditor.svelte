@@ -156,6 +156,13 @@
 	:global(.collapsed-child) {
 		display: none !important;
 	}
+	/* Heading id markers (`<!--id:...-->`) are implementation detail: hide and
+	   make them non-selectable so they never bother the user. The interactive
+	   plugin reads the id from the ProseMirror node model, not the DOM, so this
+	   is safe. Also hides any user-typed HTML comments in WYSIWYG mode. */
+	:global(.mdx-host .ProseMirror span[data-type='html'][data-value^='<!--']) {
+		display: none;
+	}
 	:global(.dnd-slash) {
 		position: fixed;
 		z-index: 1000;
