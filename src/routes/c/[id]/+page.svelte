@@ -60,7 +60,7 @@
 	}
 
 	// debounced save
-	let saveTimer: ReturnType<typeof setTimeout>;
+	let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const outlineItems = $derived(
 		parseHeadings(content).map((h) => ({ id: h.id, level: h.level, text: h.text }))
@@ -101,12 +101,28 @@
 				content = canonical;
 				(sourceMode ? editor : wysiwyg)?.setValue(canonical);
 			}
-			saveState = 'idle';
+			saveState = 'saved';
+			clearTimeout(savedTimer);
+			savedTimer = setTimeout(() => (saveState = 'idle'), 1800);
 			showToast('Saved');
 		} catch {
 			saveState = 'error';
 			showToast('Save failed', 'err');
 		}
+	}
+
+	let savedTimer: ReturnType<typeof setTimeout>;
+
+	// Flush a pending debounced save if the tab is closed mid-debounce, so edits
+	// made in the last ~600ms aren't lost. sendBeacon survives tab close.
+	function flushPendingSave() {
+		if (!saveTimer) return;
+		clearTimeout(saveTimer);
+		saveTimer = undefined;
+		navigator.sendBeacon(
+			`/c/${data.campaignId}/content`,
+			new Blob([JSON.stringify({ content, rev })], { type: 'application/json' })
+		);
 	}
 
 	async function saveTitle() {
@@ -191,7 +207,11 @@
 			else if (ev.type === 'reveal-undone') wysiwyg?.applyRevealRemoved(ev.mapId, ev.opId);
 			else if (ev.type === 'reveals-cleared') wysiwyg?.applyLayerCleared(ev.mapId, ev.layer);
 		};
-		return () => es.close();
+		window.addEventListener('pagehide', flushPendingSave);
+		return () => {
+			es.close();
+			window.removeEventListener('pagehide', flushPendingSave);
+		};
 	});
 </script>
 
@@ -248,6 +268,7 @@
 	</nav>
 	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
 		{#if saveState === 'saving'}Saving…
+		{:else if saveState === 'saved'}Saved ✓
 		{:else if saveState === 'conflict'}Out of sync ·
 			<button type="button" class="reload" onclick={() => location.reload()}>Reload</button>
 		{/if}

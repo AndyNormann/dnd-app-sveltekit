@@ -34,7 +34,7 @@ test('show/hide toggle propagates to a live player via SSE', async ({ browser })
 	await expect(editor).toBeVisible({ timeout: 10000 });
 	await editor.click();
 	await page.keyboard.type('# Main Section');
-	await expect(page.getByText('Saved')).toBeVisible({ timeout: 5000 });
+	await expect(page.locator('.save-state')).toContainText('Saved', { timeout: 5000 });
 
 	const controls = editor.locator('.dm-heading-controls').first();
 	await expect(controls).toBeVisible({ timeout: 5000 });

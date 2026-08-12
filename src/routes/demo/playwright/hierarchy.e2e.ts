@@ -41,7 +41,7 @@ test('show/hide is hierarchical: hiding a heading hides everything below it', as
 	await page.keyboard.press('Enter');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('# Sibling');
-	await expect(page.getByText('Saved')).toBeVisible({ timeout: 5000 });
+	await expect(page.locator('.save-state')).toContainText('Saved', { timeout: 5000 });
 
 	const player = await browser.newPage();
 	await player.goto(`/c/${id}/play`);

@@ -69,10 +69,10 @@ test('combat: HP apply marks a unit down, combat log is live, next skips the dea
 	let entries = await (await request.get(`/c/${id}/initiative`, { headers: dm })).json();
 	const ariaEntry = entries.find((e: any) => e.unit_id === aria.id);
 	await request.post(`/c/${id}/initiative/${ariaEntry.id}`, { headers: dm, data: { action: 'update', active: true } });
-	// advance: should land on a LIVE combatant (goblin), not the downed aria
+	// advance 'next': it must skip the downed aria and land on a LIVE combatant (goblin)
+	await request.post(`/c/${id}/initiative`, { headers: dm, data: { action: 'next' } });
 	const ent1 = await (await request.get(`/c/${id}/initiative`, { headers: dm })).json();
 	const active1 = ent1.find((e: any) => e.active === 1);
-	expect(active1.unit_id).not.toBe(aria.id);
 	expect(active1.unit_id).toBe(goblin.id);
 
 	await pctx.close();

@@ -41,7 +41,7 @@ test('WYSIWYG editor renders interactive markdown, saves, and collapse hides con
 
 	await expect(editor.locator('.dice-dec')).toHaveCount(1);
 	await expect(editor.locator('.wiki-dec')).toHaveCount(1);
-	await expect(page.getByText('Saved')).toBeVisible({ timeout: 5000 });
+	await expect(page.locator('.save-state')).toContainText('Saved', { timeout: 5000 });
 
 	// server injects a heading id -> heading gets its DM controls
 	const controls = editor.locator('.dm-heading-controls');

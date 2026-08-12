@@ -190,6 +190,29 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       rolls, deaths — broadcast via SSE to DM and players, so everyone can
       reconstruct the fight without staring at HP numbers.
 
+## Hardening pass (5 rounds of polish)
+
+> A repeated propose → implement → self-review → commit loop on the current
+> state: UX, design, performance and small features. Each round is one commit.
+
+- [x] **R1. DM editor data-safety + save feedback**
+      Flush a pending debounced save on tab close via `navigator.sendBeacon`
+      (`pagehide`), so edits aren't lost if the tab is closed mid-debounce. Show
+      a transient "Saved ✓" state in the header after a successful save.
+- [ ] **R2. Home dashboard depth**
+      Campaign cards show last-edited time + roll/map counts; a DM auth indicator
+      on the home page ("Logged in as DM" / log in) instead of only logging out
+      from inside a campaign.
+- [ ] **R3. Player live UX**
+      A live "updated just now" stamp on player Notes/Combat that refreshes on
+      any SSE activity, and a "New from the DM" banner when a handout is revealed.
+- [ ] **R4. Combat ergonomics**
+      Space/N advances the turn; Escape/click-away closes the HP popover; the
+      active round + whose-turn readout is more prominent.
+- [ ] **R5. Accessibility + performance**
+      `aria-label`s on icon-only buttons, respect `prefers-reduced-motion` for
+      toast/floating animations, and a visible SSE reconnect state.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**

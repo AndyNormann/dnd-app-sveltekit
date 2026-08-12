@@ -63,7 +63,7 @@ test('slash menu: /map uploads and inserts at caret; menu only at block start', 
 	await expect(page.locator('.dnd-slash')).toBeHidden();
 
 	// the stored markdown carries a ::map{id=...} directive (no literal slash line)
-	await expect(page.getByText('Saved')).toBeVisible({ timeout: 5000 });
+	await expect(page.locator('.save-state')).toContainText('Saved', { timeout: 5000 });
 
 	await anon.close();
 	await dm.close();
