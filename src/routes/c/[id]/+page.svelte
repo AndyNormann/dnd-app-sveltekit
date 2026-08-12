@@ -231,6 +231,7 @@
 		class="toggle"
 		class:on={showOutline}
 		title="Toggle outline (Ctrl+.)"
+		aria-label="Toggle outline"
 		onclick={toggleOutline}>☰</button
 	>
 	<button
@@ -238,6 +239,7 @@
 		class="toggle"
 		class:on={sourceMode}
 		title="Toggle raw markdown source (Ctrl+\)"
+		aria-label="Toggle raw markdown source"
 		onclick={toggleSource}>✎</button
 	>
 	{#if editingTitle}

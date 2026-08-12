@@ -122,6 +122,7 @@
 	<main>
 		<h1 class="campaign-title">{title}</h1>
 		<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+		{#if !connected}<span class="reconnect">Reconnecting…</span>{/if}
 		<LiveStamp at={lastActivity} />
 		{#if banner}<div class="banner">{banner}</div>{/if}
 		{#if html.trim() === ''}
@@ -207,6 +208,14 @@
 	}
 	.conn.on {
 		background: #3a9b45;
+	}
+	.reconnect {
+		position: absolute;
+		top: 0.7rem;
+		right: 2rem;
+		font-size: 0.75rem;
+		color: var(--accent-soft);
+		font-weight: 600;
 	}
 	.banner {
 		position: absolute;

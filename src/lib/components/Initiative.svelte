@@ -87,8 +87,8 @@
 				{@const unit = units.find((u) => u.id === e.unit_id)}
 				<div class="entry" class:active={e.active === 1} class:dead={!!unit && unit.alive === 0}>
 					{#if dm}
-						<button type="button" class="play" title="It's their turn" onclick={() => setActive(e)}>▶</button>
-						<button type="button" class="rm" title="Remove" onclick={() => remove(e)}>✕</button>
+						<button type="button" class="play" title="It's their turn" aria-label="Set active turn" onclick={() => setActive(e)}>▶</button>
+						<button type="button" class="rm" title="Remove" aria-label="Remove" onclick={() => remove(e)}>✕</button>
 					{/if}
 					<span class="nm">{e.name}</span>
 					{#if unit && unit.alive === 0}<span class="down">💀 down</span>{/if}

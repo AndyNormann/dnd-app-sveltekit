@@ -209,7 +209,7 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - [x] **R4. Combat ergonomics**
       Space/N advances the turn; Escape/click-away closes the HP popover; the
       active round + whose-turn readout is more prominent.
-- [ ] **R5. Accessibility + performance**
+- [x] **R5. Accessibility + performance**
       `aria-label`s on icon-only buttons, respect `prefers-reduced-motion` for
       toast/floating animations, and a visible SSE reconnect state.
 

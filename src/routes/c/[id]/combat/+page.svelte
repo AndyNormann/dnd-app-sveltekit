@@ -243,9 +243,9 @@
 						<span class="dot" style="background:{c.color}"></span>
 						<span class="cname">{c.name}</span>
 						<span class="cmeta">{c.player_name ? c.player_name + ' · ' : ''}{c.speed}ft · init {c.init_bonus >= 0 ? '+' : ''}{c.init_bonus} · {c.hp}/{c.max_hp}hp</span>
-						<button type="button" class="tiny" title="Add to board" onclick={() => addPlayerToBoard(c.id)}>⚔</button>
-						<button type="button" class="tiny" title="Copy player link" onclick={() => copyLink(c)}>🔗</button>
-						<button type="button" class="tiny" title="Delete" onclick={() => deleteCharacter(c.id)}>✕</button>
+						<button type="button" class="tiny" title="Add to board" aria-label="Add to board" onclick={() => addPlayerToBoard(c.id)}>⚔</button>
+						<button type="button" class="tiny" title="Copy player link" aria-label="Copy player link" onclick={() => copyLink(c)}>🔗</button>
+						<button type="button" class="tiny" title="Delete" aria-label="Delete" onclick={() => deleteCharacter(c.id)}>✕</button>
 					</li>
 				{/each}
 			</ul>

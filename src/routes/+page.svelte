@@ -94,7 +94,7 @@
 							}}
 						>
 							<input type="hidden" name="id" value={c.id} />
-							<button type="submit" class="delete" title="Delete campaign">✕</button>
+							<button type="submit" class="delete" title="Delete campaign" aria-label="Delete campaign">✕</button>
 						</form>
 					</span>
 				</li>
