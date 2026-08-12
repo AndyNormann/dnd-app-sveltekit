@@ -183,7 +183,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 							headings.push({ pos, node });
 							// visible level marker (always shown, independent of the id marker)
 							decos.push(
-								Decoration.widget(pos, () => makeHeadingHash(level), { side: -1 })
+								Decoration.widget(pos + 1, () => makeHeadingHash(level), { side: 1 })
 							);
 							if (id) {
 								const parentId =
@@ -191,7 +191,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 								headingParents.set(id, parentId);
 								decos.push(
 									Decoration.widget(pos + 1, () => makeHeadingControls(id), {
-										side: 1
+										side: -1
 									})
 								);
 							}
