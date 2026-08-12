@@ -65,6 +65,15 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		return anyShared;
 	}
 
+	/** A visible `#`/`##`/`###`… prefix so the DM can see a heading's level at a glance. */
+	function makeHeadingHash(level: number): HTMLElement {
+		const dom = document.createElement('span');
+		dom.className = 'dhc-hash';
+		dom.contentEditable = 'false';
+		dom.textContent = '#'.repeat(level) + ' ';
+		return dom;
+	}
+
 	function makeHeadingControls(id: string): HTMLElement {
 		const dom = document.createElement('span');
 		dom.className = 'dm-heading-controls';
@@ -172,6 +181,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 							const parentIdx = stack.length ? stack[stack.length - 1] : null;
 							const id = headingId(node);
 							headings.push({ pos, node });
+							// visible level marker (always shown, independent of the id marker)
+							decos.push(
+								Decoration.widget(pos, () => makeHeadingHash(level), { side: -1 })
+							);
 							if (id) {
 								const parentId =
 									parentIdx !== null ? headingId(headings[parentIdx].node) : null;
