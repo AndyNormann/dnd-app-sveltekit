@@ -111,6 +111,16 @@
 		align-items: center;
 		margin-right: 0.5rem;
 		vertical-align: middle;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+	}
+	:global(.mdx-host .ProseMirror h1:hover .dm-heading-controls),
+	:global(.mdx-host .ProseMirror h2:hover .dm-heading-controls),
+	:global(.mdx-host .ProseMirror h3:hover .dm-heading-controls),
+	:global(.mdx-host .ProseMirror h4:hover .dm-heading-controls),
+	:global(.mdx-host .ProseMirror h5:hover .dm-heading-controls),
+	:global(.mdx-host .ProseMirror h6:hover .dm-heading-controls) {
+		opacity: 1;
 	}
 	:global(.dm-heading-controls button) {
 		border: 0;
