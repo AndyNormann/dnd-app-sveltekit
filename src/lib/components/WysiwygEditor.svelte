@@ -85,7 +85,7 @@
 	:global(.mdx-host .ProseMirror) {
 		min-height: 100%;
 		outline: none;
-		padding: 1rem 1.75rem 30vh;
+		padding: 1rem 1.75rem 30vh 3rem;
 		font-family: var(--font-body);
 		font-size: 1.08rem;
 		line-height: 1.55;
@@ -127,7 +127,16 @@
 		background: none;
 		cursor: pointer;
 		padding: 0;
-		font-size: 0.8em;
+		/* fixed control size, independent of the heading font size */
+		width: 1.5rem;
+		height: 1.5rem;
+		font-size: 1rem;
+		line-height: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		vertical-align: middle;
 	}
 	:global(.dm-heading-controls .dhc-collapse) {
 		color: #6b7280;
@@ -136,9 +145,6 @@
 		border: 1px solid var(--gold);
 		background: var(--parchment-deep);
 		border-radius: 4px;
-		font-size: 0.8em;
-		padding: 0 0.25rem;
-		line-height: 1;
 	}
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);
