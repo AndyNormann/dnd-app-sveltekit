@@ -65,14 +65,12 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		return anyShared;
 	}
 
-	function makeHeadingControls(id: string, depth: number): HTMLElement {
+	function makeHeadingControls(id: string): HTMLElement {
 		const dom = document.createElement('span');
 		dom.className = 'dm-heading-controls';
 		dom.contentEditable = 'false';
-		// the heading is indented by (depth-1)*1.5rem; compensate so the widget stays
 		// pinned in the fixed left gutter (ProseMirror padding-left = 4rem, inset 0.4rem)
-		const indent = (depth - 1) * 1.5;
-		dom.style.left = `calc(-4rem + 0.4rem - ${indent}rem)`;
+		dom.style.left = `calc(-4rem + 0.4rem)`;
 
 		const st = () => meta.get(id) ?? { shared: 0, collapsed: false };
 
@@ -176,7 +174,6 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 							) {
 								stack.pop();
 							}
-							const depth = stack.length + 1;
 							const parentIdx = stack.length ? stack[stack.length - 1] : null;
 							const id = headingId(node);
 							headings.push({ pos, node });
@@ -184,18 +181,9 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 								const parentId =
 									parentIdx !== null ? headingId(headings[parentIdx].node) : null;
 								headingParents.set(id, parentId);
-								// depth indentation: nest each heading under its parent
-								const indent = (depth - 1) * 1.5;
-								if (indent > 0) {
-									decos.push(
-										Decoration.node(pos, pos + node.nodeSize, {
-											style: `margin-left: ${indent}rem`
-										})
-									);
-								}
 								// controls at the START of the heading, in the gutter
 								decos.push(
-									Decoration.widget(pos + 1, () => makeHeadingControls(id, depth), {
+									Decoration.widget(pos + 1, () => makeHeadingControls(id), {
 										side: -1
 									})
 								);
