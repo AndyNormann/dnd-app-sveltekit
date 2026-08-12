@@ -65,12 +65,22 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		return anyShared;
 	}
 
-	function makeHeadingControls(id: string): HTMLElement {
+	function makeHeadingControls(id: string, level: number, depth: number): HTMLElement {
 		const dom = document.createElement('span');
 		dom.className = 'dm-heading-controls';
 		dom.contentEditable = 'false';
+		// the heading is indented by (depth-1)*1.5rem; compensate so the widget stays
+		// pinned in the fixed left gutter (ProseMirror padding-left = 5.5rem, inset 0.4rem)
+		const indent = (depth - 1) * 1.5;
+		dom.style.left = `calc(-5.5rem + 0.4rem - ${indent}rem)`;
 
 		const st = () => meta.get(id) ?? { shared: 0, collapsed: false };
+
+		// permanent, always-visible level marker (the scannable gutter column)
+		const lvl = document.createElement('span');
+		lvl.className = 'dhc-level';
+		lvl.textContent = '#'.repeat(Math.max(1, Math.min(6, level)));
+		lvl.title = `Heading level ${level}`;
 
 		const collapse = document.createElement('button');
 		collapse.type = 'button';
@@ -124,7 +134,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 			currentView?.dispatch(currentView.state.tr);
 		};
 
-		dom.append(collapse, vis);
+		const btns = document.createElement('span');
+		btns.className = 'dhc-btns';
+		btns.append(collapse, vis);
+		dom.append(lvl, btns);
 		return dom;
 	}
 
@@ -169,6 +182,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 							) {
 								stack.pop();
 							}
+							const depth = stack.length + 1;
 							const parentIdx = stack.length ? stack[stack.length - 1] : null;
 							const id = headingId(node);
 							headings.push({ pos, node });
@@ -176,9 +190,18 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 								const parentId =
 									parentIdx !== null ? headingId(headings[parentIdx].node) : null;
 								headingParents.set(id, parentId);
-								// controls at the START of the heading, before the `#` (`▾👁 # Heading`)
+								// depth indentation: nest each heading under its parent
+								const indent = (depth - 1) * 1.5;
+								if (indent > 0) {
+									decos.push(
+										Decoration.node(pos, pos + node.nodeSize, {
+											style: `margin-left: ${indent}rem`
+										})
+									);
+								}
+								// controls + permanent level marker at the START of the heading, in the gutter
 								decos.push(
-									Decoration.widget(pos + 1, () => makeHeadingControls(id), {
+									Decoration.widget(pos + 1, () => makeHeadingControls(id, level, depth), {
 										side: -1
 									})
 								);

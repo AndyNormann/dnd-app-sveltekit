@@ -85,7 +85,7 @@
 	:global(.mdx-host .ProseMirror) {
 		min-height: 100%;
 		outline: none;
-		padding: 1rem 1.75rem 30vh 3rem;
+		padding: 1rem 1.75rem 30vh 5.5rem;
 		font-family: var(--font-body);
 		font-size: 1.08rem;
 		line-height: 1.55;
@@ -126,22 +126,33 @@
 	}
 	:global(.dm-heading-controls) {
 		position: absolute;
-		/* pull the controls into the left gutter so they don't shift the heading line */
-		left: calc(-3rem + 0.4rem);
+		/* left is set inline per heading (depth compensation); this centers vertically */
 		top: 50%;
 		transform: translateY(-50%);
+		display: inline-flex;
+		gap: 0.3rem;
+		align-items: center;
+		white-space: nowrap;
+	}
+	:global(.dm-heading-controls .dhc-level) {
+		color: #a1a1aa;
+		font-size: 0.72rem;
+		line-height: 1;
+		user-select: none;
+	}
+	:global(.dm-heading-controls .dhc-btns) {
 		display: inline-flex;
 		gap: 0.25rem;
 		align-items: center;
 		opacity: 0;
 		transition: opacity 0.15s ease;
 	}
-	:global(.mdx-host .ProseMirror h1:hover .dm-heading-controls),
-	:global(.mdx-host .ProseMirror h2:hover .dm-heading-controls),
-	:global(.mdx-host .ProseMirror h3:hover .dm-heading-controls),
-	:global(.mdx-host .ProseMirror h4:hover .dm-heading-controls),
-	:global(.mdx-host .ProseMirror h5:hover .dm-heading-controls),
-	:global(.mdx-host .ProseMirror h6:hover .dm-heading-controls) {
+	:global(.mdx-host .ProseMirror h1:hover .dm-heading-controls .dhc-btns),
+	:global(.mdx-host .ProseMirror h2:hover .dm-heading-controls .dhc-btns),
+	:global(.mdx-host .ProseMirror h3:hover .dm-heading-controls .dhc-btns),
+	:global(.mdx-host .ProseMirror h4:hover .dm-heading-controls .dhc-btns),
+	:global(.mdx-host .ProseMirror h5:hover .dm-heading-controls .dhc-btns),
+	:global(.mdx-host .ProseMirror h6:hover .dm-heading-controls .dhc-btns) {
 		opacity: 1;
 	}
 	:global(.dm-heading-controls button) {
@@ -150,9 +161,9 @@
 		cursor: pointer;
 		padding: 0;
 		/* fixed control size, independent of the heading font size */
-		width: 1.25rem;
-		height: 1.25rem;
-		font-size: 0.9rem;
+		width: 1.15rem;
+		height: 1.15rem;
+		font-size: 0.85rem;
 		line-height: 1;
 		display: inline-flex;
 		align-items: center;

@@ -28,13 +28,14 @@ test('heading controls are hidden until the heading is hovered', async ({ browse
 
 	const h1 = dm.page.locator('.mdx-host .ProseMirror h1').first();
 	await h1.scrollIntoViewIfNeeded();
-	const hidden = await dm.page.locator('.dm-heading-controls').first().evaluate((el) => getComputedStyle(el).opacity);
+	const btns = dm.page.locator('.dm-heading-controls .dhc-btns').first();
+	const hidden = await btns.evaluate((el) => getComputedStyle(el).opacity);
 	console.log('HOVPROBE hidden', hidden);
 	expect(Number(hidden)).toBe(0);
 
 	await h1.hover();
 	await dm.page.waitForTimeout(250);
-	const shown = await dm.page.locator('.dm-heading-controls').first().evaluate((el) => getComputedStyle(el).opacity);
+	const shown = await btns.evaluate((el) => getComputedStyle(el).opacity);
 	console.log('HOVPROBE shown', shown);
 	expect(Number(shown)).toBe(1);
 });
