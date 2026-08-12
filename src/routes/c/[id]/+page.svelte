@@ -458,6 +458,7 @@
 		overflow: auto;
 		height: 100%;
 		min-width: 0;
+		padding-bottom: 32vh;
 	}
 	.source {
 		background: #fdfbf5;

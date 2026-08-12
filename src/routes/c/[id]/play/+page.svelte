@@ -191,7 +191,7 @@
 		border-left: 1px solid var(--rule);
 		border-right: 1px solid var(--rule);
 		box-shadow: 0 0 18px rgba(43, 35, 23, 0.1);
-		padding: 1.5rem 2.5rem 4rem;
+		padding: 1.5rem 2.5rem 32vh;
 		margin: 1rem 0 3rem;
 		line-height: 1.6;
 		min-width: 0;
