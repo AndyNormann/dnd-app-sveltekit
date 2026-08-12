@@ -123,6 +123,22 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       New/empty campaign editor shows a writing hint (headings, `/map`, dice,
       wiki links); player page with nothing shared says so instead of blank.
 
+## Notes + Combat pages (layout restructure)
+
+> Each campaign gets two views: **Notes** (the editor / reading surface) and
+> **Combat** (initiative + combat tools). Rolls stop floating over text.
+
+- [x] **25. Rolls → right sidebar**
+      Convert the floating RollLog panel into an in-flow right sidebar on the
+      Notes page (outline | content | rolls), so it never covers the text.
+- [x] **26. Combat page for initiative**
+      Move the Initiative tracker off the floating panel into its own full page:
+      DM `/c/[id]/combat` and player `/c/[id]/play/combat` (both live via SSE).
+      Remove it from the Notes pages.
+- [x] **27. Notes/Combat tab navigation**
+      A Notes | Combat tab bar on both the DM and player pages, so the two
+      surfaces of a campaign are one click apart.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**

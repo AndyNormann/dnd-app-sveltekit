@@ -101,33 +101,30 @@
 
 <style>
 	.initiative {
-		position: fixed;
-		bottom: 1rem;
-		left: 1rem;
-		width: 17rem;
+		width: 100%;
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
 		border-top: 3px solid var(--gold);
 		border-radius: 8px;
-		box-shadow: 0 4px 14px rgba(43, 35, 23, 0.2);
+		box-shadow: 0 4px 14px rgba(43, 35, 23, 0.12);
 		font-family: system-ui, sans-serif;
-		font-size: 0.85rem;
-		z-index: 50;
+		font-size: 0.9rem;
 		color: var(--ink);
 	}
 	.header {
 		width: 100%;
 		text-align: left;
-		padding: 0.5rem 0.75rem;
+		padding: 0.6rem 0.85rem;
 		border: 0;
 		background: none;
 		font-family: var(--font-display);
 		font-weight: 600;
+		font-size: 1.05rem;
 		color: var(--accent);
 		cursor: pointer;
 	}
 	.list {
-		max-height: 14rem;
+		max-height: none;
 		overflow-y: auto;
 		padding: 0 0.5rem;
 	}

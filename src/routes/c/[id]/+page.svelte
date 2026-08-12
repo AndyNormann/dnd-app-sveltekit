@@ -3,7 +3,6 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import WysiwygEditor from '$lib/components/WysiwygEditor.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
-	import Initiative from '$lib/components/Initiative.svelte';
 	import Outline from '$lib/components/Outline.svelte';
 	import { parseHeadings } from '$lib/markdown';
 	import type { RollData } from '$lib/types';
@@ -29,7 +28,6 @@
 	let editor: Editor | undefined = $state();
 	let wysiwyg: WysiwygEditor | undefined = $state();
 	let rollLog: RollLog;
-	let initiative: Initiative;
 	const uiKey = `dnd-ui-${data.campaignId}`;
 
 	// shared heading meta for the WYSIWYG heading controls (mutated in place)
@@ -187,8 +185,7 @@
 				wysiwyg?.applyState(ev.maps, ev.tokens);
 			} else if (ev.type === 'map-added') {
 				if (!data.maps.some((m: { id: string }) => m.id === ev.map.id)) data.maps = [...data.maps, ev.map];
-			} else if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries, ev.round);
-			else if (ev.type === 'tokens-updated') wysiwyg?.applyTokens(ev.mapId, ev.tokens);
+			} else if (ev.type === 'tokens-updated') wysiwyg?.applyTokens(ev.mapId, ev.tokens);
 			else if (ev.type === 'grid-updated') wysiwyg?.applyGrid(ev.mapId, ev.grid_size);
 			else if (ev.type === 'layer-changed') wysiwyg?.applyLayer(ev.mapId, ev.layer);
 			else if (ev.type === 'reveal-undone') wysiwyg?.applyRevealRemoved(ev.mapId, ev.opId);
@@ -245,6 +242,10 @@
 			</button>
 		</h1>
 	{/if}
+	<nav class="tabs">
+		<a href={`/c/${data.campaignId}`} class="tab" class:active={true}>Notes</a>
+		<a href={`/c/${data.campaignId}/combat`} class="tab">Combat</a>
+	</nav>
 	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
 		{#if saveState === 'saving'}Saving…
 		{:else if saveState === 'conflict'}Out of sync ·
@@ -296,14 +297,14 @@
 			{/if}
 		</section>
 	</div>
+	<aside class="rail rolls">
+		<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
+	</aside>
 </div>
 
 {#if toast}
 	<div class="toast" class:err={toast.type === 'err'}>{toast.msg}</div>
 {/if}
-
-<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
-<Initiative bind:this={initiative} campaignId={data.campaignId} dm initial={data.initiative} initialRound={data.initiativeRound} />
 
 <style>
 	.bar {
@@ -407,17 +408,23 @@
 	}
 	.layout {
 		display: grid;
-		grid-template-columns: 13rem 1fr;
+		grid-template-columns: 13rem 1fr 19rem;
 		height: calc(100vh - 3.3rem);
 	}
 	.layout.no-rail {
-		grid-template-columns: 1fr;
+		grid-template-columns: 1fr 19rem;
 	}
 	.rail {
 		border-right: 1px solid var(--rule);
 		background: var(--parchment);
 		overflow-y: auto;
 		padding: 0.25rem;
+	}
+	.rail.rolls {
+		border-right: 0;
+		border-left: 1px solid var(--rule);
+		padding: 0;
+		overflow: hidden;
 	}
 	.split {
 		display: grid;
@@ -493,5 +500,24 @@
 			opacity: 1;
 			transform: none;
 		}
+	}
+	.tabs {
+		display: inline-flex;
+		gap: 0.25rem;
+		margin-left: 0.5rem;
+	}
+	.tab {
+		text-decoration: none;
+		font-size: 0.85rem;
+		padding: 0.35rem 0.7rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		color: var(--ink-soft);
+		background: var(--parchment-light);
+	}
+	.tab.active {
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
 	}
 </style>

@@ -143,19 +143,15 @@
 
 <style>
 	.roll-log {
-		position: fixed;
-		bottom: 1rem;
-		right: 1rem;
-		width: 18rem;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 		background: var(--parchment-light);
-		border: 1px solid var(--rule);
 		border-top: 3px solid var(--gold);
-		border-radius: 8px;
-		box-shadow: 0 4px 14px rgba(43, 35, 23, 0.2);
 		font-family: system-ui, sans-serif;
 		font-size: 0.85rem;
-		z-index: 50;
 		color: var(--ink);
+		overflow: hidden;
 	}
 	.header {
 		width: 100%;
@@ -176,8 +172,9 @@
 		height: 1.1rem;
 	}
 	.list {
-		max-height: 14rem;
+		flex: 1;
 		overflow-y: auto;
+		max-height: none;
 		padding: 0 0.75rem;
 	}
 	.empty {

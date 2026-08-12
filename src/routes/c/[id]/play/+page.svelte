@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
-	import Initiative from '$lib/components/Initiative.svelte';
 	import Outline from '$lib/components/Outline.svelte';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp, RollData } from '$lib/types';
@@ -16,7 +15,6 @@
 	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
 	let rollLog: RollLog;
-	let initiative: Initiative;
 
 	function refreshOutline(container: HTMLElement) {
 		const sel = 'h1,h2,h3,h4,h5,h6';
@@ -68,9 +66,6 @@
 				case 'roll':
 					rollLog?.addRoll(ev.roll as RollData);
 					break;
-				case 'initiative-updated':
-					initiative?.applyEntries(ev.entries, ev.round);
-					break;
 				case 'reveal-undone':
 					doc?.applyRevealRemoved(ev.mapId, ev.opId);
 					break;
@@ -101,6 +96,11 @@
 
 <svelte:head><title>{title}</title></svelte:head>
 
+<nav class="tabs">
+	<a href={`/c/${data.campaignId}/play`} class="tab" class:active={true}>Notes</a>
+	<a href={`/c/${data.campaignId}/play/combat`} class="tab">Combat</a>
+</nav>
+
 <div class="page">
 	<aside class="rail">
 		<Outline items={outlineItems} />
@@ -121,20 +121,35 @@
 			/>
 		{/if}
 	</main>
+	<aside class="rail rolls">
+		<RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
+	</aside>
 </div>
 
-<RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
-<Initiative
-	bind:this={initiative}
-	campaignId={data.campaignId}
-	initial={data.initiative}
-	initialRound={data.initiativeRound}
-/>
-
 <style>
+	.tabs {
+		display: flex;
+		justify-content: center;
+		gap: 0.25rem;
+		padding: 0.75rem 0 0;
+	}
+	.tab {
+		text-decoration: none;
+		font-size: 0.85rem;
+		padding: 0.4rem 1rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		color: var(--ink-soft);
+		background: var(--parchment-light);
+	}
+	.tab.active {
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
+	}
 	.page {
 		display: grid;
-		grid-template-columns: 12rem minmax(0, 50rem);
+		grid-template-columns: 12rem minmax(0, 50rem) 18rem;
 		justify-content: center;
 		gap: 1.25rem;
 		font-family: var(--font-body);
@@ -147,6 +162,11 @@
 		max-height: calc(100vh - 2rem);
 		overflow-y: auto;
 		padding-top: 1.5rem;
+	}
+	.rail.rolls {
+		overflow: hidden;
+		padding-top: 0;
+		border-left: 1px solid var(--rule);
 	}
 	main {
 		--page-bg: var(--parchment-light);
@@ -193,6 +213,9 @@
 			grid-template-columns: 1fr;
 		}
 		.rail {
+			display: none;
+		}
+		.rail.rolls {
 			display: none;
 		}
 		main {
