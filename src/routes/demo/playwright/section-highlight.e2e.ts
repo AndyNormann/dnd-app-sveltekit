@@ -62,4 +62,21 @@ test('hovering anywhere in a section highlights that whole section', async ({ br
 		.first()
 		.evaluate((el) => getComputedStyle(el).backgroundColor);
 	expect(bg).toMatch(/rgba?\(/);
+
+	// caret placement should also highlight the section (not just mouse hover)
+	await pm.locator('text=Para B.').click();
+	await dm.page.waitForTimeout(250);
+	expect(await hl()).toBe(2);
+
+	// highlighting must not shift the layout: an un-highlighted paragraph keeps its
+	// vertical position while a different section is hovered
+	await pm.locator('h1').first().hover();
+	await dm.page.waitForTimeout(250);
+	const sb = await pm.locator('text=Sub body').boundingBox();
+	expect(sb).toBeTruthy();
+	await pm.locator('text=Para A.').hover();
+	await dm.page.waitForTimeout(250);
+	const sb2 = await pm.locator('text=Sub body').boundingBox();
+	expect(sb2).toBeTruthy();
+	expect(sb!.y).toBeCloseTo(sb2!.y, 1);
 });

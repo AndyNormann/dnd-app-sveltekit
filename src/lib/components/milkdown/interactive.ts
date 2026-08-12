@@ -242,13 +242,22 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 							}
 						});
 					}
-					// section highlight: when hovering a heading, tint the heading and every
-					// block below it up to the next heading of <= level, so the section reads
-					// as one unit.
-					if (hoveredPos !== null) {
-						const hi = headings.findIndex(
-							(h) => h.pos === hoveredPos || h.pos + 1 === hoveredPos
-						);
+					// section highlight: when the caret sits in a section (or the mouse hovers it),
+					// tint the heading and every block below it up to the next heading of <= level,
+					// so the section reads as one unit.
+					let caretHeading: number | null = null;
+					const sel = state.selection;
+					if (sel) {
+						const p = sel.$from.pos;
+						for (const si of sectionIndex) {
+							if (si.pos <= p) caretHeading = si.pos;
+							else break;
+						}
+					}
+					// mouse hover wins transiently while present; otherwise the caret's section shows
+					const target = hoveredPos ?? caretHeading;
+					if (target !== null) {
+						const hi = headings.findIndex((h) => h.pos === target);
 						if (hi >= 0) {
 							const { pos, node } = headings[hi];
 							const level = node.attrs.level as number;
