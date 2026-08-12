@@ -91,6 +91,13 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	});
 	expect(ownMove.status()).toBe(200);
 
+	// player cannot exceed the remaining budget (server-enforced): Aria moved 2 cells,
+	// so a big leap must be rejected with 409
+	const over = await playerCtx.request.post(`/c/${id}/combat/units/${playerUnit}`, {
+		data: { action: 'move', x: 2, y: 3 }
+	});
+	expect(over.status()).toBe(409);
+
 	// DM can move any token freely
 	const dmMove = await dm.request.post(`/c/${id}/combat/units/${playerUnit}`, {
 		data: { action: 'move', x: 2, y: 2 }

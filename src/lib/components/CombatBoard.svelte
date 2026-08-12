@@ -40,7 +40,9 @@
 	let measureEnd: [number, number] | null = null;
 
 	let draggingId: string | null = null;
-	let dragTemp: Record<string, { x: number; y: number }> = {};
+	let dragTemp = $state<Record<string, { x: number; y: number }>>({});
+	let dragStart = $state<{ x: number; y: number } | null>(null);
+	let dragCost = $state<number | null>(null);
 	let activeId = $state<string | null>(activeUnitId);
 
 	const myUnit = $derived(units.find((u) => u.character_id === characterId) ?? null);
@@ -227,25 +229,63 @@
 				}
 				draggingId = u.id;
 			}
+			dragStart = { x: u.x, y: u.y };
+			dragCost = null;
 			errorMsg = '';
 			window.addEventListener('mousemove', onDragMove);
 			window.addEventListener('mouseup', onDragEnd);
 		};
 	}
 
+	function clampToBudget(
+		target: { x: number; y: number },
+		origin: { x: number; y: number },
+		steps: number
+	): { x: number; y: number } {
+		let tx = origin.x;
+		let ty = origin.y;
+		const cx = Math.sign(target.x - origin.x);
+		const cy = Math.sign(target.y - origin.y);
+		for (let i = 0; i < steps; i++) {
+			const rx = Math.abs(target.x - tx);
+			const ry = Math.abs(target.y - ty);
+			if (rx === 0 && ry === 0) break;
+			if (rx >= ry) {
+				if (rx !== 0) tx += cx;
+				else if (ry !== 0) ty += cy;
+			} else {
+				if (ry !== 0) ty += cy;
+				else if (rx !== 0) tx += cx;
+			}
+		}
+		return {
+			x: Math.max(0, Math.min(config.grid_cols - 1, tx)),
+			y: Math.max(0, Math.min(config.grid_rows - 1, ty))
+		};
+	}
+
 	function onDragMove(e: MouseEvent) {
-		if (!draggingId) return;
+		if (!draggingId || !dragStart) return;
 		const [cx, cy] = toCell(e);
-		const cell = {
+		let cell = {
 			x: Math.max(0, Math.min(config.grid_cols - 1, Math.round(cx))),
 			y: Math.max(0, Math.min(config.grid_rows - 1, Math.round(cy)))
 		};
+		if (!dm) {
+			// player: clamp to the speed budget and report cost/remaining live
+			const allowed = Math.max(0, budgetCells - usedCells);
+			const cost = Math.abs(cell.x - dragStart.x) + Math.abs(cell.y - dragStart.y);
+			if (cost > allowed) cell = clampToBudget(cell, dragStart, allowed);
+			dragCost = Math.abs(cell.x - dragStart.x) + Math.abs(cell.y - dragStart.y);
+		}
 		dragTemp = { ...dragTemp, [draggingId]: cell };
 	}
 
 	async function onDragEnd() {
 		const id = draggingId;
 		draggingId = null;
+		dragStart = null;
+		dragCost = null;
 		window.removeEventListener('mousemove', onDragMove);
 		window.removeEventListener('mouseup', onDragEnd);
 		if (id === null) return;
@@ -344,6 +384,13 @@
 				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
 			</div>
 		{/each}
+		{#if !dm && draggingId && dragCost != null && dragTemp[draggingId]}
+			{@const d = dragTemp[draggingId]}
+			{@const rem = Math.max(0, budgetCells - usedCells - dragCost)}
+			<div class="drag-feedback" style="left:{d.x * CELL + 4}px;top:{d.y * CELL + 40}px">
+				−{dragCost} cell{dragCost === 1 ? '' : 's'} · {rem} left
+			</div>
+		{/if}
 	</div>
 
 	{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
@@ -455,6 +502,19 @@
 		background: rgba(255, 255, 255, 0.85);
 		padding: 0 0.2rem;
 		border-radius: 3px;
+	}
+	.drag-feedback {
+		position: absolute;
+		z-index: 4;
+		padding: 0.15rem 0.4rem;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 4px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		white-space: nowrap;
+		pointer-events: none;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 	}
 	.error {
 		color: var(--accent-soft);
