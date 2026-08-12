@@ -42,6 +42,7 @@
 	let draggingId: string | null = null;
 	let dragTemp = $state<Record<string, { x: number; y: number }>>({});
 	let dragStart = $state<{ x: number; y: number } | null>(null);
+	let grabOffset = $state<{ x: number; y: number } | null>(null);
 	let dragCost = $state<number | null>(null);
 	let activeId = $state<string | null>(activeUnitId);
 
@@ -230,8 +231,15 @@
 				draggingId = u.id;
 			}
 			dragStart = { x: u.x, y: u.y };
+			const r = boardEl?.getBoundingClientRect();
+			grabOffset = {
+				x: e.clientX - (r?.left ?? 0) - u.x * CELL,
+				y: e.clientY - (r?.top ?? 0) - u.y * CELL
+			};
 			dragCost = null;
 			errorMsg = '';
+			// keep the token exactly where it is when grabbed (no jump), then snap as it moves
+			dragTemp = { ...dragTemp, [u.id]: { x: u.x, y: u.y } };
 			window.addEventListener('mousemove', onDragMove);
 			window.addEventListener('mouseup', onDragEnd);
 		};
@@ -264,19 +272,25 @@
 		};
 	}
 
+	function manhattan(a: { x: number; y: number }, b: { x: number; y: number }) {
+		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+	}
+
 	function onDragMove(e: MouseEvent) {
-		if (!draggingId || !dragStart) return;
-		const [cx, cy] = toCell(e);
+		if (!draggingId || !dragStart || !grabOffset) return;
+		const r = boardEl?.getBoundingClientRect();
+		const tx = (e.clientX - (r?.left ?? 0)) - grabOffset.x;
+		const ty = (e.clientY - (r?.top ?? 0)) - grabOffset.y;
 		let cell = {
-			x: Math.max(0, Math.min(config.grid_cols - 1, Math.round(cx))),
-			y: Math.max(0, Math.min(config.grid_rows - 1, Math.round(cy)))
+			x: Math.max(0, Math.min(config.grid_cols - 1, Math.round(tx / CELL))),
+			y: Math.max(0, Math.min(config.grid_rows - 1, Math.round(ty / CELL)))
 		};
 		if (!dm) {
 			// player: clamp to the speed budget and report cost/remaining live
 			const allowed = Math.max(0, budgetCells - usedCells);
-			const cost = Math.abs(cell.x - dragStart.x) + Math.abs(cell.y - dragStart.y);
+			const cost = manhattan(cell, dragStart);
 			if (cost > allowed) cell = clampToBudget(cell, dragStart, allowed);
-			dragCost = Math.abs(cell.x - dragStart.x) + Math.abs(cell.y - dragStart.y);
+			dragCost = manhattan(cell, dragStart);
 		}
 		dragTemp = { ...dragTemp, [draggingId]: cell };
 	}
@@ -285,6 +299,7 @@
 		const id = draggingId;
 		draggingId = null;
 		dragStart = null;
+		grabOffset = null;
 		dragCost = null;
 		window.removeEventListener('mousemove', onDragMove);
 		window.removeEventListener('mouseup', onDragEnd);
@@ -300,7 +315,7 @@
 			return;
 		}
 		if (!dm) {
-			const cost = Math.abs(cell.x - unit.x) + Math.abs(cell.y - unit.y);
+			const cost = manhattan(cell, unit);
 			if (usedCells + cost > budgetCells) {
 				errorMsg = `Movement limit reached (max ${budgetCells} cells this turn)`;
 				dragTemp = {};
@@ -319,6 +334,11 @@
 			else errorMsg = 'Move failed';
 			dragTemp = {};
 		} else {
+			// keep the local budget accurate even if the SSE config broadcast hasn't landed yet
+			const body = (await res.json().catch(() => ({}))) as { used?: number };
+			if (typeof body.used === 'number') {
+				config = { ...config, combat_movement_used: body.used };
+			}
 			dragTemp = {};
 		}
 	}

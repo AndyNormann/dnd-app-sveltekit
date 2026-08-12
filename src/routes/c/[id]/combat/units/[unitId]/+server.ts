@@ -61,16 +61,20 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		const cfg = getBoardConfig(params.id);
 		if (nx >= cfg.grid_cols || ny >= cfg.grid_rows) throw error(400, 'Out of bounds');
 
-		if (dm) {
-			// DM may move anything freely
+		// A valid player cookie for THIS unit means the actor is that player (even if a
+		// DM session is also present in the same browser), so the movement budget applies.
+		const me = playerCharacter(cookies);
+		const isPlayerForUnit = !!(me && me.id === unit.character_id && unit.kind === 'player');
+
+		if (dm && !isPlayerForUnit) {
+			// DM may move anything freely (no player identity acting for this unit)
 			updateCombatUnit(unit.id, { x: nx, y: ny });
 			broadcastUnits(params.id);
 			return json({ ok: true });
 		}
 
 		// player move: own character, active turn, within speed budget
-		const me = playerCharacter(cookies);
-		if (!me || me.id !== unit.character_id || unit.kind !== 'player') {
+		if (!isPlayerForUnit) {
 			throw error(401, 'Not your character');
 		}
 		if (getActiveUnitId(params.id) !== unit.id) throw error(401, 'Not your turn');
@@ -79,10 +83,11 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		const used = getMovementUsed(params.id);
 		if (used + cost > budget) throw error(409, 'Movement limit reached');
 		updateCombatUnit(unit.id, { x: nx, y: ny });
-		setMovementUsed(params.id, used + cost);
+		const newUsed = used + cost;
+		setMovementUsed(params.id, newUsed);
 		broadcastUnits(params.id);
 		broadcast(params.id, { type: 'board-config-updated', config: getBoardConfig(params.id) });
-		return json({ ok: true });
+		return json({ ok: true, used: newUsed, budget });
 	}
 
 	throw error(400, 'Unknown action');
