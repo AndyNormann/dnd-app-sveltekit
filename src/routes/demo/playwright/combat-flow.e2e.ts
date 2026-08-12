@@ -72,10 +72,10 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	await expect(dm.page.locator('.order .initiative .entry').first()).toBeVisible({ timeout: 10000 });
 
 	// advance turns until Aria is active (deterministic movement test)
-	const activeUnit = await activeUnitId(dm.request, id);
 	const playerUnit = await playerUnitId(dm.request, id);
 	let guard = 0;
-	while (activeUnit !== playerUnit && guard++ < 20) {
+	while (guard++ < 20) {
+		if ((await activeUnitId(dm.request, id)) === playerUnit) break;
 		await dm.request.post(`/c/${id}/initiative`, { data: { action: 'next' } });
 	}
 	// enemy token move as the player must be rejected
