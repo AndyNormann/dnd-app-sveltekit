@@ -65,22 +65,16 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		return anyShared;
 	}
 
-	function makeHeadingControls(id: string, level: number, depth: number): HTMLElement {
+	function makeHeadingControls(id: string, depth: number): HTMLElement {
 		const dom = document.createElement('span');
 		dom.className = 'dm-heading-controls';
 		dom.contentEditable = 'false';
 		// the heading is indented by (depth-1)*1.5rem; compensate so the widget stays
-		// pinned in the fixed left gutter (ProseMirror padding-left = 5.5rem, inset 0.4rem)
+		// pinned in the fixed left gutter (ProseMirror padding-left = 4rem, inset 0.4rem)
 		const indent = (depth - 1) * 1.5;
-		dom.style.left = `calc(-5.5rem + 0.4rem - ${indent}rem)`;
+		dom.style.left = `calc(-4rem + 0.4rem - ${indent}rem)`;
 
 		const st = () => meta.get(id) ?? { shared: 0, collapsed: false };
-
-		// permanent, always-visible level marker (the scannable gutter column)
-		const lvl = document.createElement('span');
-		lvl.className = 'dhc-level';
-		lvl.textContent = '#'.repeat(Math.max(1, Math.min(6, level)));
-		lvl.title = `Heading level ${level}`;
 
 		const collapse = document.createElement('button');
 		collapse.type = 'button';
@@ -137,7 +131,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		const btns = document.createElement('span');
 		btns.className = 'dhc-btns';
 		btns.append(collapse, vis);
-		dom.append(lvl, btns);
+		dom.append(btns);
 		return dom;
 	}
 
@@ -199,9 +193,9 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 										})
 									);
 								}
-								// controls + permanent level marker at the START of the heading, in the gutter
+								// controls at the START of the heading, in the gutter
 								decos.push(
-									Decoration.widget(pos + 1, () => makeHeadingControls(id, level, depth), {
+									Decoration.widget(pos + 1, () => makeHeadingControls(id, depth), {
 										side: -1
 									})
 								);

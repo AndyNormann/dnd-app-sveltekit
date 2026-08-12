@@ -85,7 +85,7 @@
 	:global(.mdx-host .ProseMirror) {
 		min-height: 100%;
 		outline: none;
-		padding: 1rem 1.75rem 30vh 5.5rem;
+		padding: 1rem 1.75rem 30vh 4rem;
 		font-family: var(--font-body);
 		font-size: 1.08rem;
 		line-height: 1.55;
@@ -130,15 +130,8 @@
 		top: 50%;
 		transform: translateY(-50%);
 		display: inline-flex;
-		gap: 0.3rem;
 		align-items: center;
 		white-space: nowrap;
-	}
-	:global(.dm-heading-controls .dhc-level) {
-		color: #a1a1aa;
-		font-size: 0.72rem;
-		line-height: 1;
-		user-select: none;
 	}
 	:global(.dm-heading-controls .dhc-btns) {
 		display: inline-flex;
