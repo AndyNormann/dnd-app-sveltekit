@@ -139,6 +139,29 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       A Notes | Combat tab bar on both the DM and player pages, so the two
       surfaces of a campaign are one click apart.
 
+
+## Combat board (pen-and-paper grid)
+
+> Players get fixed per-character links; a blank 5-ft grid the DM draws on;
+> auto-rolled initiative; turn-gated, speed-budgeted token movement; measure tool.
+
+- [x] **28. Characters + player links**
+      `characters` table (name, player name, speed, init bonus, color, HP/max HP,
+      secret link token); DM roster CRUD with a "copy player link" button; player
+      portal at `/p/<token>` (Notes + Combat tabs) that sets a signed player cookie.
+- [x] **29. Combat board**
+      Blank grid canvas (5-ft cells) on the Combat page with DM draw/erase tools +
+      color palette, place/move tokens, Clear board; persists + realtime via SSE.
+- [x] **30. Auto-rolled initiative**
+      "Roll initiative" rolls d20 + init bonus for every board unit (players and
+      enemies) into the turn-order tracker; active combatant gates movement.
+- [x] **31. Movement + speed budget**
+      Players move their own token on their turn within `speed / 5` cells, reset
+      each turn; server-enforced with a DM override to move anything freely.
+- [x] **32. Measure + HP**
+      Drag-to-measure tool showing distance in feet/cells (DM + players); players
+      see the turn order and their own HP/max HP, enemy HP is hidden.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**
@@ -152,4 +175,4 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 
 - Collaborative editing (CRDT/OT)
 - Version history / cross-session undo
-- Per-player identity features (private notes, player character sheets) — need accounts first
+- Private notes / player character sheets — not yet (player identity via fixed links is in)

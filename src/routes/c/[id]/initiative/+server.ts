@@ -5,7 +5,9 @@ import {
 	updateInitiative,
 	clearInitiative,
 	getInitiativeRound,
-	setInitiativeRound
+	setInitiativeRound,
+	listCombatUnits,
+	resetMovement
 } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
@@ -48,6 +50,19 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	} else if (body.action === 'clear') {
 		clearInitiative(params.id);
 		setInitiativeRound(params.id, 1);
+	} else if (body.action === 'roll') {
+		// auto-roll initiative for every combat unit (d20 + bonus), players and enemies
+		const units = listCombatUnits(params.id);
+		clearInitiative(params.id);
+		const rolls = units
+			.map((u) => ({ unit: u, init: Math.floor(Math.random() * 20) + 1 + u.init_bonus }))
+			.sort((a, b) => b.init - a.init);
+		rolls.forEach((r, i) => {
+			const e = addInitiative(params.id, r.unit.name, r.init, r.unit.hp, r.unit.id);
+			if (i === 0) updateInitiative(e.id, { active: 1 });
+		});
+		setInitiativeRound(params.id, 1);
+		resetMovement(params.id);
 	} else if (body.action === 'next') {
 		const entries: InitEntry[] = listInitiative(params.id);
 		const activeIndex = entries.findIndex((e) => e.active === 1);
@@ -59,6 +74,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			for (const e of entries) updateInitiative(e.id, { active: 0 });
 			updateInitiative(entries[nextIndex].id, { active: 1 });
 			setInitiativeRound(params.id, round);
+			resetMovement(params.id);
 		}
 	} else {
 		throw error(400, 'Unknown action');

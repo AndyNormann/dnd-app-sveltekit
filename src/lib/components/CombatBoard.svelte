@@ -1,0 +1,464 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
+
+	let {
+		campaignId,
+		dm = false,
+		characterId = null,
+		initialUnits = [],
+		initialDrawings = [],
+		initialConfig,
+		activeUnitId = null
+	}: {
+		campaignId: string;
+		dm?: boolean;
+		characterId?: string | null;
+		initialUnits?: CombatUnit[];
+		initialDrawings?: CombatDrawing[];
+		initialConfig: BoardConfig;
+		activeUnitId?: string | null;
+	} = $props();
+
+	const CELL = 40;
+	const COLORS = ['#222', '#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#d68910', '#7f8c8d'];
+
+	let units = $state<CombatUnit[]>(initialUnits);
+	let drawings = $state<CombatDrawing[]>(initialDrawings);
+	let config = $state<BoardConfig>(initialConfig);
+	let tool = $state<'draw' | 'erase' | 'measure'>(dm ? 'draw' : 'measure');
+	let color = $state('#222');
+	let errorMsg = $state('');
+
+	let canvas: HTMLCanvasElement | undefined = $state();
+	let measureCanvas: HTMLCanvasElement | undefined = $state();
+	let boardEl: HTMLDivElement | undefined = $state();
+
+	let drawing = $state(false);
+	let currentPoints: [number, number][] = [];
+	let measureStart: [number, number] | null = null;
+	let measureEnd: [number, number] | null = null;
+
+	let draggingId: string | null = null;
+	let dragTemp: Record<string, { x: number; y: number }> = {};
+	let activeId = $state<string | null>(activeUnitId);
+
+	const myUnit = $derived(units.find((u) => u.character_id === characterId) ?? null);
+	const isMyTurn = $derived(!!myUnit && myUnit.id === activeId);
+
+	export function setActiveUnitId(id: string | null) {
+		activeId = id;
+	}
+	const budgetCells = $derived(myUnit ? Math.floor(myUnit.speed / (config.grid_scale || 5)) : 0);
+	const usedCells = $derived(config.combat_movement_used);
+
+	export function applyUnits(next: CombatUnit[]) {
+		units = next;
+		dragTemp = {};
+	}
+	export function applyDrawings(next: CombatDrawing[]) {
+		drawings = next;
+	}
+	export function applyConfig(next: BoardConfig) {
+		config = next;
+	}
+
+	function toCell(e: { clientX: number; clientY: number }): [number, number] {
+		const rect = boardEl?.getBoundingClientRect();
+		if (!rect) return [0, 0];
+		return [(e.clientX - rect.left) / CELL, (e.clientY - rect.top) / CELL];
+	}
+
+	function redraw() {
+		const ctx = canvas?.getContext('2d');
+		if (!ctx || !canvas) return;
+		const cols = config.grid_cols;
+		const rows = config.grid_rows;
+		canvas.width = cols * CELL;
+		canvas.height = rows * CELL;
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.fillStyle = '#f6f1e3';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		for (const d of drawings) {
+			ctx.strokeStyle = d.mode === 'erase' ? '#f6f1e3' : d.color;
+			ctx.fillStyle = d.mode === 'erase' ? '#f6f1e3' : d.color;
+			ctx.lineWidth = d.width;
+			ctx.lineCap = 'round';
+			ctx.lineJoin = 'round';
+			if (d.points.length === 1) {
+				ctx.beginPath();
+				ctx.arc(d.points[0][0] * CELL, d.points[0][1] * CELL, d.width, 0, Math.PI * 2);
+				ctx.fill();
+				continue;
+			}
+			ctx.beginPath();
+			d.points.forEach(([x, y], i) => {
+				if (i === 0) ctx.moveTo(x * CELL, y * CELL);
+				else ctx.lineTo(x * CELL, y * CELL);
+			});
+			ctx.stroke();
+		}
+		ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+		ctx.lineWidth = 1;
+		for (let i = 0; i <= cols; i++) {
+			ctx.beginPath();
+			ctx.moveTo(i * CELL + 0.5, 0);
+			ctx.lineTo(i * CELL + 0.5, rows * CELL);
+			ctx.stroke();
+		}
+		for (let j = 0; j <= rows; j++) {
+			ctx.beginPath();
+			ctx.moveTo(0, j * CELL + 0.5);
+			ctx.lineTo(cols * CELL, j * CELL + 0.5);
+			ctx.stroke();
+		}
+	}
+
+	function redrawMeasure() {
+		const ctx = measureCanvas?.getContext('2d');
+		if (!ctx || !measureCanvas) return;
+		const cols = config.grid_cols;
+		const rows = config.grid_rows;
+		measureCanvas.width = cols * CELL;
+		measureCanvas.height = rows * CELL;
+		ctx.clearRect(0, 0, measureCanvas.width, measureCanvas.height);
+		if (!measureStart || !measureEnd) return;
+		const [ax, ay] = measureStart;
+		const [bx, by] = measureEnd;
+		const cells = Math.hypot(bx - ax, by - ay);
+		const feet = Math.round(cells * config.grid_scale);
+		ctx.strokeStyle = '#c0392b';
+		ctx.lineWidth = 2;
+		ctx.setLineDash([5, 4]);
+		ctx.beginPath();
+		ctx.moveTo(ax * CELL + CELL / 2, ay * CELL + CELL / 2);
+		ctx.lineTo(bx * CELL + CELL / 2, by * CELL + CELL / 2);
+		ctx.stroke();
+		ctx.setLineDash([]);
+		ctx.font = '12px system-ui, sans-serif';
+		ctx.fillStyle = '#c0392b';
+		const mx = ((ax + bx) / 2) * CELL;
+		const my = ((ay + by) / 2) * CELL;
+		ctx.fillText(`${feet} ft · ${cells.toFixed(1)} cells`, mx + 6, my - 6);
+	}
+
+	$effect(() => {
+		redraw();
+		redrawMeasure();
+	});
+
+	function onPointerDown(e: PointerEvent) {
+		const pos = toCell(e);
+		if (tool === 'measure') {
+			measureStart = pos;
+			measureEnd = pos;
+			redrawMeasure();
+			return;
+		}
+		if (dm && (tool === 'draw' || tool === 'erase')) {
+			drawing = true;
+			currentPoints = [pos];
+			redraw();
+			e.preventDefault();
+		}
+	}
+	function onPointerMove(e: PointerEvent) {
+		const pos = toCell(e);
+		if (drawing) {
+			currentPoints.push(pos);
+			// live draw current stroke
+			const ctx = canvas?.getContext('2d');
+			if (ctx && currentPoints.length > 1) {
+				ctx.strokeStyle = tool === 'erase' ? '#f6f1e3' : color;
+				ctx.lineWidth = 4;
+				ctx.lineCap = 'round';
+				ctx.lineJoin = 'round';
+				ctx.beginPath();
+				currentPoints.forEach(([x, y], i) => {
+					if (i === 0) ctx.moveTo(x * CELL, y * CELL);
+					else ctx.lineTo(x * CELL, y * CELL);
+				});
+				ctx.stroke();
+			}
+		} else if (measureStart) {
+			measureEnd = pos;
+			redrawMeasure();
+		}
+	}
+	function onPointerUp() {
+		if (drawing) {
+			if (currentPoints.length >= 1 && (tool === 'draw' || tool === 'erase')) postStroke(tool, currentPoints);
+			drawing = false;
+			currentPoints = [];
+			redraw();
+		} else if (measureStart) {
+			measureStart = null;
+			measureEnd = null;
+			redrawMeasure();
+		}
+	}
+
+	async function postStroke(mode: 'draw' | 'erase', points: [number, number][]) {
+		errorMsg = '';
+		const res = await fetch(`/c/${campaignId}/combat/drawings`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ color, width: 4, mode, points })
+		});
+		if (!res.ok) errorMsg = 'Could not save drawing';
+	}
+
+	function tokenPos(u: CombatUnit) {
+		const t = dragTemp[u.id];
+		return t ?? { x: u.x, y: u.y };
+	}
+
+	function startDrag(u: CombatUnit) {
+		return (e: MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (dm) {
+				draggingId = u.id;
+			} else {
+				if (u.id !== myUnit?.id) return;
+				if (!isMyTurn) {
+					errorMsg = "It isn't your turn yet.";
+					return;
+				}
+				draggingId = u.id;
+			}
+			errorMsg = '';
+			window.addEventListener('mousemove', onDragMove);
+			window.addEventListener('mouseup', onDragEnd);
+		};
+	}
+
+	function onDragMove(e: MouseEvent) {
+		if (!draggingId) return;
+		const [cx, cy] = toCell(e);
+		const cell = {
+			x: Math.max(0, Math.min(config.grid_cols - 1, Math.round(cx))),
+			y: Math.max(0, Math.min(config.grid_rows - 1, Math.round(cy)))
+		};
+		dragTemp = { ...dragTemp, [draggingId]: cell };
+	}
+
+	async function onDragEnd() {
+		const id = draggingId;
+		draggingId = null;
+		window.removeEventListener('mousemove', onDragMove);
+		window.removeEventListener('mouseup', onDragEnd);
+		if (id === null) return;
+		const cell = dragTemp[id];
+		if (!cell) {
+			dragTemp = {};
+			return;
+		}
+		const unit = units.find((x) => x.id === id);
+		if (!unit) {
+			dragTemp = {};
+			return;
+		}
+		if (!dm) {
+			const cost = Math.abs(cell.x - unit.x) + Math.abs(cell.y - unit.y);
+			if (usedCells + cost > budgetCells) {
+				errorMsg = `Movement limit reached (max ${budgetCells} cells this turn)`;
+				dragTemp = {};
+				return;
+			}
+		}
+		errorMsg = '';
+		const res = await fetch(`/c/${campaignId}/combat/units/${id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'move', x: cell.x, y: cell.y })
+		});
+		if (!res.ok) {
+			if (res.status === 409) errorMsg = 'Movement limit reached';
+			else if (res.status === 401) errorMsg = 'Not your turn';
+			else errorMsg = 'Move failed';
+			dragTemp = {};
+		} else {
+			dragTemp = {};
+		}
+	}
+</script>
+
+<div class="board-wrap">
+	{#if dm}
+		<div class="toolbar">
+			<button type="button" class:on={tool === 'draw'} onclick={() => (tool = 'draw')}>✏️ Draw</button>
+			<button type="button" class:on={tool === 'erase'} onclick={() => (tool = 'erase')}>🧽 Erase</button>
+			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
+			<span class="colors">
+				{#each COLORS as c}
+					<button
+						type="button"
+						class="swatch"
+						class:sel={color === c}
+						style="background:{c}"
+						onclick={() => {
+							color = c;
+							if (tool !== 'measure') tool = tool === 'erase' ? 'erase' : 'draw';
+						}}
+						aria-label={c}
+					></button>
+				{/each}
+			</span>
+		</div>
+	{:else}
+		<div class="toolbar">
+			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
+			{#if myUnit}
+				<span class="budget"
+					>Turn: <b>{myUnit.name}</b> · moved {Math.min(usedCells, budgetCells)}/{budgetCells} cells</span
+				>
+			{/if}
+		</div>
+	{/if}
+
+	<div
+		class="board"
+		bind:this={boardEl}
+		style="width:{config.grid_cols * CELL}px;height:{config.grid_rows * CELL}px"
+		onpointerdown={onPointerDown}
+		onpointermove={onPointerMove}
+		onpointerup={onPointerUp}
+		onpointerleave={onPointerUp}
+	>
+		<canvas class="grid" bind:this={canvas}></canvas>
+		<canvas class="measure" bind:this={measureCanvas}></canvas>
+		{#each units as u (u.id)}
+			{@const pos = tokenPos(u)}
+			<div
+				class="token"
+				class:myturn={u.id === myUnit?.id}
+				class:active={u.id === activeId}
+				style="left:{pos.x * CELL}px;top:{pos.y * CELL}px"
+				onmousedown={startDrag(u)}
+				onpointerdown={(e) => e.stopPropagation()}
+				title={u.name}
+			>
+				<span class="dot" style="background:{u.color}"></span>
+				<span class="label">{u.name}</span>
+				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
+			</div>
+		{/each}
+	</div>
+
+	{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
+</div>
+
+<style>
+	.board-wrap {
+		font-family: system-ui, sans-serif;
+	}
+	.toolbar {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 0.5rem;
+		flex-wrap: wrap;
+	}
+	.toolbar button {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 5px;
+		padding: 0.3rem 0.6rem;
+		cursor: pointer;
+		font-size: 0.85rem;
+		color: var(--ink-soft);
+	}
+	.toolbar button.on {
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
+	}
+	.colors {
+		display: inline-flex;
+		gap: 0.3rem;
+		margin-left: 0.3rem;
+	}
+	.swatch {
+		width: 1.3rem;
+		height: 1.3rem;
+		border-radius: 50%;
+		border: 2px solid transparent;
+		padding: 0;
+	}
+	.swatch.sel {
+		border-color: var(--gold);
+	}
+	.budget {
+		margin-left: 0.5rem;
+		font-size: 0.85rem;
+		color: var(--ink-soft);
+	}
+	.board {
+		position: relative;
+		border: 2px solid var(--rule);
+		background: #f6f1e3;
+		border-radius: 4px;
+		overflow: hidden;
+		touch-action: none;
+		cursor: crosshair;
+	}
+	.grid {
+		position: absolute;
+		inset: 0;
+		display: block;
+	}
+	.measure {
+		position: absolute;
+		inset: 0;
+		display: block;
+		pointer-events: none;
+	}
+	.token {
+		position: absolute;
+		width: 40px;
+		height: 40px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.05rem;
+		pointer-events: auto;
+		cursor: grab;
+		z-index: 3;
+	}
+	.token.myturn {
+		cursor: grabbing;
+	}
+	.dot {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		border: 2px solid #fff;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+		flex: none;
+	}
+	.token.active .dot {
+		box-shadow: 0 0 0 2px var(--gold), 0 1px 3px rgba(0, 0, 0, 0.4);
+	}
+	.label {
+		font-size: 0.62rem;
+		color: var(--ink);
+		background: rgba(255, 255, 255, 0.85);
+		padding: 0 0.2rem;
+		border-radius: 3px;
+		white-space: nowrap;
+	}
+	.hp {
+		font-size: 0.58rem;
+		color: var(--accent);
+		background: rgba(255, 255, 255, 0.85);
+		padding: 0 0.2rem;
+		border-radius: 3px;
+	}
+	.error {
+		color: var(--accent-soft);
+		font-size: 0.85rem;
+		margin: 0.4rem 0 0;
+	}
+</style>

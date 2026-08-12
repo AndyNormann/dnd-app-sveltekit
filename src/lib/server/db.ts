@@ -83,6 +83,48 @@ db.exec(`
 		active INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS characters (
+		id TEXT PRIMARY KEY,
+		campaign_id TEXT NOT NULL,
+		name TEXT NOT NULL,
+		player_name TEXT NOT NULL DEFAULT '',
+		speed INTEGER NOT NULL DEFAULT 30,
+		init_bonus INTEGER NOT NULL DEFAULT 0,
+		color TEXT NOT NULL DEFAULT '#1b6ca8',
+		max_hp INTEGER NOT NULL DEFAULT 0,
+		hp INTEGER NOT NULL DEFAULT 0,
+		link_token TEXT NOT NULL,
+		created_at INTEGER NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS combat_units (
+		id TEXT PRIMARY KEY,
+		campaign_id TEXT NOT NULL,
+		kind TEXT NOT NULL,
+		character_id TEXT,
+		name TEXT NOT NULL,
+		color TEXT NOT NULL,
+		speed INTEGER NOT NULL DEFAULT 0,
+		init_bonus INTEGER NOT NULL DEFAULT 0,
+		hp INTEGER NOT NULL DEFAULT 0,
+		max_hp INTEGER NOT NULL DEFAULT 0,
+		x INTEGER NOT NULL DEFAULT 0,
+		y INTEGER NOT NULL DEFAULT 0,
+		created_at INTEGER NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS combat_drawings (
+		id TEXT PRIMARY KEY,
+		campaign_id TEXT NOT NULL,
+		color TEXT NOT NULL,
+		width REAL NOT NULL DEFAULT 4,
+		mode TEXT NOT NULL DEFAULT 'draw',
+		points TEXT NOT NULL,
+		created_at INTEGER NOT NULL
+	);
+
+	CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_link ON characters(link_token);
 `);
 
 // migrate pre-brush databases: add shape/path/radius to map_reveals
@@ -124,6 +166,26 @@ db.exec(`
 	}
 	if (!campCols.includes('initiative_round')) {
 		db.exec(`ALTER TABLE campaigns ADD COLUMN initiative_round INTEGER NOT NULL DEFAULT 1`);
+	}
+	// combat board config + movement budget
+	if (!campCols.includes('grid_cols')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN grid_cols INTEGER NOT NULL DEFAULT 24`);
+	}
+	if (!campCols.includes('grid_rows')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN grid_rows INTEGER NOT NULL DEFAULT 18`);
+	}
+	if (!campCols.includes('grid_scale')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN grid_scale INTEGER NOT NULL DEFAULT 5`);
+	}
+	if (!campCols.includes('combat_movement_used')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN combat_movement_used INTEGER NOT NULL DEFAULT 0`);
+	}
+	// link initiative entries to combat units so turns gate movement
+	const initCols = (db.query('PRAGMA table_info(initiative_entries)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!initCols.includes('unit_id')) {
+		db.exec(`ALTER TABLE initiative_entries ADD COLUMN unit_id TEXT`);
 	}
 }
 
@@ -610,6 +672,7 @@ export interface InitEntry {
 	init: number;
 	hp: number;
 	active: number;
+	unit_id: string | null;
 }
 
 const INIT_ORDER = 'ORDER BY init DESC, id ASC';
@@ -624,13 +687,19 @@ export function listInitiative(campaignId: string): InitEntry[] {
 		.all(campaignId) as InitEntry[];
 }
 
-export function addInitiative(campaignId: string, name: string, init: number, hp: number): InitEntry {
+export function addInitiative(
+	campaignId: string,
+	name: string,
+	init: number,
+	hp: number,
+	unitId?: string | null
+): InitEntry {
 	const row = db
 		.query(
-			`INSERT INTO initiative_entries (campaign_id, name, init, hp, created_at)
-			 VALUES (?, ?, ?, ?, ?) RETURNING *`
+			`INSERT INTO initiative_entries (campaign_id, name, init, hp, unit_id, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?) RETURNING *`
 		)
-		.get(campaignId, name, init, hp, Date.now()) as InitEntry;
+		.get(campaignId, name, init, hp, unitId ?? null, Date.now()) as InitEntry;
 	return rowToInit(row);
 }
 
@@ -725,5 +794,308 @@ export function updateToken(id: string, patch: { x?: number; y?: number; label?:
 export function removeToken(id: string): void {
 	db.query('DELETE FROM map_tokens WHERE id = ?').run(id);
 }
+
+
+// --- Characters (player roster + secret links) ---
+
+export interface CharacterRow {
+	id: string;
+	campaign_id: string;
+	name: string;
+	player_name: string;
+	speed: number;
+	init_bonus: number;
+	color: string;
+	max_hp: number;
+	hp: number;
+	link_token: string;
+	created_at: number;
+}
+
+export function createCharacter(
+	campaignId: string,
+	data: {
+		name: string;
+		player_name?: string;
+		speed?: number;
+		init_bonus?: number;
+		color?: string;
+		max_hp?: number;
+		hp?: number;
+	}
+): CharacterRow {
+	const id = nanoid(10);
+	const link_token = nanoid(24);
+	db.query(
+		`INSERT INTO characters (id, campaign_id, name, player_name, speed, init_bonus, color, max_hp, hp, link_token, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		id,
+		campaignId,
+		data.name,
+		data.player_name ?? '',
+		Math.max(1, Math.floor(data.speed ?? 30)),
+		Math.floor(data.init_bonus ?? 0),
+		data.color ?? '#1b6ca8',
+		Math.max(0, Math.floor(data.max_hp ?? 0)),
+		Math.max(0, Math.floor(data.hp ?? data.max_hp ?? 0)),
+		link_token,
+		Date.now()
+	);
+	return db.query('SELECT * FROM characters WHERE id = ?').get(id) as CharacterRow;
+}
+
+export function listCharacters(campaignId: string): CharacterRow[] {
+	return db
+		.query('SELECT * FROM characters WHERE campaign_id = ? ORDER BY created_at')
+		.all(campaignId) as CharacterRow[];
+}
+
+export function getCharacter(id: string): CharacterRow | null {
+	return (db.query('SELECT * FROM characters WHERE id = ?').get(id) as CharacterRow) ?? null;
+}
+
+export function getCharacterByToken(token: string): CharacterRow | null {
+	return (
+		(db.query('SELECT * FROM characters WHERE link_token = ?').get(token) as CharacterRow) ?? null
+	);
+}
+
+export function updateCharacter(
+	id: string,
+	patch: {
+		name?: string;
+		player_name?: string;
+		speed?: number;
+		init_bonus?: number;
+		color?: string;
+		max_hp?: number;
+		hp?: number;
+	}
+): CharacterRow | null {
+	const cur = db.query('SELECT * FROM characters WHERE id = ?').get(id) as CharacterRow | null;
+	if (!cur) return null;
+	db.query(
+		`UPDATE characters SET name = ?, player_name = ?, speed = ?, init_bonus = ?, color = ?, max_hp = ?, hp = ? WHERE id = ?`
+	).run(
+		patch.name ?? cur.name,
+		patch.player_name ?? cur.player_name,
+		patch.speed != null ? Math.max(1, Math.floor(patch.speed)) : cur.speed,
+		patch.init_bonus != null ? Math.floor(patch.init_bonus) : cur.init_bonus,
+		patch.color ?? cur.color,
+		patch.max_hp != null ? Math.max(0, Math.floor(patch.max_hp)) : cur.max_hp,
+		patch.hp != null ? Math.max(0, Math.floor(patch.hp)) : cur.hp,
+		id
+	);
+	return db.query('SELECT * FROM characters WHERE id = ?').get(id) as CharacterRow;
+}
+
+export function deleteCharacter(id: string): void {
+	db.query('DELETE FROM characters WHERE id = ?').run(id);
+}
+
+// --- Combat units (tokens on the combat board) ---
+
+export interface CombatUnit {
+	id: string;
+	campaign_id: string;
+	kind: 'player' | 'enemy';
+	character_id: string | null;
+	name: string;
+	color: string;
+	speed: number;
+	init_bonus: number;
+	hp: number;
+	max_hp: number;
+	x: number;
+	y: number;
+}
+
+export function addCombatUnit(
+	campaignId: string,
+	data: {
+		kind: 'player' | 'enemy';
+		character_id?: string | null;
+		name: string;
+		color?: string;
+		speed?: number;
+		init_bonus?: number;
+		hp?: number;
+		max_hp?: number;
+		x?: number;
+		y?: number;
+	}
+): CombatUnit {
+	const id = nanoid(10);
+	db.query(
+		`INSERT INTO combat_units (id, campaign_id, kind, character_id, name, color, speed, init_bonus, hp, max_hp, x, y, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		id,
+		campaignId,
+		data.kind,
+		data.character_id ?? null,
+		data.name,
+		data.color ?? (data.kind === 'player' ? '#1b6ca8' : '#a33'),
+		Math.max(0, Math.floor(data.speed ?? 0)),
+		Math.floor(data.init_bonus ?? 0),
+		Math.max(0, Math.floor(data.hp ?? data.max_hp ?? 0)),
+		Math.max(0, Math.floor(data.max_hp ?? 0)),
+		Math.max(0, Math.floor(data.x ?? 0)),
+		Math.max(0, Math.floor(data.y ?? 0)),
+		Date.now()
+	);
+	return db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit;
+}
+
+export function listCombatUnits(campaignId: string): CombatUnit[] {
+	return db
+		.query('SELECT * FROM combat_units WHERE campaign_id = ? ORDER BY created_at')
+		.all(campaignId) as CombatUnit[];
+}
+
+export function getCombatUnit(id: string): CombatUnit | null {
+	return (db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit) ?? null;
+}
+
+export function updateCombatUnit(
+	id: string,
+	patch: {
+		x?: number;
+		y?: number;
+		hp?: number;
+		name?: string;
+		color?: string;
+		speed?: number;
+		init_bonus?: number;
+		max_hp?: number;
+	}
+): CombatUnit | null {
+	const cur = db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit | null;
+	if (!cur) return null;
+	db.query(
+		`UPDATE combat_units SET x = ?, y = ?, hp = ?, name = ?, color = ?, speed = ?, init_bonus = ?, max_hp = ? WHERE id = ?`
+	).run(
+		patch.x != null ? Math.max(0, Math.floor(patch.x)) : cur.x,
+		patch.y != null ? Math.max(0, Math.floor(patch.y)) : cur.y,
+		patch.hp != null ? Math.max(0, Math.floor(patch.hp)) : cur.hp,
+		patch.name ?? cur.name,
+		patch.color ?? cur.color,
+		patch.speed != null ? Math.max(0, Math.floor(patch.speed)) : cur.speed,
+		patch.init_bonus != null ? Math.floor(patch.init_bonus) : cur.init_bonus,
+		patch.max_hp != null ? Math.max(0, Math.floor(patch.max_hp)) : cur.max_hp,
+		id
+	);
+	return db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit;
+}
+
+export function removeCombatUnit(id: string): void {
+	db.query('DELETE FROM combat_units WHERE id = ?').run(id);
+}
+
+export function clearCombatUnits(campaignId: string): void {
+	db.query('DELETE FROM combat_units WHERE campaign_id = ?').run(campaignId);
+}
+
+// --- Combat drawings (pen-and-paper strokes) ---
+
+export interface CombatDrawing {
+	id: string;
+	campaign_id: string;
+	color: string;
+	width: number;
+	mode: 'draw' | 'erase';
+	points: [number, number][];
+	created_at: number;
+}
+
+export function addCombatDrawing(
+	campaignId: string,
+	color: string,
+	width: number,
+	mode: 'draw' | 'erase',
+	points: [number, number][]
+): CombatDrawing {
+	const id = nanoid(12);
+	db.query(
+		'INSERT INTO combat_drawings (id, campaign_id, color, width, mode, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+	).run(id, campaignId, color, width, mode, JSON.stringify(points), Date.now());
+	return db.query('SELECT * FROM combat_drawings WHERE id = ?').get(id) as CombatDrawing;
+}
+
+export function listCombatDrawings(campaignId: string): CombatDrawing[] {
+	return (db
+		.query('SELECT * FROM combat_drawings WHERE campaign_id = ? ORDER BY created_at')
+		.all(campaignId) as Omit<CombatDrawing, 'points'>[]).map((r) => ({
+		...r,
+		points: (JSON.parse((r as unknown as { points: string }).points) || []) as [number, number][]
+	})) as CombatDrawing[];
+}
+
+export function clearCombatDrawings(campaignId: string): void {
+	db.query('DELETE FROM combat_drawings WHERE campaign_id = ?').run(campaignId);
+}
+
+// --- Combat board config + movement budget ---
+
+export interface BoardConfig {
+	grid_cols: number;
+	grid_rows: number;
+	grid_scale: number;
+	combat_movement_used: number;
+}
+
+export function getBoardConfig(campaignId: string): BoardConfig {
+	const r = db
+		.query(
+			'SELECT grid_cols, grid_rows, grid_scale, combat_movement_used FROM campaigns WHERE id = ?'
+		)
+		.get(campaignId) as BoardConfig | null;
+	return (
+		r ?? { grid_cols: 24, grid_rows: 18, grid_scale: 5, combat_movement_used: 0 }
+	);
+}
+
+export function setBoardGrid(campaignId: string, cols: number, rows: number, scale: number): void {
+	db.query('UPDATE campaigns SET grid_cols = ?, grid_rows = ?, grid_scale = ? WHERE id = ?').run(
+		Math.max(4, Math.min(80, Math.floor(cols))),
+		Math.max(4, Math.min(60, Math.floor(rows))),
+		Math.max(1, Math.min(20, Math.floor(scale))),
+		campaignId
+	);
+}
+
+export function getMovementUsed(campaignId: string): number {
+	return (
+		(db.query('SELECT combat_movement_used FROM campaigns WHERE id = ?').get(campaignId) as {
+			combat_movement_used: number;
+		} | null)?.combat_movement_used ?? 0
+	);
+}
+
+export function setMovementUsed(campaignId: string, used: number): void {
+	db.query('UPDATE campaigns SET combat_movement_used = ? WHERE id = ?').run(
+		Math.max(0, Math.floor(used)),
+		campaignId
+	);
+}
+
+export function resetMovement(campaignId: string): void {
+	db.query('UPDATE campaigns SET combat_movement_used = 0 WHERE id = ?').run(campaignId);
+}
+
+
+
+export function getActiveUnitId(campaignId: string): string | null {
+	const row = db
+		.query('SELECT unit_id FROM initiative_entries WHERE campaign_id = ? AND active = 1')
+		.get(campaignId) as { unit_id: string | null } | undefined;
+	return row?.unit_id ?? null;
+}
+
+export function setInitiativeHpByUnit(unitId: string, hp: number): void {
+	db.query('UPDATE initiative_entries SET hp = ? WHERE unit_id = ?').run(hp, unitId);
+}
+
 
 export default db;

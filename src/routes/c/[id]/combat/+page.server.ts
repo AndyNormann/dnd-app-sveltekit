@@ -1,4 +1,13 @@
-import { getCampaign, listInitiative, getInitiativeRound } from '$lib/server/db';
+import {
+	getCampaign,
+	listInitiative,
+	getInitiativeRound,
+	listCharacters,
+	listCombatUnits,
+	listCombatDrawings,
+	getBoardConfig,
+	getActiveUnitId
+} from '$lib/server/db';
 import { isDM } from '$lib/server/auth';
 import { redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -12,6 +21,11 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		campaignId: campaign.id,
 		title: campaign.title,
 		initiative: listInitiative(params.id),
-		initiativeRound: getInitiativeRound(params.id)
+		initiativeRound: getInitiativeRound(params.id),
+		characters: listCharacters(params.id),
+		units: listCombatUnits(params.id),
+		drawings: listCombatDrawings(params.id),
+		boardConfig: getBoardConfig(params.id),
+		activeUnitId: getActiveUnitId(params.id)
 	};
 };

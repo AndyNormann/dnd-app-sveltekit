@@ -1,13 +1,143 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import type { PageData } from './$types';
+	import type { CharacterRow, CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
 	let title = $state(data.title);
 	let connected = $state(false);
+	let units = $state<CombatUnit[]>(data.units);
+	let drawings = $state<CombatDrawing[]>(data.drawings);
+	let boardConfig = $state<BoardConfig>(data.boardConfig);
+	let characters = $state<CharacterRow[]>(data.characters);
 	let initiative: Initiative;
+	let board: CombatBoard;
+
+	let showRoster = $state(false);
+	let charName = $state('');
+	let charPlayer = $state('');
+	let charSpeed = $state('30');
+	let charInit = $state('0');
+	let charHp = $state('');
+	let charColor = $state('#1b6ca8');
+	let enemyName = $state('');
+	let enemyInit = $state('0');
+	let enemyHp = $state('');
+	let enemyColor = $state('#a33');
+	let errorMsg = $state('');
+	let toast = $state<string | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout>;
+
+	function showToast(msg: string) {
+		toast = msg;
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => (toast = null), 2000);
+	}
+
+	function linkFor(c: CharacterRow) {
+		return `${location.origin}/p/${c.link_token}`;
+	}
+	function copyLink(c: CharacterRow) {
+		navigator.clipboard?.writeText(linkFor(c)).then(
+			() => showToast(`Link for ${c.name} copied`),
+			() => showToast('Could not copy link')
+		);
+	}
+
+	async function addCharacter(e: Event) {
+		e.preventDefault();
+		errorMsg = '';
+		if (!charName.trim()) return;
+		const res = await fetch(`/c/${data.campaignId}/characters`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				name: charName,
+				player_name: charPlayer,
+				speed: charSpeed,
+				init_bonus: charInit,
+				max_hp: charHp,
+				color: charColor
+			})
+		});
+		if (!res.ok) return;
+		const ch = (await res.json()) as CharacterRow;
+		characters = [...characters, ch];
+		charName = '';
+		charPlayer = '';
+		charSpeed = '30';
+		charInit = '0';
+		charHp = '';
+		showRoster = true;
+		showToast(`Created ${ch.name}`);
+	}
+
+	async function deleteCharacter(id: string) {
+		await fetch(`/c/${data.campaignId}/characters/${id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'delete' })
+		});
+		characters = characters.filter((c) => c.id !== id);
+	}
+
+	async function addPlayerToBoard(characterId: string) {
+		errorMsg = '';
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'add-player', character_id: characterId })
+		});
+		if (!res.ok) errorMsg = 'Could not add to board';
+	}
+
+	async function addEnemy(e: Event) {
+		e.preventDefault();
+		errorMsg = '';
+		if (!enemyName.trim()) return;
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				action: 'add-enemy',
+				name: enemyName,
+				init_bonus: enemyInit,
+				max_hp: enemyHp,
+				color: enemyColor
+			})
+		});
+		if (!res.ok) return;
+		enemyName = '';
+		enemyInit = '0';
+		enemyHp = '';
+	}
+
+	function rollInitiative() {
+		errorMsg = '';
+		fetch(`/c/${data.campaignId}/initiative`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'roll' })
+		});
+	}
+
+	function clearBoard() {
+		errorMsg = '';
+		fetch(`/c/${data.campaignId}/combat/units`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'clear' })
+		});
+		fetch(`/c/${data.campaignId}/combat/drawings`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'clear' })
+		});
+		showToast('Board cleared');
+	}
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
@@ -15,37 +145,130 @@
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
-			if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries, ev.round);
-			else if (ev.type === 'title-changed') title = ev.title;
+			switch (ev.type) {
+				case 'initiative-updated': {
+					initiative?.applyEntries(ev.entries, ev.round);
+					const active = ev.entries.find((x: { active: number }) => x.active === 1)?.unit_id ?? null;
+					board?.setActiveUnitId(active);
+					break;
+				}
+				case 'combat-units-updated':
+					units = ev.units;
+					board?.applyUnits(ev.units);
+					break;
+				case 'combat-drawings-updated':
+					drawings = ev.drawings;
+					board?.applyDrawings(ev.drawings);
+					break;
+				case 'board-config-updated':
+					boardConfig = ev.config;
+					board?.applyConfig(ev.config);
+					break;
+				case 'characters-updated':
+					refreshCharacters();
+					break;
+				case 'title-changed':
+					title = ev.title;
+					break;
+			}
 		};
 		return () => es.close();
 	});
+
+	async function refreshCharacters() {
+		const res = await fetch(`/c/${data.campaignId}/characters`);
+		if (res.ok) characters = await res.json();
+	}
 </script>
 
 <svelte:head><title>{title} — Combat</title></svelte:head>
 
 <header class="bar">
 	<a href="/" class="back">←</a>
-	<span
-		class="conn"
-		class:on={connected}
-		title={connected ? 'Realtime connected' : 'Realtime disconnected'}
-	></span>
+	<span class="conn" class:on={connected} title={connected ? 'Realtime connected' : 'Realtime disconnected'}></span>
 	<h1>{title}</h1>
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab">Notes</a>
 		<a href={`/c/${data.campaignId}/combat`} class="tab" class:active={true}>Combat</a>
 	</nav>
 	<div class="spacer"></div>
-	<a href={`/c/${data.campaignId}/play/combat`} target="_blank" rel="noreferrer">Player combat</a>
+	<button type="button" class:on={showRoster} onclick={() => (showRoster = !showRoster)}>Characters</button>
+	<a href={`/c/${data.campaignId}/play/combat`} target="_blank" rel="noreferrer">Spectate</a>
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
 	</form>
 </header>
 
 <main class="combat">
-	<Initiative bind:this={initiative} campaignId={data.campaignId} dm initial={data.initiative} initialRound={data.initiativeRound} />
+	{#if showRoster}
+		<section class="panel roster">
+			<h2>Characters</h2>
+			<form class="add-char" onsubmit={addCharacter}>
+				<input class="nm" placeholder="Character" bind:value={charName} maxlength="60" />
+				<input class="pn" placeholder="Player name" bind:value={charPlayer} maxlength="60" />
+				<input class="num" placeholder="Speed" title="Speed (ft)" bind:value={charSpeed} maxlength="4" />
+				<input class="num" placeholder="Init+" title="Init bonus" bind:value={charInit} maxlength="4" />
+				<input class="num" placeholder="Max HP" bind:value={charHp} maxlength="6" />
+				<input class="color" type="color" bind:value={charColor} title="Token color" />
+				<button type="submit">Add</button>
+			</form>
+			{#if characters.length === 0}
+				<p class="empty">No characters yet. Create one, then send them their link.</p>
+			{/if}
+			<ul class="char-list">
+				{#each characters as c (c.id)}
+					<li>
+						<span class="dot" style="background:{c.color}"></span>
+						<span class="cname">{c.name}</span>
+						<span class="cmeta">{c.player_name ? c.player_name + ' · ' : ''}{c.speed}ft · init {c.init_bonus >= 0 ? '+' : ''}{c.init_bonus} · {c.hp}/{c.max_hp}hp</span>
+						<button type="button" class="tiny" title="Add to board" onclick={() => addPlayerToBoard(c.id)}>⚔</button>
+						<button type="button" class="tiny" title="Copy player link" onclick={() => copyLink(c)}>🔗</button>
+						<button type="button" class="tiny" title="Delete" onclick={() => deleteCharacter(c.id)}>✕</button>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
+	<section class="panel board">
+		<CombatBoard
+			bind:this={board}
+			campaignId={data.campaignId}
+			dm
+			initialUnits={units}
+			initialDrawings={drawings}
+			initialConfig={boardConfig}
+			activeUnitId={data.activeUnitId}
+		/>
+	</section>
+
+	<section class="panel setup">
+		<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
+		<form class="add-enemy" onsubmit={addEnemy}>
+			<input class="nm" placeholder="Enemy name" bind:value={enemyName} maxlength="60" />
+			<input class="num" placeholder="Init+" bind:value={enemyInit} maxlength="4" />
+			<input class="num" placeholder="HP" bind:value={enemyHp} maxlength="6" />
+			<input class="color" type="color" bind:value={enemyColor} title="Enemy color" />
+			<button type="submit">Add enemy</button>
+		</form>
+		<button type="button" class="big danger" onclick={clearBoard}>🗑 Clear board</button>
+	</section>
+
+	{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
+
+	<section class="panel order">
+		<Initiative
+			bind:this={initiative}
+			campaignId={data.campaignId}
+			dm
+			initial={data.initiative}
+			initialRound={data.initiativeRound}
+			units={units}
+		/>
+	</section>
 </main>
+
+{#if toast}<div class="toast">{toast}</div>{/if}
 
 <style>
 	.bar {
@@ -100,6 +323,7 @@
 	.conn.on {
 		background: #3a9b45;
 	}
+	.bar button,
 	.bar a[target] {
 		font-size: 0.85rem;
 		padding: 0.4rem 0.7rem;
@@ -110,21 +334,155 @@
 		text-decoration: none;
 		color: var(--ink-soft);
 	}
+	.bar button.on {
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
+	}
 	.logout {
 		margin: 0;
 	}
 	.logout button {
 		border: 1px solid var(--accent-soft);
 		color: var(--accent-soft);
-		font-size: 0.85rem;
-		padding: 0.4rem 0.7rem;
-		border-radius: 6px;
-		background: var(--parchment-light);
-		cursor: pointer;
 	}
 	.combat {
-		max-width: 42rem;
-		margin: 1.5rem auto;
+		max-width: 68rem;
+		margin: 1rem auto;
 		padding: 0 1rem;
+	}
+	.panel {
+		background: var(--parchment-light);
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		padding: 0.9rem;
+		margin-bottom: 1rem;
+	}
+	.panel h2 {
+		font-family: var(--font-display);
+		color: var(--accent);
+		margin: 0 0 0.6rem;
+		font-size: 1rem;
+	}
+	.add-char,
+	.add-enemy {
+		display: flex;
+		gap: 0.35rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.6rem;
+	}
+	.add-char input,
+	.add-enemy input {
+		border: 1px solid var(--rule);
+		border-radius: 5px;
+		padding: 0.3rem 0.4rem;
+		font-size: 0.85rem;
+		min-width: 0;
+	}
+	.add-char .nm,
+	.add-enemy .nm {
+		flex: 1 1 10rem;
+	}
+	.add-char .pn {
+		flex: 1 1 8rem;
+	}
+	.add-char .num,
+	.add-enemy .num {
+		width: 3.4rem;
+	}
+	.add-char input.color,
+	.add-enemy input.color {
+		width: 2.4rem;
+		padding: 0.1rem;
+	}
+	.add-char button,
+	.add-enemy button {
+		border: 0;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 5px;
+		padding: 0.3rem 0.7rem;
+		cursor: pointer;
+	}
+	.empty {
+		color: var(--ink-soft);
+		font-style: italic;
+		font-size: 0.9rem;
+	}
+	.char-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.char-list li {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.3rem 0;
+		border-top: 1px solid var(--rule);
+	}
+	.char-list .dot {
+		width: 0.9rem;
+		height: 0.9rem;
+		border-radius: 50%;
+		flex: none;
+	}
+	.char-list .cname {
+		font-weight: 600;
+		min-width: 6rem;
+	}
+	.char-list .cmeta {
+		flex: 1;
+		color: var(--ink-soft);
+		font-size: 0.8rem;
+	}
+	.tiny {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 4px;
+		cursor: pointer;
+		padding: 0.1rem 0.3rem;
+		font-size: 0.8rem;
+	}
+	.setup {
+		display: flex;
+		gap: 0.6rem;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+	.big {
+		border: 0;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 6px;
+		padding: 0.5rem 0.9rem;
+		cursor: pointer;
+		font-family: var(--font-display);
+		font-weight: 600;
+	}
+	.big.danger {
+		background: var(--accent-soft);
+	}
+	.add-enemy {
+		margin: 0;
+		flex: 1;
+	}
+	.error {
+		color: var(--accent-soft);
+		font-size: 0.9rem;
+	}
+	.toast {
+		position: fixed;
+		right: 1.25rem;
+		bottom: 1.25rem;
+		z-index: 2000;
+		padding: 0.6rem 1rem;
+		background: var(--parchment-light);
+		border: 1px solid var(--gold);
+		border-left: 4px solid #3a9b45;
+		border-radius: 6px;
+		box-shadow: 0 4px 16px rgba(43, 35, 23, 0.25);
+		font-family: var(--font-body);
+		color: var(--ink);
 	}
 </style>

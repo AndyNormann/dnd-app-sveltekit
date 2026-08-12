@@ -18,6 +18,10 @@ export type CampaignEvent =
 	| { type: 'layer-changed'; mapId: string; layer: number }
 	| { type: 'reveal-undone'; mapId: string; layer: number; opId: number }
 	| { type: 'reveals-cleared'; mapId: string; layer: number }
+	| { type: 'characters-updated' }
+	| { type: 'combat-units-updated'; units: import('./db').CombatUnit[] }
+	| { type: 'combat-drawings-updated'; drawings: import('./db').CombatDrawing[] }
+	| { type: 'board-config-updated'; config: import('./db').BoardConfig }
 	| {
 			type: 'snapshot';
 			title: string;

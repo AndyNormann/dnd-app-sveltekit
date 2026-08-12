@@ -1,12 +1,21 @@
 <script lang="ts">
-	import type { InitEntry } from '$lib/server/db';
+	import type { InitEntry, CombatUnit } from '$lib/server/db';
 
 	let {
 		campaignId,
 		dm = false,
 		initial = [],
-		initialRound = 1
-	}: { campaignId: string; dm?: boolean; initial?: InitEntry[]; initialRound?: number } = $props();
+		initialRound = 1,
+		units = [],
+		viewerUnitId = null
+	}: {
+		campaignId: string;
+		dm?: boolean;
+		initial?: InitEntry[];
+		initialRound?: number;
+		units?: CombatUnit[];
+		viewerUnitId?: string | null;
+	} = $props();
 
 	let entries = $state<InitEntry[]>([...initial]);
 	let round = $state(initialRound);
@@ -42,7 +51,13 @@
 		post(`/c/${campaignId}/initiative/${entry.id}`, { action: 'update', active: true });
 	}
 	function setHp(entry: InitEntry, delta: number) {
-		post(`/c/${campaignId}/initiative/${entry.id}`, { action: 'update', hp: entry.hp + delta });
+		const unit = units.find((u) => u.id === entry.unit_id);
+		const targetHp = Math.max(0, (unit ? unit.hp : entry.hp) + delta);
+		if (unit) {
+			post(`/c/${campaignId}/combat/units/${unit.id}`, { action: 'hp', hp: targetHp });
+		} else {
+			post(`/c/${campaignId}/initiative/${entry.id}`, { action: 'update', hp: targetHp });
+		}
 	}
 	function remove(entry: InitEntry) {
 		post(`/c/${campaignId}/initiative/${entry.id}`, { action: 'remove' });
@@ -65,6 +80,7 @@
 				<p class="empty">No combatants yet.</p>
 			{/if}
 			{#each entries as e (e.id)}
+				{@const unit = units.find((u) => u.id === e.unit_id)}
 				<div class="entry" class:active={e.active === 1}>
 					{#if dm}
 						<button type="button" class="play" title="It's their turn" onclick={() => setActive(e)}>▶</button>
@@ -75,11 +91,11 @@
 					{#if dm}
 						<span class="hp">
 							<button type="button" onclick={() => setHp(e, -1)}>−</button>
-							{e.hp}
+							{unit ? unit.hp : e.hp}{unit && unit.max_hp ? `/${unit.max_hp}` : ''}
 							<button type="button" onclick={() => setHp(e, 1)}>+</button>
 						</span>
-					{:else if e.hp > 0}
-						<span class="hp">{e.hp}</span>
+					{:else if e.unit_id === viewerUnitId && unit}
+						<span class="hp">{unit.hp}{unit.max_hp ? `/${unit.max_hp}` : ''}</span>
 					{/if}
 				</div>
 			{/each}
