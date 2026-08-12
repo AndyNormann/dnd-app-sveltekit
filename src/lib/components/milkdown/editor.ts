@@ -10,6 +10,7 @@ import { nord } from '@milkdown/theme-nord';
 import { buildInteractivePlugin, type HeadingMeta } from './interactive';
 import { buildSlashPlugin } from './slash';
 import { mapBlock, mapBlockView, mapDirectiveTransformer, mapApi, configureMaps } from './mapNode';
+import { headingHashRemark, headingHashPlugin } from './headingHash';
 import type { MapData, TokenData } from '$lib/types';
 
 export interface MilkdownHandle {
@@ -47,10 +48,14 @@ function fixSerializedMarkdown(markdown: string): string {
 	// Milkdown escapes the opening `[` of `[[Name]]` wiki links (`\[[Name]]`)
 	// and underscores inside `::map{id=...}` ids (`::map{id=X_Y}` -> `X\_Y`).
 	// Restore both so the app's parsing keeps matching.
-	return markdown
+	let out = markdown
 		.replace(/\\\[\\\[/g, '[[')
 		.replace(/\\\]\\\]/g, ']]')
 		.replace(/::map\{id=([^}]*)\}/g, (_m, id: string) => `::map{id=${id.replace(/\\/g, '')}}`);
+	// The heading's `#` is real editable text now, so the serializer adds its own
+	// `#{level} ` prefix on top of it (`# # Heading`). Collapse the doubled prefix.
+	out = out.replace(/^((?:#){1,6}) \1 /gm, '$1 ');
+	return out;
 }
 
 /**
@@ -87,7 +92,8 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 			// commonmark parses them, so mapBlock can be registered after commonmark
 			ctx.set(remarkPluginsCtx, [
 				...(ctx.get(remarkPluginsCtx) ?? []),
-				{ plugin: mapDirectiveTransformer, options: {} }
+				{ plugin: mapDirectiveTransformer, options: {} },
+				{ plugin: headingHashRemark, options: {} }
 			]);
 		})
 		.config(nord)
@@ -101,6 +107,7 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 		.use(listener)
 		.use(interactive)
 		.use(slash)
+		.use(headingHashPlugin)
 		.config((ctx) => {
 			const lm = ctx.get(listenerCtx);
 			lm.markdownUpdated((_ctx, markdown) => {

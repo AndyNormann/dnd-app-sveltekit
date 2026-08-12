@@ -15,18 +15,38 @@ async function loginDM(browser: Browser) {
 	await expect(page).toHaveURL('/');
 	return { page, request: ctx.request };
 }
-test('heading hashes render', async ({ browser }) => {
+test('heading hashes are real editable text, adjacent to the heading text', async ({ browser }) => {
 	const dm = await loginDM(browser);
 	const id = await createCampaign(dm.request);
 	await dm.page.goto(`/c/${id}`);
 	await dm.page.waitForSelector('.mdx-host .ProseMirror');
-	await dm.page.locator('.mdx-host .ProseMirror').click();
+	const pm = dm.page.locator('.mdx-host .ProseMirror');
+	await pm.click();
 	await dm.page.keyboard.type('# One\n\n## Two\n\n### Three\n');
-	await dm.page.waitForSelector('.dhc-hash');
-	await dm.page.waitForTimeout(400);
-	const hashes = await dm.page.locator('.dhc-hash').evaluateAll((els) => els.map((e) => e.textContent));
-	console.log('HASHES', JSON.stringify(hashes));
-	expect(hashes.filter((h) => h === '# ').length).toBeGreaterThanOrEqual(1);
-	expect(hashes.filter((h) => h === '## ').length).toBeGreaterThanOrEqual(1);
-	expect(hashes.filter((h) => h === '### ').length).toBeGreaterThanOrEqual(1);
+	await dm.page.waitForTimeout(900);
+
+	const info = await dm.page.evaluate(() => {
+		const read = (sel: string) => {
+			const el = document.querySelector(sel);
+			if (!el) return null;
+			const txts = Array.from(el.childNodes)
+				.filter((n) => n.nodeName === '#text')
+				.map((n) => (n as Text).textContent)
+				.join('');
+			const hasWidget = !!el.querySelector('.dhc-hash');
+			return { txts, hasWidget };
+		};
+		return { h1: read('.mdx-host .ProseMirror h1'), h2: read('.mdx-host .ProseMirror h2'), h3: read('.mdx-host .ProseMirror h3') };
+	});
+	console.log('H', JSON.stringify(info));
+
+	// the hash is plain editable text (no locked widget), sitting right before the heading text
+	expect(info.h1!.hasWidget).toBe(false);
+	expect(info.h1!.txts).toContain('# One');
+	expect(info.h2!.txts).toContain('## Two');
+	expect(info.h3!.txts).toContain('### Three');
+	// the hash is immediately adjacent to the text (no space gap beyond the markdown space)
+	expect(info.h1!.txts.trim()).toBe('# One');
+	expect(info.h2!.txts.trim()).toBe('## Two');
+	expect(info.h3!.txts.trim()).toBe('### Three');
 });

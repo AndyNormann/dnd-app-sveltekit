@@ -129,15 +129,6 @@
 		padding: 0;
 		font-size: 0.8em;
 	}
-	/* Visible `#`/`##`/`###`… level markers on headings. Read as “markdown syntax”,
-	   so keep them muted and non-selectable. */
-	:global(.mdx-host .ProseMirror .dhc-hash) {
-		color: var(--accent);
-		opacity: 0.5;
-		font-weight: 700;
-		user-select: none;
-		pointer-events: none;
-	}
 	:global(.dm-heading-controls .dhc-collapse) {
 		color: #6b7280;
 	}
