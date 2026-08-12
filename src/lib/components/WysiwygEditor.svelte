@@ -191,8 +191,8 @@
 		cursor: pointer;
 	}
 	:global(.map-widget) {
-		/* inset the map so it reads as its own block and doesn't dominate the section */
-		margin: 0.75rem 1rem 1.5rem;
+		/* keep the map compact so it reads as a block without dominating the section */
+		margin: 0.75rem 0 1.5rem;
 		max-width: 640px;
 		max-height: 55vh;
 		overflow-y: auto;
