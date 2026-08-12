@@ -203,7 +203,7 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       Campaign cards show last-edited time + roll/map counts; a DM auth indicator
       on the home page ("Logged in as DM" / log in) instead of only logging out
       from inside a campaign.
-- [ ] **R3. Player live UX**
+- [x] **R3. Player live UX**
       A live "updated just now" stamp on player Notes/Combat that refreshes on
       any SSE activity, and a "New from the DM" banner when a handout is revealed.
 - [ ] **R4. Combat ergonomics**

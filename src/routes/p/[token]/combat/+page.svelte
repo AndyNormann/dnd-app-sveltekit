@@ -3,6 +3,7 @@
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
+	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import type { PageData } from './$types';
 	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
@@ -10,6 +11,10 @@
 
 	let title = $state(data.title);
 	let connected = $state(false);
+	let lastActivity = $state(Date.now());
+	function poke() {
+		lastActivity = Date.now();
+	}
 	let units = $state<CombatUnit[]>(data.units);
 	let drawings = $state<CombatDrawing[]>(data.drawings);
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
@@ -27,6 +32,7 @@
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
+			poke();
 			switch (ev.type) {
 				case 'initiative-updated': {
 					initiative?.applyEntries(ev.entries, ev.round);
@@ -71,6 +77,7 @@
 <main class="combat">
 	<h1 class="campaign-title">{title}</h1>
 	<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+	<LiveStamp at={lastActivity} />
 	{#if activeName}
 		<div class="turn-banner" class:mine={isMyTurn}>
 			{#if isMyTurn}✨ Your turn — go!{:else}⏳ Waiting on {activeName}…{/if}

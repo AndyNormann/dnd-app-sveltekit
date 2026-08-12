@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
+	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	let title = $state(data.title);
 	let connected = $state(false);
+	let lastActivity = $state(Date.now());
 	let initiative: Initiative;
+	function poke() {
+		lastActivity = Date.now();
+	}
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
@@ -15,6 +20,7 @@
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
+			poke();
 			if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries, ev.round);
 			else if (ev.type === 'title-changed') title = ev.title;
 		};
@@ -32,6 +38,7 @@
 <main class="combat">
 	<h1 class="campaign-title">{title}</h1>
 	<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+	<LiveStamp at={lastActivity} />
 	<Initiative bind:this={initiative} campaignId={data.campaignId} initial={data.initiative} initialRound={data.initiativeRound} />
 </main>
 

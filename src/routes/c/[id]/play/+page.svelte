@@ -3,6 +3,7 @@
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
 	import Outline from '$lib/components/Outline.svelte';
+	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp, RollData } from '$lib/types';
 
@@ -12,6 +13,17 @@
 	let title = $state(data.title);
 	let maps = $state<MapData[]>(data.maps);
 	let connected = $state(false);
+	let lastActivity = $state(Date.now());
+	let banner = $state<string | null>(null);
+	let bannerTimer: ReturnType<typeof setTimeout>;
+	function poke() {
+		lastActivity = Date.now();
+	}
+	function showBanner(msg: string) {
+		banner = msg;
+		clearTimeout(bannerTimer);
+		bannerTimer = setTimeout(() => (banner = null), 5000);
+	}
 	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
 	let rollLog: RollLog;
@@ -35,6 +47,7 @@
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
+			poke();
 			switch (ev.type) {
 				case 'snapshot':
 					title = ev.title;
@@ -73,6 +86,7 @@
 					doc?.applyLayerCleared(ev.mapId, ev.layer);
 					break;
 				case 'handout-revealed':
+					showBanner('📢 New from the DM');
 					// the shared html will have been delivered; scroll to + flash the heading
 					setTimeout(() => {
 						document
@@ -108,6 +122,8 @@
 	<main>
 		<h1 class="campaign-title">{title}</h1>
 		<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+		<LiveStamp at={lastActivity} />
+		{#if banner}<div class="banner">{banner}</div>{/if}
 		{#if html.trim() === ''}
 			<p class="empty">The DM hasn't shared anything yet. Hang tight!</p>
 		{:else}
@@ -191,6 +207,31 @@
 	}
 	.conn.on {
 		background: #3a9b45;
+	}
+	.banner {
+		position: absolute;
+		top: 0.6rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 99px;
+		padding: 0.35rem 1rem;
+		font-family: var(--font-body);
+		font-size: 0.9rem;
+		font-weight: 600;
+		box-shadow: 0 2px 8px rgba(43, 35, 23, 0.3);
+		animation: banner-in 0.2s ease;
+	}
+	@keyframes banner-in {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(-6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
 	}
 	.empty {
 		text-align: center;
