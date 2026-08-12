@@ -47,12 +47,22 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 	const { campaignId } = opts;
 	const meta = opts.meta;
 	let currentView: EditorView | undefined;
+	/** heading id -> parent heading id (built during decoration traversal). */
+	let headingParents = new Map<string, string | null>();
 
 	const key = new PluginKey('dnd-interactive');
 
-	function effectiveShared(id: string): boolean {
-		// For now, only the heading's own explicit state drives the checkbox.
-		return meta.get(id)?.shared === 1;
+	/** Hierarchical visibility: a hidden ancestor hides all descendants below it. */
+	function effectiveShared(id: string | null): boolean {
+		let cur: string | null = id;
+		let anyShared = false;
+		while (cur !== null) {
+			const state = meta.get(cur)?.shared ?? 0;
+			if (state === 2) return false; // hidden ancestor hides everything below
+			if (state === 1) anyShared = true;
+			cur = headingParents.get(cur) ?? null;
+		}
+		return anyShared;
 	}
 
 	function makeHeadingControls(id: string): HTMLElement {
@@ -148,17 +158,31 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 				decorations(state) {
 					const decos: Decoration[] = [];
 					const headings: { pos: number; node: ProseNode }[] = [];
+					headingParents = new Map<string, string | null>();
+					const stack: number[] = []; // indices of open ancestor headings
 					state.doc.descendants((node, pos) => {
 						if (node.type.name === 'heading') {
-							headings.push({ pos, node });
+							const level = node.attrs.level as number;
+							while (
+								stack.length &&
+								(headings[stack[stack.length - 1]].node.attrs.level as number) >= level
+							) {
+								stack.pop();
+							}
+							const parentIdx = stack.length ? stack[stack.length - 1] : null;
 							const id = headingId(node);
+							headings.push({ pos, node });
 							if (id) {
+								const parentId =
+									parentIdx !== null ? headingId(headings[parentIdx].node) : null;
+								headingParents.set(id, parentId);
 								decos.push(
 									Decoration.widget(pos + 1, () => makeHeadingControls(id), {
 										side: 1
 									})
 								);
 							}
+							stack.push(headings.length - 1);
 						} else if (node.isText) {
 							const text = node.text ?? '';
 							INLINE_DICE_RE.lastIndex = 0;

@@ -89,16 +89,22 @@ export function parseHeadings(markdown: string): HeadingNode[] {
 	return headings;
 }
 
-/** Resolve effective visibility of a heading, walking ancestors for inherited share state. */
+/**
+ * Resolve effective visibility of a heading, walking ancestors for inherited
+ * share state. Hiding is hierarchical: an explicitly-hidden ancestor hides
+ * everything below it (even an explicitly-shared descendant). A heading is
+ * visible only if some ancestor-or-self is explicitly shared and none is hidden.
+ */
 export function effectiveShared(index: number, headings: HeadingNode[], meta: MetaMap): boolean {
 	let cur: number | null = index;
+	let anyShared = false;
 	while (cur !== null) {
 		const state = meta[headings[cur].id]?.shared ?? SHARE_INHERIT;
-		if (state === SHARE_SHARED) return true;
-		if (state === SHARE_HIDDEN) return false;
+		if (state === SHARE_HIDDEN) return false; // a hidden ancestor hides all descendants
+		if (state === SHARE_SHARED) anyShared = true;
 		cur = headings[cur].parent;
 	}
-	return false;
+	return anyShared;
 }
 
 /** Strip id markers from a single line of text. */

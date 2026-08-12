@@ -62,6 +62,17 @@ test('effectiveShared walks ancestors', () => {
 	expect(effectiveShared(1, headings, meta2)).toBe(false);
 });
 
+test('effectiveShared: a hidden ancestor hides even an explicitly-shared descendant', () => {
+	const headings = parseHeadings(doc);
+	// parent hidden (SHARE_HIDDEN), child explicitly SHARED -> child still hidden
+	const meta: MetaMap = {
+		[headings[0].id]: { shared: SHARE_HIDDEN, collapsed: false },
+		[headings[1].id]: { shared: SHARE_SHARED, collapsed: false }
+	};
+	expect(effectiveShared(0, headings, meta)).toBe(false); // parent hidden
+	expect(effectiveShared(1, headings, meta)).toBe(false); // child dominated by hidden parent
+});
+
 test('computeSharedMarkdown keeps only shared subtrees', () => {
 	const headings = parseHeadings(doc);
 	const meta: MetaMap = { [headings[0].id]: { shared: SHARE_SHARED, collapsed: false } };
