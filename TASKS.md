@@ -206,7 +206,7 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - [x] **R3. Player live UX**
       A live "updated just now" stamp on player Notes/Combat that refreshes on
       any SSE activity, and a "New from the DM" banner when a handout is revealed.
-- [ ] **R4. Combat ergonomics**
+- [x] **R4. Combat ergonomics**
       Space/N advances the turn; Escape/click-away closes the HP popover; the
       active round + whose-turn readout is more prominent.
 - [ ] **R5. Accessibility + performance**

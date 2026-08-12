@@ -17,6 +17,8 @@
 	let combatLog: CombatLog;
 	let initiative: Initiative;
 	let board: CombatBoard;
+	let activeName = $state('');
+	let round = $state(data.initiativeRound);
 
 	let showRoster = $state(false);
 	let charName = $state('');
@@ -152,6 +154,8 @@
 					initiative?.applyEntries(ev.entries, ev.round);
 					const active = ev.entries.find((x: { active: number }) => x.active === 1)?.unit_id ?? null;
 					board?.setActiveUnitId(active);
+					activeName = ev.entries.find((x: { active: number }) => x.active === 1)?.name ?? '';
+					round = ev.round;
 					break;
 				}
 				case 'combat-units-updated':
@@ -180,6 +184,17 @@
 		return () => es.close();
 	});
 
+	function onKeydown(e: KeyboardEvent) {
+		// N / Space advances the turn (DM only)
+		if (e.key === 'n' || e.key === 'N' || e.key === ' ') {
+			// ignore when typing in an input
+			const tag = (e.target as HTMLElement)?.tagName;
+			if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+			e.preventDefault();
+			initiative?.advance();
+		}
+	}
+
 	async function refreshCharacters() {
 		const res = await fetch(`/c/${data.campaignId}/characters`);
 		if (res.ok) characters = await res.json();
@@ -187,6 +202,8 @@
 </script>
 
 <svelte:head><title>{title} — Combat</title></svelte:head>
+
+<svelte:window onkeydown={onKeydown} />
 
 <header class="bar">
 	<a href="/" class="back">←</a>
@@ -236,6 +253,9 @@
 	{/if}
 
 	<section class="panel board">
+		{#if activeName}
+			<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
+		{/if}
 		<CombatBoard
 			bind:this={board}
 			campaignId={data.campaignId}
@@ -372,6 +392,28 @@
 		color: var(--accent);
 		margin: 0 0 0.6rem;
 		font-size: 1rem;
+	}
+	.turn-status {
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--ink);
+		margin-bottom: 0.6rem;
+		padding: 0.4rem 0.7rem;
+		background: var(--parchment-deep);
+		border: 1px solid var(--gold);
+		border-radius: 6px;
+		display: inline-block;
+	}
+	.turn-status kbd {
+		font-family: inherit;
+		font-size: 0.7rem;
+		color: var(--ink-soft);
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		padding: 0.05rem 0.35rem;
+		margin-left: 0.4rem;
+		background: var(--parchment-light);
 	}
 	.add-char,
 	.add-enemy {

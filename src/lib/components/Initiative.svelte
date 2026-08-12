@@ -65,6 +65,10 @@
 	function nextTurn() {
 		post(`/c/${campaignId}/initiative`, { action: 'next' });
 	}
+	/** Advance to the next combatant (keyboard shortcut). */
+	export function advance() {
+		nextTurn();
+	}
 	function clear() {
 		post(`/c/${campaignId}/initiative`, { action: 'clear' });
 	}

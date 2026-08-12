@@ -171,8 +171,17 @@
 		redrawMeasure();
 	});
 
+	function onKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') selectedId = null;
+	}
+
 	function onPointerDown(e: PointerEvent) {
 		const pos = toCell(e);
+		if (tool === 'dmg') {
+			// clicking empty board clears the selection
+			selectedId = null;
+			return;
+		}
 		if (tool === 'measure') {
 			measureStart = pos;
 			measureEnd = pos;
@@ -400,6 +409,8 @@
 		}
 	}
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="board-wrap">
 	{#if dm}
