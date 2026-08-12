@@ -122,15 +122,13 @@
 	:global(.dm-heading-controls .dhc-collapse) {
 		color: #6b7280;
 	}
-	:global(.dm-heading-controls .dhc-share) {
-		cursor: pointer;
-	}
-	:global(.dm-heading-controls .dhc-handout) {
+	:global(.dm-heading-controls .dhc-vis) {
 		border: 1px solid var(--gold);
 		background: var(--parchment-deep);
 		border-radius: 4px;
 		font-size: 0.8em;
 		padding: 0 0.25rem;
+		line-height: 1;
 	}
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);

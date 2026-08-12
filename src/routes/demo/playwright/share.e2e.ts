@@ -24,7 +24,7 @@ async function loginDM(browser: Browser) {
 	return { dm, page };
 }
 
-test('share checkbox toggles and propagates to a live player via SSE', async ({ browser }) => {
+test('show/hide toggle propagates to a live player via SSE', async ({ browser }) => {
 	const anon = await browser.newContext();
 	const id = await createCampaign(anon.request);
 	const { dm, page } = await loginDM(browser);
@@ -38,8 +38,8 @@ test('share checkbox toggles and propagates to a live player via SSE', async ({ 
 
 	const controls = editor.locator('.dm-heading-controls').first();
 	await expect(controls).toBeVisible({ timeout: 5000 });
-	const share = controls.locator('.dhc-share');
-	await expect(share).not.toBeChecked();
+	const vis = controls.locator('.dhc-vis');
+	await expect(vis).toHaveText('👁'); // hidden by default
 
 	// a live player should NOT see the unshared heading — instead the empty state
 	const player = await browser.newPage();
@@ -49,14 +49,14 @@ test('share checkbox toggles and propagates to a live player via SSE', async ({ 
 	const docHeading = player.locator('.rendered').getByText('Main Section');
 	await expect(docHeading).toHaveCount(0);
 
-	// share it: checkbox reflects checked AND the live player sees it via SSE
-	await share.click();
-	await expect(share).toBeChecked();
+	// reveal it: single button flips to hide AND the live player sees it via SSE
+	await vis.click();
+	await expect(vis).toHaveText('🙈');
 	await expect(docHeading).toBeVisible({ timeout: 10000 });
 
-	// unshare: checkbox reflects unchecked AND the player hides it again
-	await share.click();
-	await expect(share).not.toBeChecked();
+	// hide again: button flips back to reveal AND the player hides it
+	await vis.click();
+	await expect(vis).toHaveText('👁');
 	await expect(docHeading).toHaveCount(0, { timeout: 10000 });
 
 	await anon.close();

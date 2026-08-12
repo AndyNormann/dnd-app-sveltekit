@@ -82,44 +82,39 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 			currentView?.dispatch(currentView.state.tr);
 		};
 
-		const share = document.createElement('input');
-		share.type = 'checkbox';
-		share.className = 'dhc-share';
-		share.title = 'Share with players';
-		share.checked = effectiveShared(id);
-		share.onmousedown = (e) => e.stopPropagation();
-		share.onclick = (e) => {
-			e.preventDefault();
+		// single show/hide toggle for players: 👁 reveal, 🙈 hide. Reveal uses the
+		// handout flow (live reveal + scroll/flash), hide unshares.
+		const vis = document.createElement('button');
+		vis.type = 'button';
+		vis.className = 'dhc-vis';
+		vis.textContent = effectiveShared(id) ? '🙈' : '👁';
+		vis.title = effectiveShared(id) ? 'Hide from players' : 'Reveal to players';
+		vis.onmousedown = (e) => e.stopPropagation();
+		vis.onclick = (e) => {
 			e.stopPropagation();
-			const cur = effectiveShared(id);
-			const next = cur ? 2 : 1;
-			meta.set(id, { ...st(), shared: next });
-			share.checked = !cur;
-			fetch(`/c/${campaignId}/share`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ headingId: id, state: next })
-			});
-			// recompute decorations so the re-rendered checkbox reflects the new state
+			const shared = effectiveShared(id);
+			if (shared) {
+				// currently visible to players -> hide
+				meta.set(id, { ...st(), shared: 2 });
+				fetch(`/c/${campaignId}/share`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ headingId: id, state: 2 })
+				});
+			} else {
+				// hidden -> reveal live (handout flow)
+				meta.set(id, { ...st(), shared: 1 });
+				fetch(`/c/${campaignId}/handout`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ headingId: id })
+				});
+			}
+			// recompute decorations so the re-rendered button reflects the new state
 			currentView?.dispatch(currentView.state.tr);
 		};
 
-		const handout = document.createElement('button');
-		handout.type = 'button';
-		handout.className = 'dhc-handout';
-		handout.title = 'Reveal handout to players now';
-		handout.textContent = '📢';
-		handout.onmousedown = (e) => e.stopPropagation();
-		handout.onclick = (e) => {
-			e.stopPropagation();
-			fetch(`/c/${campaignId}/handout`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ headingId: id })
-			});
-		};
-
-		dom.append(collapse, share, handout);
+		dom.append(collapse, vis);
 		return dom;
 	}
 
