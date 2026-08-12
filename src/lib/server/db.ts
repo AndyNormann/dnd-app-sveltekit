@@ -17,6 +17,7 @@ db.exec(`
 		title TEXT NOT NULL,
 		content TEXT NOT NULL DEFAULT '',
 		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL DEFAULT 0,
 		rev INTEGER NOT NULL DEFAULT 0,
 		initiative_round INTEGER NOT NULL DEFAULT 1
 	);
@@ -189,6 +190,10 @@ db.exec(`
 	if (!campCols.includes('combat_movement_used')) {
 		db.exec(`ALTER TABLE campaigns ADD COLUMN combat_movement_used INTEGER NOT NULL DEFAULT 0`);
 	}
+	// last-edited stamp for the dashboard
+	if (!campCols.includes('updated_at')) {
+		db.exec(`ALTER TABLE campaigns ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0`);
+	}
 	// combat-unit death flag (alive 0 = down/out, skipped in turn order)
 	const unitCols = (db.query('PRAGMA table_info(combat_units)').all() as { name: string }[]).map(
 		(c) => c.name
@@ -210,6 +215,7 @@ export interface Campaign {
 	title: string;
 	content: string;
 	created_at: number;
+	updated_at: number;
 	rev: number;
 }
 
@@ -265,16 +271,39 @@ export function listCampaigns(): Campaign[] {
 	return db.query('SELECT * FROM campaigns ORDER BY created_at DESC').all() as Campaign[];
 }
 
+export interface CampaignSummary {
+	id: string;
+	title: string;
+	created_at: number;
+	updated_at: number;
+	maps: number;
+	rolls: number;
+}
+
+/** Dashboard list: campaigns ordered by last-edited, with roll/map counts. */
+export function listCampaignSummaries(): CampaignSummary[] {
+	return db
+		.query(
+			`SELECT c.id, c.title, c.created_at, c.updated_at,
+				(SELECT COUNT(*) FROM maps m WHERE m.campaign_id = c.id) AS maps,
+				(SELECT COUNT(*) FROM rolls r WHERE r.campaign_id = c.id) AS rolls
+			FROM campaigns c
+			ORDER BY CASE WHEN c.updated_at = 0 THEN c.created_at ELSE c.updated_at END DESC`
+		)
+		.all() as CampaignSummary[];
+}
+
 export function getCampaign(id: string): Campaign | null {
 	return (db.query('SELECT * FROM campaigns WHERE id = ?').get(id) as Campaign) ?? null;
 }
 
 export function createCampaign(title: string): Campaign {
 	const id = nanoid(10);
-	db.query('INSERT INTO campaigns (id, title, content, created_at) VALUES (?, ?, ?, ?)').run(
+	db.query('INSERT INTO campaigns (id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').run(
 		id,
 		title,
 		'',
+		Date.now(),
 		Date.now()
 	);
 	return getCampaign(id)!;
@@ -282,7 +311,11 @@ export function createCampaign(title: string): Campaign {
 
 /** Write content and bump the revision (unconditional; used by restore/canonicalize). */
 export function updateContent(id: string, content: string): void {
-	db.query('UPDATE campaigns SET content = ?, rev = rev + 1 WHERE id = ?').run(content, id);
+	db.query('UPDATE campaigns SET content = ?, rev = rev + 1, updated_at = ? WHERE id = ?').run(
+		content,
+		Date.now(),
+		id
+	);
 }
 
 /**
@@ -296,8 +329,8 @@ export function updateContentConditional(
 	expectedRev: number
 ): boolean {
 	const res = db
-		.query('UPDATE campaigns SET content = ?, rev = rev + 1 WHERE id = ? AND rev = ?')
-		.run(content, id, expectedRev);
+		.query('UPDATE campaigns SET content = ?, rev = rev + 1, updated_at = ? WHERE id = ? AND rev = ?')
+		.run(content, Date.now(), id, expectedRev);
 	return res.changes > 0;
 }
 
@@ -317,7 +350,7 @@ export function checkpoint(): void {
 }
 
 export function updateTitle(id: string, title: string): void {
-	db.query('UPDATE campaigns SET title = ? WHERE id = ?').run(title, id);
+	db.query('UPDATE campaigns SET title = ?, updated_at = ? WHERE id = ?').run(title, Date.now(), id);
 }
 
 export interface CampaignSearchResult {

@@ -6,12 +6,40 @@
 	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
 
 	let q = $state(data.query);
+
+	function relTime(ts: number) {
+		if (!ts) return 'just now';
+		const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+		if (s < 5) return 'just now';
+		if (s < 60) return `${s}s ago`;
+		const m = Math.floor(s / 60);
+		if (m < 60) return `${m}m ago`;
+		const h = Math.floor(m / 60);
+		if (h < 24) return `${h}h ago`;
+		const d = Math.floor(h / 24);
+		if (d < 30) return `${d}d ago`;
+		const mo = Math.floor(d / 30);
+		return mo < 12 ? `${mo}mo ago` : `${Math.floor(mo / 12)}y ago`;
+	}
 </script>
 
 <svelte:head><title>D&D Campaigns</title></svelte:head>
 
 <main>
-	<h1><img class="logo" src={favicon} alt="" /> Campaigns</h1>
+	<header class="top">
+		<h1><img class="logo" src={favicon} alt="" /> Campaigns</h1>
+		{#if data.isDM}
+			<form method="POST" action="/logout" class="auth">
+				<span class="auth-pill on">DM</span>
+				<button type="submit" title="Log out as DM">Log out</button>
+			</form>
+		{:else}
+			<a href="/login" class="auth">
+				<span class="auth-pill">Player</span>
+				<button type="button" title="Log in as DM">Log in</button>
+			</a>
+		{/if}
+	</header>
 
 	<form method="POST" action="?/create" use:enhance class="create">
 		<input name="title" placeholder="New campaign title" autocomplete="off" />
@@ -52,6 +80,10 @@
 			{#each data.campaigns as c (c.id)}
 				<li class="card">
 					<a href={`/c/${c.id}`} class="title">{c.title}</a>
+					<span class="meta">
+						<span class="time">Edited {relTime(c.updated_at || c.created_at)}</span>
+						<span class="counts">{c.maps} map{c.maps === 1 ? '' : 's'} · {c.rolls} roll{c.rolls === 1 ? '' : 's'}</span>
+					</span>
 					<span class="actions">
 						<a href={`/c/${c.id}/play`} class="play">player view</a>
 						<form
@@ -82,11 +114,51 @@
 		display: flex;
 		align-items: center;
 		gap: 0.6rem;
-		margin-bottom: 1.5rem;
+		margin: 0;
 		font-family: var(--font-display);
 		font-weight: 700;
 		color: var(--accent);
 		letter-spacing: 0.03em;
+	}
+	.top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+	.auth {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		text-decoration: none;
+	}
+	.auth button {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 6px;
+		padding: 0.35rem 0.8rem;
+		color: var(--ink-soft);
+		cursor: pointer;
+		font-size: 0.85rem;
+	}
+	.auth form,
+	.auth-pill {
+		margin: 0;
+	}
+	.auth-pill {
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		padding: 0.22rem 0.5rem;
+		border-radius: 99px;
+		border: 1px solid var(--rule);
+		color: var(--ink-soft);
+	}
+	.auth-pill.on {
+		color: var(--parchment-light);
+		background: var(--accent);
+		border-color: var(--accent);
 	}
 	.logo {
 		width: 2.2rem;
@@ -201,6 +273,13 @@
 	}
 	.title:hover {
 		color: var(--accent);
+	}
+	.meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		font-size: 0.82rem;
+		color: var(--ink-soft);
 	}
 	.play {
 		font-size: 0.9rem;

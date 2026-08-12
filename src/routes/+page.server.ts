@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
-import { createCampaign, deleteCampaign, listCampaigns, restoreCampaign, searchCampaigns } from '$lib/server/db';
+import { createCampaign, deleteCampaign, listCampaignSummaries, restoreCampaign, searchCampaigns } from '$lib/server/db';
+import { isDM } from '$lib/server/auth';
 import { UPLOAD_DIR } from '$lib/server/uploads';
 import { mkdirSync } from 'node:fs';
 import { unlink, writeFile } from 'node:fs/promises';
@@ -7,10 +8,10 @@ import { extname } from 'node:path';
 import { nanoid } from 'nanoid';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ url }) => {
+export const load: PageServerLoad = ({ url, cookies }) => {
 	const q = url.searchParams.get('q')?.trim() ?? '';
-	if (q) return { campaigns: [], query: q, results: searchCampaigns(q) };
-	return { campaigns: listCampaigns(), query: '', results: [] };
+	if (q) return { campaigns: [], query: q, results: searchCampaigns(q), isDM: isDM(cookies) };
+	return { campaigns: listCampaignSummaries(), query: '', results: [], isDM: isDM(cookies) };
 };
 
 export const actions: Actions = {

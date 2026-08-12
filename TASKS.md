@@ -199,7 +199,7 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       Flush a pending debounced save on tab close via `navigator.sendBeacon`
       (`pagehide`), so edits aren't lost if the tab is closed mid-debounce. Show
       a transient "Saved ✓" state in the header after a successful save.
-- [ ] **R2. Home dashboard depth**
+- [x] **R2. Home dashboard depth**
       Campaign cards show last-edited time + roll/map counts; a DM auth indicator
       on the home page ("Logged in as DM" / log in) instead of only logging out
       from inside a campaign.
