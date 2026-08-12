@@ -489,11 +489,6 @@
 		position: absolute;
 		width: 40px;
 		height: 40px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.05rem;
 		pointer-events: auto;
 		cursor: grab;
 		z-index: 3;
@@ -501,31 +496,51 @@
 	.token.myturn {
 		cursor: grabbing;
 	}
+	/* The dot is the position anchor: its centre is pinned to the cell centre (20,20)
+	   for a 30px dot in a 40px cell, independent of the label/HP readouts. */
 	.dot {
+		position: absolute;
+		top: 5px;
+		left: 5px;
 		width: 30px;
 		height: 30px;
-		border-radius: 50%;
+		box-sizing: border-box;
 		border: 2px solid #fff;
+		border-radius: 50%;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-		flex: none;
 	}
 	.token.active .dot {
 		box-shadow: 0 0 0 2px var(--gold), 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
 	.label {
-		font-size: 0.62rem;
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.55rem;
+		line-height: 1.1;
 		color: var(--ink);
 		background: rgba(255, 255, 255, 0.85);
-		padding: 0 0.2rem;
+		padding: 0 0.15rem;
 		border-radius: 3px;
 		white-space: nowrap;
+		max-width: 44px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		pointer-events: none;
 	}
 	.hp {
-		font-size: 0.58rem;
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.55rem;
+		line-height: 1.1;
 		color: var(--accent);
 		background: rgba(255, 255, 255, 0.85);
-		padding: 0 0.2rem;
+		padding: 0 0.15rem;
 		border-radius: 3px;
+		pointer-events: none;
 	}
 	.snap-hl {
 		position: absolute;
