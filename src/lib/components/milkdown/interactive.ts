@@ -176,10 +176,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 								const parentId =
 									parentIdx !== null ? headingId(headings[parentIdx].node) : null;
 								headingParents.set(id, parentId);
-								// controls at the END of the heading so the `#` + text read like markdown
+								// controls at the START of the heading, before the `#` (`▾👁 # Heading`)
 								decos.push(
-									Decoration.widget(pos + node.nodeSize - 1, () => makeHeadingControls(id), {
-										side: 1
+									Decoration.widget(pos + 1, () => makeHeadingControls(id), {
+										side: -1
 									})
 								);
 							}
