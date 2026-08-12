@@ -9,7 +9,8 @@ import {
 	clearInitiative,
 	setInitiativeRound,
 	listInitiative,
-	getInitiativeRound
+	getInitiativeRound,
+	addCombatLog
 } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
@@ -44,6 +45,8 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		setInitiativeRound(params.id, 1);
 		broadcast(params.id, { type: 'combat-units-updated', units: [] });
 		broadcastInitiative(params.id);
+		const entry = addCombatLog(params.id, '🗑 Board cleared');
+		broadcast(params.id, { type: 'combat-log', entry });
 		return json({ ok: true });
 	}
 

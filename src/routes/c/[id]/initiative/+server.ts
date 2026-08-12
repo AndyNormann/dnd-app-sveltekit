@@ -7,6 +7,7 @@ import {
 	getInitiativeRound,
 	setInitiativeRound,
 	listCombatUnits,
+	addCombatLog,
 	resetMovement
 } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
@@ -63,18 +64,36 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		});
 		setInitiativeRound(params.id, 1);
 		resetMovement(params.id);
+		const rollEntry = addCombatLog(params.id, '🎲 Initiative rolled — Round 1');
+		broadcast(params.id, { type: 'combat-log', entry: rollEntry });
 	} else if (body.action === 'next') {
 		const entries: InitEntry[] = listInitiative(params.id);
+		const units = listCombatUnits(params.id);
+		const isDown = (e: InitEntry) => {
+			if (!e.unit_id) return false; // manual combatant, always acts
+			const u = units.find((x) => x.id === e.unit_id);
+			return !!u && u.alive === 0;
+		};
 		const activeIndex = entries.findIndex((e) => e.active === 1);
 		if (entries.length) {
-			const nextIndex = (activeIndex + 1) % entries.length;
-			let round = getInitiativeRound(params.id);
-			// wrapping past the last combatant begins a new round
-			if (activeIndex === entries.length - 1) round += 1;
+			// advance to the next living combatant, skipping any that are down
+			let nextIndex = activeIndex;
+			let roundInc = 0;
+			for (let step = 0; step < entries.length; step++) {
+				nextIndex = (nextIndex + 1) % entries.length;
+				if (nextIndex === 0) roundInc = 1; // wrapped past the last combatant
+				if (!isDown(entries[nextIndex])) break;
+			}
+			const round = getInitiativeRound(params.id) + roundInc;
 			for (const e of entries) updateInitiative(e.id, { active: 0 });
 			updateInitiative(entries[nextIndex].id, { active: 1 });
 			setInitiativeRound(params.id, round);
 			resetMovement(params.id);
+			const entry = addCombatLog(
+				params.id,
+				roundInc === 1 ? `— Round ${round}: ${entries[nextIndex].name}'s turn —` : `${entries[nextIndex].name}'s turn`
+			);
+			broadcast(params.id, { type: 'combat-log', entry });
 		}
 	} else {
 		throw error(400, 'Unknown action');

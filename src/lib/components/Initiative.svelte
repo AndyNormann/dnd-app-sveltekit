@@ -81,12 +81,13 @@
 			{/if}
 			{#each entries as e (e.id)}
 				{@const unit = units.find((u) => u.id === e.unit_id)}
-				<div class="entry" class:active={e.active === 1}>
+				<div class="entry" class:active={e.active === 1} class:dead={!!unit && unit.alive === 0}>
 					{#if dm}
 						<button type="button" class="play" title="It's their turn" onclick={() => setActive(e)}>▶</button>
 						<button type="button" class="rm" title="Remove" onclick={() => remove(e)}>✕</button>
 					{/if}
 					<span class="nm">{e.name}</span>
+					{#if unit && unit.alive === 0}<span class="down">💀 down</span>{/if}
 					<span class="in">({e.init})</span>
 					{#if dm}
 						<span class="hp">
@@ -159,6 +160,16 @@
 	.entry.active {
 		background: var(--parchment-deep);
 		box-shadow: inset 3px 0 0 var(--gold);
+	}
+	.entry.dead {
+		opacity: 0.5;
+	}
+	.entry.dead .nm {
+		text-decoration: line-through;
+	}
+	.down {
+		color: var(--accent-soft);
+		font-size: 0.75rem;
 	}
 	.nm {
 		flex: 1;

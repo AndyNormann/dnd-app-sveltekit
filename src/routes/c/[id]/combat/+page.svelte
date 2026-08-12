@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
+	import CombatLog from '$lib/components/CombatLog.svelte';
 	import type { PageData } from './$types';
 	import type { CharacterRow, CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
@@ -13,6 +14,7 @@
 	let drawings = $state<CombatDrawing[]>(data.drawings);
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
 	let characters = $state<CharacterRow[]>(data.characters);
+	let combatLog: CombatLog;
 	let initiative: Initiative;
 	let board: CombatBoard;
 
@@ -156,6 +158,9 @@
 					units = ev.units;
 					board?.applyUnits(ev.units);
 					break;
+				case 'combat-log':
+					combatLog?.add(ev.entry);
+					break;
 				case 'combat-drawings-updated':
 					drawings = ev.drawings;
 					board?.applyDrawings(ev.drawings);
@@ -265,6 +270,10 @@
 			initialRound={data.initiativeRound}
 			units={units}
 		/>
+	</section>
+
+	<section class="panel log">
+		<CombatLog bind:this={combatLog} initial={data.logs} />
 	</section>
 </main>
 

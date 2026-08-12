@@ -6,7 +6,8 @@ import {
 	listCombatUnits,
 	listCombatDrawings,
 	getBoardConfig,
-	getActiveUnitId
+	getActiveUnitId,
+	listCombatLogs
 } from '$lib/server/db';
 import { PLAYER_COOKIE } from '$lib/server/player';
 import { error } from '@sveltejs/kit';
@@ -35,6 +36,7 @@ export const load: PageServerLoad = ({ params, cookies }) => {
 		units: listCombatUnits(ch.campaign_id),
 		drawings: listCombatDrawings(ch.campaign_id),
 		boardConfig: getBoardConfig(ch.campaign_id),
-		activeUnitId: getActiveUnitId(ch.campaign_id)
+		activeUnitId: getActiveUnitId(ch.campaign_id),
+		logs: listCombatLogs(ch.campaign_id)
 	};
 };

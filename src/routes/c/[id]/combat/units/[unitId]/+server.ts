@@ -10,7 +10,8 @@ import {
 	getActiveUnitId,
 	setInitiativeHpByUnit,
 	listInitiative,
-	getInitiativeRound
+	getInitiativeRound,
+	addCombatLog
 } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
@@ -46,13 +47,29 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	}
 
 	if (body.action === 'hp') {
-		if (!dm) throw error(401, 'DM required');
-		const hp = Math.max(0, Math.floor(Number(body.hp) || 0));
+		const me = playerCharacter(cookies);
+		const isPlayerForUnit = !!(me && me.id === unit.character_id && unit.kind === 'player');
+		if (!dm && !isPlayerForUnit) throw error(401, 'DM or your own unit required');
+		const max = unit.max_hp > 0 ? unit.max_hp : Infinity;
+		const hp = Math.max(0, Math.min(max, Math.floor(Number(body.hp) || 0)));
+		const delta = hp - unit.hp;
 		updateCombatUnit(unit.id, { hp });
 		setInitiativeHpByUnit(unit.id, hp);
+		// record notable HP transitions in the combat log
+		const down = unit.hp > 0 && hp === 0;
+		const back = unit.hp === 0 && hp > 0;
+		let log: string | null = null;
+		if (down) log = `${unit.name} is down`;
+		else if (back) log = `${unit.name} is back up`;
+		else if (delta > 0) log = `${unit.name} heals ${delta} → ${hp}${unit.max_hp ? `/${unit.max_hp}` : ''}`;
+		else if (delta < 0) log = `${unit.name} takes ${-delta} → ${hp}${unit.max_hp ? `/${unit.max_hp}` : ''}`;
+		if (log) {
+			const entry = addCombatLog(params.id, log);
+			broadcast(params.id, { type: 'combat-log', entry });
+		}
 		broadcastUnits(params.id);
 		broadcastInitiative(params.id);
-		return json({ ok: true });
+		return json({ ok: true, hp, alive: hp > 0 ? 1 : 0, delta });
 	}
 
 	if (body.action === 'move') {

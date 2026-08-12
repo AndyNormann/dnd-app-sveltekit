@@ -26,9 +26,12 @@
 	let units = $state<CombatUnit[]>(initialUnits);
 	let drawings = $state<CombatDrawing[]>(initialDrawings);
 	let config = $state<BoardConfig>(initialConfig);
-	let tool = $state<'draw' | 'erase' | 'measure'>(dm ? 'draw' : 'measure');
+	let tool = $state<'draw' | 'erase' | 'measure' | 'dmg'>(dm ? 'draw' : 'measure');
 	let color = $state('#222');
 	let errorMsg = $state('');
+	let selectedId = $state<string | null>(null);
+	let hpAmount = $state('');
+	let dmgError = $state('');
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let measureCanvas: HTMLCanvasElement | undefined = $state();
@@ -45,6 +48,9 @@
 	let grabOffset = $state<{ x: number; y: number } | null>(null);
 	let dragCost = $state<number | null>(null);
 	let activeId = $state<string | null>(activeUnitId);
+	// floating HP chips + baseline for delta detection
+	let floating = $state<Record<string, { delta: number; x: number; y: number; key: number }>>({});
+	const prevHp = new Map<string, number>(initialUnits.map((u) => [u.id, u.hp]));
 
 	const myUnit = $derived(units.find((u) => u.character_id === characterId) ?? null);
 	const isMyTurn = $derived(!!myUnit && myUnit.id === activeId);
@@ -58,6 +64,21 @@
 	export function applyUnits(next: CombatUnit[]) {
 		units = next;
 		dragTemp = {};
+		// float a chip on any HP change (local apply, SSE, or another client)
+		for (const u of next) {
+			const prev = prevHp.get(u.id);
+			if (prev != null && prev !== u.hp) {
+				const delta = u.hp - prev;
+				const key = Date.now() + Math.random();
+				floating = { ...floating, [u.id]: { delta, x: u.x, y: u.y, key } };
+				setTimeout(() => {
+					floating = Object.fromEntries(
+						Object.entries(floating).filter(([, v]) => v.key !== key)
+					);
+				}, 1400);
+			}
+			prevHp.set(u.id, u.hp);
+		}
 	}
 	export function applyDrawings(next: CombatDrawing[]) {
 		drawings = next;
@@ -201,6 +222,34 @@
 		}
 	}
 
+	async function applyHpDelta(delta: number) {
+			const id = selectedId;
+			if (!id) return;
+			dmgError = '';
+			const res = await fetch(`/c/${campaignId}/combat/units/${id}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'hp', hp: (unitById(id)?.hp ?? 0) + delta })
+			});
+			if (!res.ok) dmgError = 'Could not apply';
+		}
+	function unitById(id: string) {
+		return units.find((u) => u.id === id) ?? null;
+	}
+	async function applyHpSet() {
+		const id = selectedId;
+		const n = parseInt(hpAmount, 10);
+		if (!id || isNaN(n)) return;
+		dmgError = '';
+		const res = await fetch(`/c/${campaignId}/combat/units/${id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'hp', hp: n })
+		});
+		if (!res.ok) dmgError = 'Could not apply';
+		hpAmount = '';
+	}
+
 	async function postStroke(mode: 'draw' | 'erase', points: [number, number][]) {
 		errorMsg = '';
 		const res = await fetch(`/c/${campaignId}/combat/drawings`, {
@@ -220,6 +269,14 @@
 		return (e: MouseEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
+			if (tool === 'dmg') {
+				// damage tool: select the token (players only their own), don't drag
+				if (!dm && u.id !== myUnit?.id) return;
+				selectedId = selectedId === u.id ? null : u.id;
+				hpAmount = '';
+				dmgError = '';
+				return;
+			}
 			if (dm) {
 				draggingId = u.id;
 			} else {
@@ -350,6 +407,7 @@
 			<button type="button" class:on={tool === 'draw'} onclick={() => (tool = 'draw')}>✏️ Draw</button>
 			<button type="button" class:on={tool === 'erase'} onclick={() => (tool = 'erase')}>🧽 Erase</button>
 			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
+			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
 			<span class="colors">
 				{#each COLORS as c}
 					<button
@@ -369,6 +427,7 @@
 	{:else}
 		<div class="toolbar">
 			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
+			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
 			{#if myUnit}
 				<span class="budget"
 					>Turn: <b>{myUnit.name}</b> · moved {Math.min(usedCells, budgetCells)}/{budgetCells} cells</span
@@ -394,12 +453,15 @@
 				class="token"
 				class:myturn={u.id === myUnit?.id}
 				class:active={u.id === activeId}
+				class:dead={u.alive === 0}
+				class:sel={u.id === selectedId}
 				style="left:{pos.x * CELL}px;top:{pos.y * CELL}px"
 				onmousedown={startDrag(u)}
 				onpointerdown={(e) => e.stopPropagation()}
 				title={u.name}
 			>
 				<span class="dot" style="background:{u.color}"></span>
+				{#if u.alive === 0}<span class="skull">💀</span>{/if}
 				<span class="label">{u.name}</span>
 				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
 			</div>
@@ -414,6 +476,36 @@
 			<div class="drag-feedback" style="left:{d.x * CELL + 4}px;top:{d.y * CELL + 40}px">
 				−{dragCost} cell{dragCost === 1 ? '' : 's'} · {rem} left
 			</div>
+		{/if}
+		{#each Object.entries(floating) as [id, f]}
+			<div
+				class="floating"
+				class:heal={f.delta > 0}
+				class:down={f.delta < 0}
+				style="left:{f.x * CELL + 20}px;top:{f.y * CELL - 2}px"
+			>
+				{f.delta > 0 ? '+' + f.delta : f.delta}
+			</div>
+		{/each}
+		{#if selectedId && tool === 'dmg'}
+			{@const su = unitById(selectedId)}
+			{#if su}
+				{@const px = Math.max(0, Math.min(config.grid_cols * CELL - 150, su.x * CELL + 44))}
+				<div class="hp-pop" style="left:{px}px;top:{Math.max(0, su.y * CELL + 44)}px">
+					<div class="hpn">{su.name} · <b>{su.hp}{su.max_hp ? `/${su.max_hp}` : ''}</b></div>
+					<div class="btns">
+						<button type="button" onclick={() => applyHpDelta(-1)}>−1</button>
+						<button type="button" onclick={() => applyHpDelta(-5)}>−5</button>
+						<button type="button" onclick={() => applyHpDelta(1)}>+1</button>
+						<button type="button" onclick={() => applyHpDelta(5)}>+5</button>
+					</div>
+					<form class="set" onsubmit={(e) => { e.preventDefault(); applyHpSet(); }}>
+						<input bind:value={hpAmount} inputmode="numeric" placeholder="Set HP" />
+						<button type="submit">Set</button>
+					</form>
+					{#if dmgError}<div class="err">{dmgError}</div>{/if}
+				</div>
+			{/if}
 		{/if}
 	</div>
 
@@ -512,6 +604,26 @@
 	.token.active .dot {
 		box-shadow: 0 0 0 2px var(--gold), 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
+	.token.sel .dot {
+		box-shadow: 0 0 0 2px var(--accent), 0 1px 3px rgba(0, 0, 0, 0.4);
+	}
+	.token.dead .dot {
+		filter: grayscale(1) brightness(0.75);
+		opacity: 0.55;
+	}
+	.token.dead .label {
+		opacity: 0.55;
+		text-decoration: line-through;
+	}
+	.skull {
+		position: absolute;
+		top: -4px;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.6rem;
+		pointer-events: none;
+		filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+	}
 	.label {
 		position: absolute;
 		top: 0;
@@ -566,9 +678,94 @@
 		pointer-events: none;
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 	}
+	.floating {
+		position: absolute;
+		z-index: 5;
+		transform: translateX(-50%) translateY(0);
+		font-size: 0.85rem;
+		font-weight: 700;
+		padding: 0.05rem 0.3rem;
+		border-radius: 4px;
+		pointer-events: none;
+		color: var(--parchment-light);
+		background: #c0392b;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+		animation: rise 1.3s ease-out forwards;
+	}
+	.floating.heal {
+		background: #27ae60;
+	}
+	.hp-pop {
+		position: absolute;
+		z-index: 6;
+		width: 9.5rem;
+		background: var(--parchment-light);
+		border: 1px solid var(--gold);
+		border-radius: 8px;
+		padding: 0.5rem;
+		box-shadow: 0 4px 16px rgba(43, 35, 23, 0.3);
+		font-family: system-ui, sans-serif;
+	}
+	.hp-pop .hpn {
+		font-size: 0.85rem;
+		font-weight: 600;
+		margin-bottom: 0.4rem;
+		color: var(--ink);
+	}
+	.hp-pop .btns {
+		display: flex;
+		gap: 0.3rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.4rem;
+	}
+	.hp-pop .btns button {
+		flex: 1;
+		min-width: 1.9rem;
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 4px;
+		padding: 0.25rem 0;
+		cursor: pointer;
+		font-size: 0.8rem;
+	}
+	.hp-pop .set {
+		display: flex;
+		gap: 0.3rem;
+	}
+	.hp-pop .set input {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		padding: 0.2rem 0.35rem;
+		font-size: 0.8rem;
+	}
+	.hp-pop .set button {
+		border: 0;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 4px;
+		padding: 0.25rem 0.6rem;
+		cursor: pointer;
+	}
+	.hp-pop .err {
+		color: var(--accent-soft);
+		font-size: 0.75rem;
+		margin-top: 0.35rem;
+	}
 	.error {
 		color: var(--accent-soft);
 		font-size: 0.85rem;
 		margin: 0.4rem 0 0;
+	}
+	@keyframes rise {
+		from {
+			transform: translateX(-50%) translateY(0);
+			opacity: 1;
+		}
+		to {
+			transform: translateX(-50%) translateY(-18px);
+			opacity: 0;
+		}
 	}
 </style>

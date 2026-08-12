@@ -109,6 +109,7 @@ db.exec(`
 		init_bonus INTEGER NOT NULL DEFAULT 0,
 		hp INTEGER NOT NULL DEFAULT 0,
 		max_hp INTEGER NOT NULL DEFAULT 0,
+		alive INTEGER NOT NULL DEFAULT 1,
 		x INTEGER NOT NULL DEFAULT 0,
 		y INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL
@@ -123,6 +124,14 @@ db.exec(`
 		points TEXT NOT NULL,
 		created_at INTEGER NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS combat_logs (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		campaign_id TEXT NOT NULL,
+		text TEXT NOT NULL,
+		created_at INTEGER NOT NULL
+	);
+	CREATE INDEX IF NOT EXISTS idx_combat_logs_campaign ON combat_logs(campaign_id, id);
 
 	CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_link ON characters(link_token);
 `);
@@ -179,6 +188,13 @@ db.exec(`
 	}
 	if (!campCols.includes('combat_movement_used')) {
 		db.exec(`ALTER TABLE campaigns ADD COLUMN combat_movement_used INTEGER NOT NULL DEFAULT 0`);
+	}
+	// combat-unit death flag (alive 0 = down/out, skipped in turn order)
+	const unitCols = (db.query('PRAGMA table_info(combat_units)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!unitCols.includes('alive')) {
+		db.exec(`ALTER TABLE combat_units ADD COLUMN alive INTEGER NOT NULL DEFAULT 1`);
 	}
 	// link initiative entries to combat units so turns gate movement
 	const initCols = (db.query('PRAGMA table_info(initiative_entries)').all() as { name: string }[]).map(
@@ -907,6 +923,7 @@ export interface CombatUnit {
 	init_bonus: number;
 	hp: number;
 	max_hp: number;
+	alive: number;
 	x: number;
 	y: number;
 }
@@ -928,8 +945,8 @@ export function addCombatUnit(
 ): CombatUnit {
 	const id = nanoid(10);
 	db.query(
-		`INSERT INTO combat_units (id, campaign_id, kind, character_id, name, color, speed, init_bonus, hp, max_hp, x, y, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		`INSERT INTO combat_units (id, campaign_id, kind, character_id, name, color, speed, init_bonus, hp, max_hp, alive, x, y, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	).run(
 		id,
 		campaignId,
@@ -941,6 +958,7 @@ export function addCombatUnit(
 		Math.floor(data.init_bonus ?? 0),
 		Math.max(0, Math.floor(data.hp ?? data.max_hp ?? 0)),
 		Math.max(0, Math.floor(data.max_hp ?? 0)),
+		1,
 		Math.max(0, Math.floor(data.x ?? 0)),
 		Math.max(0, Math.floor(data.y ?? 0)),
 		Date.now()
@@ -973,12 +991,16 @@ export function updateCombatUnit(
 ): CombatUnit | null {
 	const cur = db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit | null;
 	if (!cur) return null;
+	const hp = patch.hp != null ? Math.max(0, Math.floor(patch.hp)) : cur.hp;
+	// alive follows hp: at 0 the unit is down, above 0 it is back up
+	const alive = hp > 0 ? 1 : 0;
 	db.query(
-		`UPDATE combat_units SET x = ?, y = ?, hp = ?, name = ?, color = ?, speed = ?, init_bonus = ?, max_hp = ? WHERE id = ?`
+		`UPDATE combat_units SET x = ?, y = ?, hp = ?, alive = ?, name = ?, color = ?, speed = ?, init_bonus = ?, max_hp = ? WHERE id = ?`
 	).run(
 		patch.x != null ? Math.max(0, Math.floor(patch.x)) : cur.x,
 		patch.y != null ? Math.max(0, Math.floor(patch.y)) : cur.y,
-		patch.hp != null ? Math.max(0, Math.floor(patch.hp)) : cur.hp,
+		hp,
+		alive,
 		patch.name ?? cur.name,
 		patch.color ?? cur.color,
 		patch.speed != null ? Math.max(0, Math.floor(patch.speed)) : cur.speed,
@@ -995,6 +1017,33 @@ export function removeCombatUnit(id: string): void {
 
 export function clearCombatUnits(campaignId: string): void {
 	db.query('DELETE FROM combat_units WHERE campaign_id = ?').run(campaignId);
+}
+
+// --- Combat log (a running feed of what just happened) ---
+
+export interface CombatLogEntry {
+	id: number;
+	campaign_id: string;
+	text: string;
+	created_at: number;
+}
+
+export function addCombatLog(campaignId: string, text: string): CombatLogEntry {
+	const row = db
+		.query('INSERT INTO combat_logs (campaign_id, text, created_at) VALUES (?, ?, ?)')
+		.run(campaignId, text, Date.now());
+	const entry = db
+		.query('SELECT * FROM combat_logs WHERE id = ?')
+		.get(Number(row.lastInsertRowid)) as CombatLogEntry;
+	return entry;
+}
+
+export function listCombatLogs(campaignId: string, limit = 80): CombatLogEntry[] {
+	return db
+		.query(
+			'SELECT * FROM combat_logs WHERE campaign_id = ? ORDER BY id DESC LIMIT ?'
+		)
+		.all(campaignId, limit) as CombatLogEntry[];
 }
 
 // --- Combat drawings (pen-and-paper strokes) ---

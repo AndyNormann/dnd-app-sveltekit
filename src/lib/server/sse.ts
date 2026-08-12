@@ -22,6 +22,7 @@ export type CampaignEvent =
 	| { type: 'combat-units-updated'; units: import('./db').CombatUnit[] }
 	| { type: 'combat-drawings-updated'; drawings: import('./db').CombatDrawing[] }
 	| { type: 'board-config-updated'; config: import('./db').BoardConfig }
+	| { type: 'combat-log'; entry: import('./db').CombatLogEntry }
 	| {
 			type: 'snapshot';
 			title: string;

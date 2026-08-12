@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
+	import CombatLog from '$lib/components/CombatLog.svelte';
 	import type { PageData } from './$types';
 	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
@@ -14,7 +15,11 @@
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
 	let initiative: Initiative;
 	let board: CombatBoard;
+	let log: CombatLog;
+	let activeName = $state(data.initiative.find((x: { active: number }) => x.active === 1)?.name ?? '');
+	let activeUnitId = $state<string | null>(data.activeUnitId);
 	const myUnitId = $derived(units.find((u) => u.character_id === data.character.id)?.id ?? null);
+	const isMyTurn = $derived(activeUnitId != null && activeUnitId === myUnitId);
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
@@ -27,8 +32,13 @@
 					initiative?.applyEntries(ev.entries, ev.round);
 					const active = ev.entries.find((x: { active: number }) => x.active === 1)?.unit_id ?? null;
 					board?.setActiveUnitId(active);
+					activeUnitId = active;
+					activeName = ev.entries.find((x: { active: number }) => x.active === 1)?.name ?? '';
 					break;
 				}
+				case 'combat-log':
+					log?.add(ev.entry);
+					break;
 				case 'combat-units-updated':
 					units = ev.units;
 					board?.applyUnits(ev.units);
@@ -61,6 +71,11 @@
 <main class="combat">
 	<h1 class="campaign-title">{title}</h1>
 	<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+	{#if activeName}
+		<div class="turn-banner" class:mine={isMyTurn}>
+			{#if isMyTurn}✨ Your turn — go!{:else}⏳ Waiting on {activeName}…{/if}
+		</div>
+	{/if}
 	<CombatBoard
 		bind:this={board}
 		campaignId={data.campaignId}
@@ -80,6 +95,9 @@
 			units={units}
 			viewerUnitId={myUnitId}
 		/>
+	</section>
+	<section class="clog">
+		<CombatLog bind:this={log} initial={data.logs} />
 	</section>
 </main>
 
@@ -140,5 +158,26 @@
 	}
 	.order {
 		margin-top: 1rem;
+	}
+	.clog {
+		margin-top: 1rem;
+	}
+	.turn-banner {
+		text-align: center;
+		font-family: var(--font-display);
+		font-size: 1rem;
+		font-weight: 600;
+		padding: 0.5rem;
+		margin: 0 0 1rem;
+		border-radius: 6px;
+		border: 1px solid var(--rule);
+		background: var(--parchment-deep);
+		color: var(--ink-soft);
+	}
+	.turn-banner.mine {
+		background: #1f5d2b;
+		border-color: #3a9b45;
+		color: #f6f1e3;
+		box-shadow: 0 0 0 2px rgba(58, 155, 69, 0.4);
 	}
 </style>

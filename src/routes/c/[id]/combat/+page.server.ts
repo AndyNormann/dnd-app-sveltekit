@@ -6,7 +6,8 @@ import {
 	listCombatUnits,
 	listCombatDrawings,
 	getBoardConfig,
-	getActiveUnitId
+	getActiveUnitId,
+	listCombatLogs
 } from '$lib/server/db';
 import { isDM } from '$lib/server/auth';
 import { PLAYER_COOKIE } from '$lib/server/player';
@@ -29,6 +30,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		units: listCombatUnits(params.id),
 		drawings: listCombatDrawings(params.id),
 		boardConfig: getBoardConfig(params.id),
-		activeUnitId: getActiveUnitId(params.id)
+		activeUnitId: getActiveUnitId(params.id),
+		logs: listCombatLogs(params.id)
 	};
 };

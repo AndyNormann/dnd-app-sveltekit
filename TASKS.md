@@ -162,6 +162,34 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       Drag-to-measure tool showing distance in feet/cells (DM + players); players
       see the turn order and their own HP/max HP, enemy HP is hidden.
 
+## Combat: run-a-fight flow (improvements)
+
+> Round out the combat board so a real encounter can be run end-to-end: damage
+> applied on the board, dead units dropped from the turn wheel, players know when
+> it is their turn, and a running feed of what just happened.
+
+- [x] **33. Board HP application with floating feedback**
+      DM (and optionally the unit's own player) can apply damage/heal straight on
+      the board: click/select a token → a small input or −N/+N stepper → HP
+      updates, a floating "+6" / "−8" chip rises from the token and fades. Should
+      reuse the existing `/combat/units/[id]` HP endpoint and broadcast, so the
+      initiative panel and every open board stay in sync.
+- [x] **34. Death + skip-dead in turn order**
+      When a unit's HP hits 0 (or ≤ 0) it is marked **down**: visually greyed /
+      dropped on the board, an `alive`/`dead` flag persisted, and the initiative
+      "Next" **skips** dead combatants instead of giving them turns. Recovering
+      HP above 0 clears the flag.
+- [x] **35. "Whose turn" prominence for players**
+      The active combatant's name is already in the panel, but the player portal
+      should make it unmistakable: a banner in the player combat view ("It's
+      **Aria**'s turn — you're up!") when it's the viewer's character, plus a
+      clear "waiting on X" otherwise.
+- [x] **36. Combat log / action feed**
+      A scrollback feed (in the combat sidebar or above the board) recording
+      events as they happen — HP changes ("Goblin 2 takes 6 → 12"), turns started,
+      rolls, deaths — broadcast via SSE to DM and players, so everyone can
+      reconstruct the fight without staring at HP numbers.
+
 ## Quality
 
 - [x] **11. Pragmatic tests**
