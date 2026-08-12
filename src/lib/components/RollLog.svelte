@@ -152,6 +152,7 @@
 		font-size: 0.85rem;
 		color: var(--ink);
 		overflow: hidden;
+		box-sizing: border-box;
 	}
 	.header {
 		width: 100%;

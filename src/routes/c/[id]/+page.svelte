@@ -432,6 +432,7 @@
 	.layout {
 		display: grid;
 		grid-template-columns: 13rem 1fr 19rem;
+		grid-template-rows: 1fr;
 		height: calc(100vh - 3.3rem);
 	}
 	.layout.no-rail {
@@ -442,23 +443,27 @@
 		background: var(--parchment);
 		overflow-y: auto;
 		padding: 0.25rem;
+		min-height: 0;
 	}
 	.rail.rolls {
 		border-right: 0;
 		border-left: 1px solid var(--rule);
 		padding: 0;
 		overflow: hidden;
+		min-height: 0;
 	}
 	.split {
 		display: grid;
 		grid-template-columns: 1fr;
 		min-width: 0;
+		min-height: 0;
 	}
 	.pane {
 		overflow: auto;
 		height: 100%;
 		min-width: 0;
-		padding-bottom: 32vh;
+		min-height: 0;
+		box-sizing: border-box;
 	}
 	.source {
 		background: #fdfbf5;

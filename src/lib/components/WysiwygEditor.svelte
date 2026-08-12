@@ -85,7 +85,7 @@
 	:global(.mdx-host .ProseMirror) {
 		min-height: 100%;
 		outline: none;
-		padding: 1rem 1.75rem 3rem;
+		padding: 1rem 1.75rem 30vh;
 		font-family: var(--font-body);
 		font-size: 1.08rem;
 		line-height: 1.55;

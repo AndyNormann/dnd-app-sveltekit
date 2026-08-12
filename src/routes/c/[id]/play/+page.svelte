@@ -181,6 +181,11 @@
 		padding-top: 1.5rem;
 	}
 	.rail.rolls {
+		position: sticky;
+		top: 1rem;
+		align-self: start;
+		height: calc(100vh - 1rem);
+		max-height: none;
 		overflow: hidden;
 		padding-top: 0;
 		border-left: 1px solid var(--rule);
