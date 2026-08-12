@@ -47,6 +47,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 	const { campaignId } = opts;
 	const meta = opts.meta;
 	let currentView: EditorView | undefined;
+	/** pos of the heading whose section is currently hovered (for the highlight). */
+	let hoveredPos: number | null = null;
+	/** sorted heading start positions + levels, rebuilt each decoration pass. */
+	const sectionIndex: { pos: number; level: number }[] = [];
 	/** heading id -> parent heading id (built during decoration traversal). */
 	let headingParents = new Map<string, string | null>();
 
@@ -214,6 +218,11 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 						}
 						return true;
 					});
+					// rebuild the section index used by the hover highlight
+					sectionIndex.length = 0;
+					for (const h of headings) {
+						sectionIndex.push({ pos: h.pos, level: h.node.attrs.level as number });
+					}
 					// collapse: hide content below a collapsed heading until the next heading of <= level
 					for (let i = 0; i < headings.length; i++) {
 						const { pos, node } = headings[i];
@@ -232,6 +241,33 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 								);
 							}
 						});
+					}
+					// section highlight: when hovering a heading, tint the heading and every
+					// block below it up to the next heading of <= level, so the section reads
+					// as one unit.
+					if (hoveredPos !== null) {
+						const hi = headings.findIndex(
+							(h) => h.pos === hoveredPos || h.pos + 1 === hoveredPos
+						);
+						if (hi >= 0) {
+							const { pos, node } = headings[hi];
+							const level = node.attrs.level as number;
+							let j = hi + 1;
+							while (j < headings.length && (headings[j].node.attrs.level as number) > level) j++;
+							const from = pos + node.nodeSize;
+							const to = j < headings.length ? headings[j].pos : state.doc.content.size;
+							// the heading row itself
+							decos.push(Decoration.node(pos, pos + node.nodeSize, { class: 'section-hl' }));
+							if (to > from) {
+								state.doc.nodesBetween(from, to, (child, cpos) => {
+									if (!child.isInline && !child.isText) {
+										decos.push(
+											Decoration.node(cpos, cpos + child.nodeSize, { class: 'section-hl' })
+										);
+									}
+								});
+							}
+						}
 					}
 					return DecorationSet.create(state.doc, decos);
 				}
@@ -258,9 +294,36 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					}
 				};
 				view.dom.addEventListener('mousedown', onMouseDown);
+				const onMouseOver = (e: MouseEvent) => {
+					// any block-level element belongs to the section of the heading that
+					// precedes it; map it back so hovering anywhere in a section highlights it
+					const block = (e.target as HTMLElement).closest(
+						'h1,h2,h3,h4,h5,h6,p,ul,ol,li,blockquote,pre,hr,.map-widget'
+					);
+					if (!block) {
+						if (hoveredPos !== null) {
+							hoveredPos = null;
+							view.dispatch(view.state.tr);
+						}
+						return;
+					}
+					const P = view.posAtDOM(block, 0);
+					let hPos: number | null = null;
+					for (const h of sectionIndex) {
+						if (h.pos <= P) hPos = h.pos;
+						else break;
+					}
+					if (hPos !== hoveredPos) {
+						hoveredPos = hPos;
+						view.dispatch(view.state.tr);
+					}
+				};
+				view.dom.addEventListener('mouseover', onMouseOver);
 				return {
 					destroy: () => {
 						view.dom.removeEventListener('mousedown', onMouseDown);
+						view.dom.removeEventListener('mouseover', onMouseOver);
+						hoveredPos = null;
 						currentView = undefined;
 					}
 				};

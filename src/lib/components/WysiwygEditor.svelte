@@ -197,6 +197,18 @@
 		max-height: 55vh;
 		overflow-y: auto;
 	}
+	:global(.mdx-host .ProseMirror .section-hl) {
+		background: var(--section-hl, rgba(184, 155, 99, 0.10));
+		border-left: 3px solid rgba(184, 155, 99, 0.35);
+		padding: 0.15rem 0 0.15rem 0.5rem;
+		border-radius: 2px;
+	}
+	/* stitch the section blocks into one continuous highlight (no page-bg gaps) */
+	:global(.mdx-host .ProseMirror .section-hl + .section-hl) {
+		margin-top: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+	}
 	:global(.collapsed-child) {
 		display: none !important;
 	}
