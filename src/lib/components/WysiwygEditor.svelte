@@ -97,20 +97,42 @@
 	:global(.mdx-host .ProseMirror h4),
 	:global(.mdx-host .ProseMirror h5),
 	:global(.mdx-host .ProseMirror h6) {
-		font-family: var(--font-display);
-		color: var(--accent);
-		letter-spacing: 0.02em;
+		position: relative;
+		/* headings read as plain text; sections are marked by the controls in the gutter */
+		font-family: var(--font-body);
+		color: var(--ink);
+		letter-spacing: normal;
+		font-weight: 600;
+		line-height: 1.5;
+		margin: 1.1em 0 0.4em;
 	}
 	:global(.mdx-host .ProseMirror h1) {
-		border-bottom: 1px solid var(--gold);
-		padding-bottom: 0.25rem;
+		font-size: 1.32rem;
+	}
+	:global(.mdx-host .ProseMirror h2) {
+		font-size: 1.2rem;
+	}
+	:global(.mdx-host .ProseMirror h3) {
+		font-size: 1.1rem;
+	}
+	:global(.mdx-host .ProseMirror h4) {
+		font-size: 1.04rem;
+	}
+	:global(.mdx-host .ProseMirror h5) {
+		font-size: 1rem;
+	}
+	:global(.mdx-host .ProseMirror h6) {
+		font-size: 0.96rem;
 	}
 	:global(.dm-heading-controls) {
+		position: absolute;
+		/* pull the controls into the left gutter so they don't shift the heading line */
+		left: calc(-3rem + 0.4rem);
+		top: 50%;
+		transform: translateY(-50%);
 		display: inline-flex;
-		gap: 0.3rem;
+		gap: 0.25rem;
 		align-items: center;
-		margin-right: 0.5rem;
-		vertical-align: middle;
 		opacity: 0;
 		transition: opacity 0.15s ease;
 	}
@@ -128,9 +150,9 @@
 		cursor: pointer;
 		padding: 0;
 		/* fixed control size, independent of the heading font size */
-		width: 1.5rem;
-		height: 1.5rem;
-		font-size: 1rem;
+		width: 1.25rem;
+		height: 1.25rem;
+		font-size: 0.9rem;
 		line-height: 1;
 		display: inline-flex;
 		align-items: center;
