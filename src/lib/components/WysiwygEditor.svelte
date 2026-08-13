@@ -209,11 +209,10 @@
 		cursor: pointer;
 	}
 	:global(.map-widget) {
-		/* keep the map compact so it reads as a block without dominating the section */
+		/* keep the map width-compact so it reads as a block, but let it render at its
+		   natural height — no internal scrollbar, so page scrolling is never trapped */
 		margin: 0.75rem 0 1.5rem;
 		max-width: 640px;
-		max-height: 55vh;
-		overflow-y: auto;
 	}
 	:global(.mdx-host .ProseMirror .section-hl) {
 		/* marker only — the actual box is the measured .section-box overlay, so
