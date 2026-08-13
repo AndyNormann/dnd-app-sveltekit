@@ -69,17 +69,23 @@ test('theme switcher: present, switches dark themes, no header overlap', async (
 	await page.goto(loc);
 	await expect(switcher).toBeVisible({ timeout: 10000 });
 
-	// each theme gives a distinct dark background and updates the active label
-	const bodies: Record<string, string> = {};
-	for (const lbl of ['Midnight', 'Ember', 'Forest', 'Obsidian', 'Parchment']) {
+	// all 5 highlight sets keep the same dark Obsidian base, but the accent changes
+	const accents: Record<string, string> = {};
+	const bases = new Set<string>();
+	for (const lbl of ['Sapphire', 'Azure', 'Sky', 'Indigo', 'Ocean']) {
 		await page.locator('.themes .dotbtn[title="' + lbl + '"]').click();
 		await expect(page.locator('.themes .name')).toHaveText(lbl);
-		const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-		bodies[lbl] = bg;
-		expect(lum(bg)).toBeLessThan(80); // always dark
+		const d = await page.evaluate(() => ({
+			bg: getComputedStyle(document.body).backgroundColor,
+			accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+			ink: getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()
+		}));
+		bases.add(d.bg);
+		accents[lbl] = d.accent;
+		expect(lum(d.bg)).toBeLessThan(80); // always dark
 	}
-	const uniq = new Set(Object.values(bodies));
-	expect(uniq.size).toBe(5); // all five distinct
+	expect(bases.size).toBe(1); // base (page bg) unchanged across all sets
+	expect(new Set(Object.values(accents)).size).toBe(5); // all five accents distinct
 
 	// DM header: switcher clear of the Log out button
 	const s = await switcher.boundingBox();

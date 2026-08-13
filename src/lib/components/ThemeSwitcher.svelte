@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	// 5 blue+green highlight sets, all on the shared Obsidian base.
 	const THEMES = [
-		{ id: 'parchment', label: 'Parchment', swatch: '#241d15', dot: '#d06a63' },
-		{ id: 'midnight', label: 'Midnight', swatch: '#1a2130', dot: '#d8736c' },
-		{ id: 'crimson', label: 'Ember', swatch: '#241517', dot: '#e8625a' },
-		{ id: 'forest', label: 'Forest', swatch: '#17201a', dot: '#d07a5e' },
-		{ id: 'obsidian', label: 'Obsidian', swatch: '#161616', dot: '#7aa8f5' }
+		{ id: 'sapphire', label: 'Sapphire', dot: '#7aa8f5' },
+		{ id: 'azure', label: 'Azure', dot: '#4d9de0' },
+		{ id: 'sky', label: 'Sky', dot: '#8fb8f7' },
+		{ id: 'indigo', label: 'Indigo', dot: '#6f8ff5' },
+		{ id: 'ocean', label: 'Ocean', dot: '#3f8fd6' }
 	] as const;
 
 	type ThemeId = (typeof THEMES)[number]['id'];
 
-	let active = $state<ThemeId>('parchment');
+	let active = $state<ThemeId>('sapphire');
 
 	onMount(() => {
 		const saved = localStorage.getItem('dnd-theme') as ThemeId | null;

@@ -22,80 +22,50 @@
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: 'Crimson Pro', 'Georgia', serif;
 	}
-	/* theme: Dark Parchment (default) — warm browns, crimson accent */
-	:global(:root, :root[data-theme='parchment']) {
-		--parchment: #241d15;
-		--parchment-deep: #1a140d;
-		--parchment-light: #2d261c;
-		--ink: #e7dcc3;
-		--ink-soft: #a79a81;
-		--accent: #d06a63;
-		--accent-soft: #e08a80;
-		--gold: #c8a13d;
-		--rule: #3d3426;
-		--board-bg: #2d261c;
-		--board-grid: rgba(255, 255, 255, 0.08);
-		--section-hl: rgba(200, 161, 61, 0.055);
-	}
-	/* theme: Midnight — cool slate/navy, blue-white text, muted crimson accent */
-	:global(:root[data-theme='midnight']) {
-		--parchment: #1a2130;
-		--parchment-deep: #141a26;
-		--parchment-light: #222b3c;
-		--ink: #dbe6f5;
-		--ink-soft: #93a4bd;
-		--accent: #d8736c;
-		--accent-soft: #e6908a;
-		--gold: #cbb56a;
-		--rule: #33405c;
-		--board-bg: #222b3c;
-		--board-grid: rgba(219, 230, 245, 0.09);
-		--section-hl: rgba(203, 181, 106, 0.06);
-	}
-	/* theme: Ember — dark red-brown, warm pale text, fiery accent */
-	:global(:root[data-theme='crimson']) {
-		--parchment: #241517;
-		--parchment-deep: #1b0f10;
-		--parchment-light: #2e1c1e;
-		--ink: #f0ded7;
-		--ink-soft: #bd9f96;
-		--accent: #e8625a;
-		--accent-soft: #ef8a80;
-		--gold: #d4a53f;
-		--rule: #4a2c2c;
-		--board-bg: #2e1c1e;
-		--board-grid: rgba(240, 222, 215, 0.09);
-		--section-hl: rgba(212, 165, 63, 0.06);
-	}
-	/* theme: Forest — dark green, cool pale text, terracotta accent */
-	:global(:root[data-theme='forest']) {
-		--parchment: #17201a;
-		--parchment-deep: #101712;
-		--parchment-light: #202c24;
-		--ink: #dce9dc;
-		--ink-soft: #9cb89f;
-		--accent: #d07a5e;
-		--accent-soft: #e09a80;
-		--gold: #c9ad5e;
-		--rule: #2f4436;
-		--board-bg: #202c24;
-		--board-grid: rgba(220, 233, 220, 0.09);
-		--section-hl: rgba(201, 173, 94, 0.06);
-	}
-	/* theme: Obsidian — neutral near-black, highest contrast; refined with blue + green highlights */
-	:global(:root[data-theme='obsidian']) {
+	/* base: Obsidian — neutral near-black, highest contrast. All 5 themes share
+	   this base; only the highlight colours (blue accent + green secondary) change per set. */
+	:global(:root) {
 		--parchment: #161616;
 		--parchment-deep: #101010;
 		--parchment-light: #222222;
 		--ink: #ececec;
 		--ink-soft: #a8a8a8;
-		--accent: #7aa8f5;
-		--accent-soft: #9cc2fa;
-		--gold: #7bc680;
 		--rule: #333333;
 		--board-bg: #222222;
 		--board-grid: rgba(236, 236, 236, 0.09);
+		/* Sapphire (default) — classic blue + mint */
+		--accent: #7aa8f5;
+		--accent-soft: #9cc2fa;
+		--gold: #7bc680;
 		--section-hl: rgba(122, 168, 245, 0.07);
+	}
+	/* highlight set: Azure — bright royal blue + emerald green */
+	:global(:root[data-theme='azure']) {
+		--accent: #4d9de0;
+		--accent-soft: #7ab8f0;
+		--gold: #2fbf6e;
+		--section-hl: rgba(77, 157, 224, 0.08);
+	}
+	/* highlight set: Sky — light pastel blue + soft mint */
+	:global(:root[data-theme='sky']) {
+		--accent: #8fb8f7;
+		--accent-soft: #b3d2fb;
+		--gold: #8fd08a;
+		--section-hl: rgba(143, 184, 247, 0.07);
+	}
+	/* highlight set: Indigo — deep indigo blue + teal */
+	:global(:root[data-theme='indigo']) {
+		--accent: #6f8ff5;
+		--accent-soft: #9db4fa;
+		--gold: #3fbfaf;
+		--section-hl: rgba(111, 143, 245, 0.08);
+	}
+	/* highlight set: Ocean — muted deep blue + leaf green */
+	:global(:root[data-theme='ocean']) {
+		--accent: #3f8fd6;
+		--accent-soft: #6fb0e8;
+		--gold: #5dbb7a;
+		--section-hl: rgba(63, 143, 214, 0.08);
 	}
 	:global(body) {
 		margin: 0;
