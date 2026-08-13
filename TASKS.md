@@ -190,6 +190,22 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       rolls, deaths — broadcast via SSE to DM and players, so everyone can
       reconstruct the fight without staring at HP numbers.
 
+## Monster library + quick encounters
+
+> Manage reusable monster templates alongside player characters and build
+> encounters from them in seconds.
+
+- [x] **37. Monster library**
+      A persisted `monsters` table (name, color, speed, init bonus, max HP) with
+      DM-only CRUD routes (`/c/[id]/monsters`, `/c/[id]/monsters/[id]`) and a
+      Monsters panel on the combat page (add / edit / delete, ⚔ add-to-board),
+      broadcast via a new `monsters-updated` SSE event.
+- [x] **38. Quick encounter setup**
+      An "Add encounter" picker in the setup area: select a monster template + a
+      count, spawns that many enemy tokens on the board (full HP, staggered
+      positions) via a new `add-monster` action on `/combat/units`; spawning
+      names multiples "Monster 1/2/3" and copies the template's stats.
+
 ## Hardening pass (5 rounds of polish)
 
 > A repeated propose → implement → self-review → commit loop on the current

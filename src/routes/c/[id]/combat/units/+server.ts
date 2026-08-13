@@ -1,6 +1,7 @@
 import {
 	getCampaign,
 	getCharacter,
+	getMonster,
 	listCombatUnits,
 	addCombatUnit,
 	clearCombatUnits,
@@ -12,6 +13,7 @@ import {
 	getInitiativeRound,
 	addCombatLog
 } from '$lib/server/db';
+import type { CombatUnit } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
 import { error, json } from '@sveltejs/kit';
@@ -94,6 +96,35 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		});
 		broadcast(params.id, { type: 'combat-units-updated', units: listCombatUnits(params.id) });
 		return json(unit);
+	}
+
+	if (body.action === 'add-monster') {
+		const monster = getMonster(String(body.monster_id ?? ''));
+		if (!monster || monster.campaign_id !== params.id) throw error(404, 'Monster not found');
+		const count = Math.min(20, Math.max(1, Math.floor(Number(body.count) || 1)));
+		const units = listCombatUnits(params.id);
+		const cfg = getBoardConfig(params.id);
+		const added: CombatUnit[] = [];
+		for (let i = 0; i < count; i++) {
+			const idx = units.length + added.length;
+			const x = ((idx % 12) * 2) + 1;
+			const y = 2 + Math.floor((idx % 12) / 6);
+			added.push(
+				addCombatUnit(params.id, {
+					kind: 'enemy',
+					name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
+					color: monster.color,
+					speed: monster.speed,
+					init_bonus: monster.init_bonus,
+					max_hp: monster.max_hp,
+					hp: monster.max_hp,
+					x,
+					y
+				})
+			);
+		}
+		broadcast(params.id, { type: 'combat-units-updated', units: listCombatUnits(params.id) });
+		return json({ ok: true, added });
 	}
 
 	throw error(400, 'Unknown action');

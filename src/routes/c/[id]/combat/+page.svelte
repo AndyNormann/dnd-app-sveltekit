@@ -4,7 +4,7 @@
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
 	import type { PageData } from './$types';
-	import type { CharacterRow, CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
+	import type { CharacterRow, Monster, CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,6 +14,7 @@
 	let drawings = $state<CombatDrawing[]>(data.drawings);
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
 	let characters = $state<CharacterRow[]>(data.characters);
+	let monsters = $state<Monster[]>(data.monsters);
 	let combatLog: CombatLog;
 	let initiative: Initiative;
 	let board: CombatBoard;
@@ -21,6 +22,7 @@
 	let round = $state(data.initiativeRound);
 
 	let showRoster = $state(false);
+	let showMonsters = $state(false);
 	let charName = $state('');
 	let charPlayer = $state('');
 	let charSpeed = $state('30');
@@ -31,6 +33,14 @@
 	let enemyInit = $state('0');
 	let enemyHp = $state('');
 	let enemyColor = $state('#a33');
+	let monName = $state('');
+	let monSpeed = $state('30');
+	let monInit = $state('0');
+	let monHp = $state('');
+	let monColor = $state('#a33');
+	let editingMonId = $state<string | null>(null);
+	let encMonId = $state('');
+	let encCount = $state('1');
 	let errorMsg = $state('');
 	let toast = $state<string | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout>;
@@ -96,6 +106,98 @@
 			body: JSON.stringify({ action: 'add-player', character_id: characterId })
 		});
 		if (!res.ok) errorMsg = 'Could not add to board';
+	}
+
+	async function addMonster(e: Event) {
+		e.preventDefault();
+		errorMsg = '';
+		if (!monName.trim()) return;
+		const res = await fetch(`/c/${data.campaignId}/monsters`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				name: monName,
+				speed: monSpeed,
+				init_bonus: monInit,
+				max_hp: monHp,
+				color: monColor
+			})
+		});
+		if (!res.ok) return;
+		const m = (await res.json()) as Monster;
+		monsters = [...monsters, m];
+		monName = '';
+		monSpeed = '30';
+		monInit = '0';
+		monHp = '';
+		showMonsters = true;
+		showToast(`Created ${m.name}`);
+	}
+
+	function startEditMonster(m: Monster) {
+		editingMonId = m.id;
+		monName = m.name;
+		monSpeed = String(m.speed);
+		monInit = String(m.init_bonus);
+		monHp = String(m.max_hp);
+		monColor = m.color;
+	}
+
+	async function saveMonsterEdit(e: Event) {
+		e.preventDefault();
+		errorMsg = '';
+		if (!editingMonId || !monName.trim()) return;
+		const res = await fetch(`/c/${data.campaignId}/monsters/${editingMonId}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				action: 'update',
+				name: monName,
+				speed: monSpeed,
+				init_bonus: monInit,
+				max_hp: monHp,
+				color: monColor
+			})
+		});
+		if (!res.ok) return;
+		const updated = (await res.json()) as Monster;
+		monsters = monsters.map((m) => (m.id === updated.id ? updated : m));
+		cancelEditMonster();
+		showToast('Saved');
+	}
+
+	function cancelEditMonster() {
+		editingMonId = null;
+		monName = '';
+		monSpeed = '30';
+		monInit = '0';
+		monHp = '';
+	}
+
+	async function deleteMonster(id: string) {
+		await fetch(`/c/${data.campaignId}/monsters/${id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'delete' })
+		});
+		monsters = monsters.filter((m) => m.id !== id);
+	}
+
+	async function spawnMonster(id: string, count: number) {
+		errorMsg = '';
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'add-monster', monster_id: id, count })
+		});
+		if (!res.ok) errorMsg = 'Could not add monsters';
+		else showToast(`Added to board`);
+	}
+
+	function addEncounter(e: Event) {
+		e.preventDefault();
+		if (!encMonId) return;
+		spawnMonster(encMonId, Math.floor(Number(encCount)) || 1);
 	}
 
 	async function addEnemy(e: Event) {
@@ -176,6 +278,9 @@
 				case 'characters-updated':
 					refreshCharacters();
 					break;
+				case 'monsters-updated':
+					refreshMonsters();
+					break;
 				case 'title-changed':
 					title = ev.title;
 					break;
@@ -199,6 +304,11 @@
 		const res = await fetch(`/c/${data.campaignId}/characters`);
 		if (res.ok) characters = await res.json();
 	}
+
+	async function refreshMonsters() {
+		const res = await fetch(`/c/${data.campaignId}/monsters`);
+		if (res.ok) monsters = await res.json();
+	}
 </script>
 
 <svelte:head><title>{title} — Combat</title></svelte:head>
@@ -215,6 +325,7 @@
 	</nav>
 	<div class="spacer"></div>
 	<button type="button" class:on={showRoster} onclick={() => (showRoster = !showRoster)}>Characters</button>
+	<button type="button" class:on={showMonsters} onclick={() => (showMonsters = !showMonsters)}>Monsters</button>
 	<a href={`/c/${data.campaignId}/play/combat`} target="_blank" rel="noreferrer">Spectate</a>
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
@@ -252,6 +363,40 @@
 		</section>
 	{/if}
 
+	{#if showMonsters}
+		<section class="panel monsters">
+			<h2>Monsters</h2>
+			<form class="add-char" onsubmit={editingMonId ? saveMonsterEdit : addMonster}>
+				<input class="nm" placeholder="Monster name" bind:value={monName} maxlength="60" />
+				<input class="num" placeholder="Speed" title="Speed (ft)" bind:value={monSpeed} maxlength="4" />
+				<input class="num" placeholder="Init+" title="Init bonus" bind:value={monInit} maxlength="4" />
+				<input class="num" placeholder="Max HP" bind:value={monHp} maxlength="6" />
+				<input class="color" type="color" bind:value={monColor} title="Token color" />
+				{#if editingMonId}
+					<button type="submit">Save</button>
+					<button type="button" onclick={cancelEditMonster}>Cancel</button>
+				{:else}
+					<button type="submit">Add</button>
+				{/if}
+			</form>
+			{#if monsters.length === 0}
+				<p class="empty">No monsters yet. Add reusable monster templates, then drop them into encounters.</p>
+			{/if}
+			<ul class="char-list">
+				{#each monsters as m (m.id)}
+					<li>
+						<span class="dot" style="background:{m.color}"></span>
+						<span class="cname">{m.name}</span>
+						<span class="cmeta">{m.speed}ft · init {m.init_bonus >= 0 ? '+' : ''}{m.init_bonus} · {m.max_hp}hp</span>
+						<button type="button" class="tiny" title="Add to board" aria-label="Add to board" onclick={() => spawnMonster(m.id, 1)}>⚔</button>
+						<button type="button" class="tiny" title="Edit" aria-label="Edit" onclick={() => startEditMonster(m)}>✎</button>
+						<button type="button" class="tiny" title="Delete" aria-label="Delete" onclick={() => deleteMonster(m.id)}>✕</button>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
 	<section class="panel board">
 		{#if activeName}
 			<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
@@ -269,6 +414,16 @@
 
 	<section class="panel setup">
 		<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
+		<form class="add-encounter" onsubmit={addEncounter}>
+			<select class="nm enc-select" bind:value={encMonId} aria-label="Monster to add">
+				<option value="">Pick monster…</option>
+				{#each monsters as m (m.id)}
+					<option value={m.id}>{m.name}</option>
+				{/each}
+			</select>
+			<input class="num" placeholder="Count" title="How many" bind:value={encCount} maxlength="2" />
+			<button type="submit">Add encounter</button>
+		</form>
 		<form class="add-enemy" onsubmit={addEnemy}>
 			<input class="nm" placeholder="Enemy name" bind:value={enemyName} maxlength="60" />
 			<input class="num" placeholder="Init+" bind:value={enemyInit} maxlength="4" />
@@ -418,38 +573,50 @@
 		background: var(--parchment-light);
 	}
 	.add-char,
-	.add-enemy {
+	.add-enemy,
+	.add-encounter {
 		display: flex;
 		gap: 0.35rem;
 		flex-wrap: wrap;
 		margin-bottom: 0.6rem;
 	}
 	.add-char input,
-	.add-enemy input {
+	.add-enemy input,
+	.add-encounter input,
+	.add-encounter select {
 		border: 1px solid var(--rule);
 		border-radius: 5px;
 		padding: 0.3rem 0.4rem;
 		font-size: 0.85rem;
 		min-width: 0;
+		background: var(--parchment-deep);
+		color: var(--ink);
 	}
 	.add-char .nm,
-	.add-enemy .nm {
+	.add-enemy .nm,
+	.add-encounter .nm {
 		flex: 1 1 10rem;
 	}
 	.add-char .pn {
 		flex: 1 1 8rem;
 	}
 	.add-char .num,
-	.add-enemy .num {
+	.add-enemy .num,
+	.add-encounter .num {
 		width: 3.4rem;
 	}
+	.add-encounter .enc-select {
+		flex: 1 1 10rem;
+	}
 	.add-char input.color,
-	.add-enemy input.color {
+	.add-enemy input.color,
+	.add-encounter input.color {
 		width: 2.4rem;
 		padding: 0.1rem;
 	}
 	.add-char button,
-	.add-enemy button {
+	.add-enemy button,
+	.add-encounter button {
 		border: 0;
 		background: var(--accent);
 		color: var(--parchment-light);
