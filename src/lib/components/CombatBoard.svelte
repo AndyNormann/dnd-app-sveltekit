@@ -176,9 +176,27 @@
 		ctx.fillText(`${feet} ft · ${cells.toFixed(1)} cells`, mx + 6, my - 6);
 	}
 
+	let rafRedraw = 0;
+	let rafMeasure = 0;
+	/** Coalesce full board repaints to one per animation frame (measure / draw / drag). */
+	function scheduleRedraw() {
+		if (rafRedraw) return;
+		rafRedraw = requestAnimationFrame(() => {
+			rafRedraw = 0;
+			redraw();
+		});
+	}
+	function scheduleRedrawMeasure() {
+		if (rafMeasure) return;
+		rafMeasure = requestAnimationFrame(() => {
+			rafMeasure = 0;
+			redrawMeasure();
+		});
+	}
+
 	$effect(() => {
-		redraw();
-		redrawMeasure();
+		scheduleRedraw();
+		scheduleRedrawMeasure();
 	});
 
 	function onKeydown(e: KeyboardEvent) {
@@ -195,13 +213,13 @@
 		if (tool === 'measure') {
 			measureStart = pos;
 			measureEnd = pos;
-			redrawMeasure();
+			scheduleRedrawMeasure();
 			return;
 		}
 		if (dm && (tool === 'draw' || tool === 'erase')) {
 			drawing = true;
 			currentPoints = [pos];
-			redraw();
+			scheduleRedraw();
 			e.preventDefault();
 		}
 	}
@@ -225,7 +243,7 @@
 			}
 		} else if (measureStart) {
 			measureEnd = pos;
-			redrawMeasure();
+			scheduleRedrawMeasure();
 		}
 	}
 	function onPointerUp() {
@@ -233,11 +251,11 @@
 			if (currentPoints.length >= 1 && (tool === 'draw' || tool === 'erase')) postStroke(tool, currentPoints);
 			drawing = false;
 			currentPoints = [];
-			redraw();
+			scheduleRedraw();
 		} else if (measureStart) {
 			measureStart = null;
 			measureEnd = null;
-			redrawMeasure();
+			scheduleRedrawMeasure();
 		}
 	}
 

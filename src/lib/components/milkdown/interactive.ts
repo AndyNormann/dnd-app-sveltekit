@@ -351,6 +351,15 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					host.appendChild(overlay);
 				};
 				let hideTimer: ReturnType<typeof setTimeout> | null = null;
+				let overlayRaf = 0;
+				/** Reposition the section box at most once per frame (it runs on every transaction). */
+				const scheduleUpdateOverlay = () => {
+					if (overlayRaf) return;
+					overlayRaf = requestAnimationFrame(() => {
+						overlayRaf = 0;
+						updateOverlay();
+					});
+				};
 				const updateOverlay = () => {
 					if (!overlay || !host) return;
 					if (hideTimer) {
@@ -399,15 +408,15 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					overlay.style.opacity = '1';
 				};
 				ensureOverlay();
-				const onScroll = () => updateOverlay();
-				const onResize = () => updateOverlay();
+				const onScroll = () => scheduleUpdateOverlay();
+				const onResize = () => scheduleUpdateOverlay();
 				(host as HTMLElement | null)?.addEventListener('scroll', onScroll);
 				window.addEventListener('resize', onResize);
 
 				return {
 					update() {
 						ensureOverlay();
-						updateOverlay();
+						scheduleUpdateOverlay();
 					},
 					destroy: () => {
 						view.dom.removeEventListener('mousedown', onMouseDown);
@@ -415,6 +424,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 						view.dom.removeEventListener('mouseleave', onMouseLeave);
 						host?.removeEventListener('scroll', onScroll);
 						window.removeEventListener('resize', onResize);
+						if (overlayRaf) {
+							cancelAnimationFrame(overlayRaf);
+							overlayRaf = 0;
+						}
 						if (hideTimer) {
 							clearTimeout(hideTimer);
 							hideTimer = null;
