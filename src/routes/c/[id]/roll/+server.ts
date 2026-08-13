@@ -1,4 +1,4 @@
-import { addRoll, getCampaign } from '$lib/server/db';
+import { addRoll, clearRolls, getCampaign } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { rollDice } from '$lib/dice';
 import { isDM } from '$lib/server/auth';
@@ -15,7 +15,17 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		expression?: string;
 		secret?: boolean;
 		label?: string;
+		action?: string;
 	};
+
+	// Clear (wipe) the roll history — DM only, persistent, broadcast to everyone.
+	if (body.action === 'clear') {
+		if (!isDM(cookies)) throw error(401, 'Clear requires DM');
+		clearRolls(params.id);
+		broadcast(params.id, { type: 'rolls-cleared' });
+		return json({ ok: true });
+	}
+
 	const roller = (body.roller ?? '').trim().slice(0, 40) || 'Anonymous';
 	const expression = (body.expression ?? '').trim().slice(0, 100);
 	const label = (body.label ?? '').trim().slice(0, 80);

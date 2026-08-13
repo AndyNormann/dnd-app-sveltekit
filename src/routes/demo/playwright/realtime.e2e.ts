@@ -158,3 +158,34 @@ test('realtime: DM can reveal a secret roll to players', async ({ browser }) => 
 	await anon.close();
 	await dm.close();
 });
+
+test('realtime: DM clearing the roll history wipes it for open players and on reconnect', async ({
+	browser
+}) => {
+	const anon = await browser.newContext();
+	const id = await createCampaign(anon.request);
+	const { dm, cookieHeader } = await loginDM(browser);
+	const player = await openPlayer(anon, id);
+
+	// a public roll reaches the open player
+	await dm.request.post(`/c/${id}/roll`, {
+		data: { expression: '1d20', label: 'CLEAR-ME' },
+		headers: { cookie: cookieHeader }
+	});
+	await expect(player.getByText('CLEAR-ME')).toBeVisible();
+
+	// DM wipes the history — the open player's list clears live via SSE
+	const cleared = await dm.request.post(`/c/${id}/roll`, {
+		data: { action: 'clear' },
+		headers: { cookie: cookieHeader }
+	});
+	expect(cleared.status()).toBe(200);
+	await expect(player.getByText('CLEAR-ME')).not.toBeVisible();
+
+	// a fresh (reconnecting) player must NOT see the wiped roll either (persistent)
+	const fresh = await openPlayer(anon, id);
+	await expect(fresh.getByText('CLEAR-ME')).not.toBeVisible();
+
+	await anon.close();
+	await dm.close();
+});

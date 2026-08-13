@@ -60,6 +60,20 @@
 		scrollToEnd();
 	}
 
+	/** Wipe the roll history for real: POST the DM-only clear, then drop it locally. */
+	export async function clearRolls() {
+		if (!dm) return;
+		const res = await fetch(`/c/${campaignId}/roll`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'clear' })
+		});
+		if (res.ok) {
+			rolls = [];
+			expression = '';
+		}
+	}
+
 	async function submit(e: Event) {
 		e.preventDefault();
 		errorMsg = '';
@@ -106,8 +120,8 @@
 		</svg>
 		Rolls {open ? '▾' : '▴'}
 	</button>
-		{#if rolls.length > 0}
-			<button type="button" class="clear" title="Clear the roll list" onclick={() => (rolls = [])}>Clear</button>
+		{#if dm && rolls.length > 0}
+			<button type="button" class="clear" title="Wipe the roll history" onclick={clearRolls}>Clear</button>
 		{/if}
 	</div>
 	{#if open}

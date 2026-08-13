@@ -686,6 +686,11 @@ export function addRoll(
 	return row;
 }
 
+/** Delete all rolls for a campaign (persistent, DM-only). */
+export function clearRolls(campaignId: string): void {
+	db.query('DELETE FROM rolls WHERE campaign_id = ?').run(campaignId);
+}
+
 export function listRolls(campaignId: string, includeSecret: boolean): RollRow[] {
 	const rows = includeSecret
 		? db

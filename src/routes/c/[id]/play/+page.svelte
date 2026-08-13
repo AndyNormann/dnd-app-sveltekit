@@ -79,6 +79,9 @@
 				case 'roll':
 					rollLog?.addRoll(ev.roll as RollData);
 					break;
+				case 'rolls-cleared':
+					rollLog?.setRolls([]);
+					break;
 				case 'reveal-undone':
 					doc?.applyRevealRemoved(ev.mapId, ev.opId);
 					break;

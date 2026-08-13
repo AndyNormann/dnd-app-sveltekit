@@ -10,6 +10,7 @@ export type CampaignEvent =
 	| { type: 'map-revealed'; mapId: string; op: RevealOp }
 	| { type: 'map-hidden'; mapId: string; op: RevealOp }
 	| { type: 'roll'; roll: RollData }
+	| { type: 'rolls-cleared' }
 	| { type: 'title-changed'; title: string }
 	| { type: 'handout-revealed'; headingId: string }
 	| { type: 'initiative-updated'; entries: InitEntry[]; round: number }
