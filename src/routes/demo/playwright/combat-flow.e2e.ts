@@ -29,9 +29,8 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	const dm = await loginDM(browser);
 	const id = await createCampaign(dm.request);
 
-	// DM creates a character via the roster UI
-	await dm.page.goto(`/c/${id}/combat`);
-	await dm.page.click('.bar button:has-text("Characters")');
+	// DM creates a character via the Roster page
+	await dm.page.goto(`/c/${id}/combat/roster`);
 	await dm.page.fill('.add-char input[placeholder="Character"]', 'Aria');
 	await dm.page.fill('.add-char input[placeholder="Player name"]', 'Bob');
 	await dm.page.fill('.add-char input[placeholder="Speed"]', '30');
@@ -58,8 +57,10 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	await expect(player.locator('.you')).toHaveText('Playing as Aria');
 	await expect(player.locator('.combat .board')).toBeVisible({ timeout: 10000 });
 
-	// DM adds Aria to the board and an enemy
-	await dm.page.locator('.char-list li').first().locator('button[title="Add to board"]').click();
+	// DM adds Aria to the board and an enemy (on the Combat page)
+	await dm.page.goto(`/c/${id}/combat`);
+	await dm.page.selectOption('.add-player select', { label: 'Aria' });
+	await dm.page.click('.add-player button[type=submit]');
 	await expect(dm.page.locator('.board .token').filter({ hasText: 'Aria' })).toBeVisible();
 	await dm.page.fill('.add-enemy input[placeholder="Enemy name"]', 'Goblin');
 	await dm.page.fill('.add-enemy input[placeholder="Init+"]', '1');

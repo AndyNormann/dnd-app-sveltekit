@@ -21,24 +21,11 @@
 	let activeName = $state('');
 	let round = $state(data.initiativeRound);
 
-	let showRoster = $state(false);
-	let showMonsters = $state(false);
-	let charName = $state('');
-	let charPlayer = $state('');
-	let charSpeed = $state('30');
-	let charInit = $state('0');
-	let charHp = $state('');
-	let charColor = $state('#1b6ca8');
+	let playerSel = $state('');
 	let enemyName = $state('');
 	let enemyInit = $state('0');
 	let enemyHp = $state('');
 	let enemyColor = $state('#a33');
-	let monName = $state('');
-	let monSpeed = $state('30');
-	let monInit = $state('0');
-	let monHp = $state('');
-	let monColor = $state('#a33');
-	let editingMonId = $state<string | null>(null);
 	let encMonId = $state('');
 	let encCount = $state('1');
 	let errorMsg = $state('');
@@ -51,136 +38,17 @@
 		toastTimer = setTimeout(() => (toast = null), 2000);
 	}
 
-	function linkFor(c: CharacterRow) {
-		return `${location.origin}/p/${c.link_token}`;
-	}
-	function copyLink(c: CharacterRow) {
-		navigator.clipboard?.writeText(linkFor(c)).then(
-			() => showToast(`Link for ${c.name} copied`),
-			() => showToast('Could not copy link')
-		);
-	}
-
-	async function addCharacter(e: Event) {
+	async function addPlayerToBoard(e: Event) {
 		e.preventDefault();
 		errorMsg = '';
-		if (!charName.trim()) return;
-		const res = await fetch(`/c/${data.campaignId}/characters`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				name: charName,
-				player_name: charPlayer,
-				speed: charSpeed,
-				init_bonus: charInit,
-				max_hp: charHp,
-				color: charColor
-			})
-		});
-		if (!res.ok) return;
-		const ch = (await res.json()) as CharacterRow;
-		characters = [...characters, ch];
-		charName = '';
-		charPlayer = '';
-		charSpeed = '30';
-		charInit = '0';
-		charHp = '';
-		showRoster = true;
-		showToast(`Created ${ch.name}`);
-	}
-
-	async function deleteCharacter(id: string) {
-		await fetch(`/c/${data.campaignId}/characters/${id}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'delete' })
-		});
-		characters = characters.filter((c) => c.id !== id);
-	}
-
-	async function addPlayerToBoard(characterId: string) {
-		errorMsg = '';
+		if (!playerSel) return;
 		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'add-player', character_id: characterId })
+			body: JSON.stringify({ action: 'add-player', character_id: playerSel })
 		});
 		if (!res.ok) errorMsg = 'Could not add to board';
-	}
-
-	async function addMonster(e: Event) {
-		e.preventDefault();
-		errorMsg = '';
-		if (!monName.trim()) return;
-		const res = await fetch(`/c/${data.campaignId}/monsters`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				name: monName,
-				speed: monSpeed,
-				init_bonus: monInit,
-				max_hp: monHp,
-				color: monColor
-			})
-		});
-		if (!res.ok) return;
-		const m = (await res.json()) as Monster;
-		monsters = [...monsters, m];
-		monName = '';
-		monSpeed = '30';
-		monInit = '0';
-		monHp = '';
-		showMonsters = true;
-		showToast(`Created ${m.name}`);
-	}
-
-	function startEditMonster(m: Monster) {
-		editingMonId = m.id;
-		monName = m.name;
-		monSpeed = String(m.speed);
-		monInit = String(m.init_bonus);
-		monHp = String(m.max_hp);
-		monColor = m.color;
-	}
-
-	async function saveMonsterEdit(e: Event) {
-		e.preventDefault();
-		errorMsg = '';
-		if (!editingMonId || !monName.trim()) return;
-		const res = await fetch(`/c/${data.campaignId}/monsters/${editingMonId}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				action: 'update',
-				name: monName,
-				speed: monSpeed,
-				init_bonus: monInit,
-				max_hp: monHp,
-				color: monColor
-			})
-		});
-		if (!res.ok) return;
-		const updated = (await res.json()) as Monster;
-		monsters = monsters.map((m) => (m.id === updated.id ? updated : m));
-		cancelEditMonster();
-		showToast('Saved');
-	}
-
-	function cancelEditMonster() {
-		editingMonId = null;
-		monName = '';
-		monSpeed = '30';
-		monInit = '0';
-		monHp = '';
-	}
-
-	async function deleteMonster(id: string) {
-		await fetch(`/c/${data.campaignId}/monsters/${id}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'delete' })
-		});
-		monsters = monsters.filter((m) => m.id !== id);
+		else showToast('Added to board');
 	}
 
 	async function spawnMonster(id: string, count: number) {
@@ -322,10 +190,9 @@
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab">Notes</a>
 		<a href={`/c/${data.campaignId}/combat`} class="tab" class:active={true}>Combat</a>
+		<a href={`/c/${data.campaignId}/combat/roster`} class="tab">Roster</a>
 	</nav>
 	<div class="spacer"></div>
-	<button type="button" class:on={showRoster} onclick={() => (showRoster = !showRoster)}>Characters</button>
-	<button type="button" class:on={showMonsters} onclick={() => (showMonsters = !showMonsters)}>Monsters</button>
 	<a href={`/c/${data.campaignId}/play/combat`} target="_blank" rel="noreferrer">Spectate</a>
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
@@ -333,70 +200,6 @@
 </header>
 
 <main class="combat">
-	{#if showRoster}
-		<section class="panel roster">
-			<h2>Characters</h2>
-			<form class="add-char" onsubmit={addCharacter}>
-				<input class="nm" placeholder="Character" bind:value={charName} maxlength="60" />
-				<input class="pn" placeholder="Player name" bind:value={charPlayer} maxlength="60" />
-				<input class="num" placeholder="Speed" title="Speed (ft)" bind:value={charSpeed} maxlength="4" />
-				<input class="num" placeholder="Init+" title="Init bonus" bind:value={charInit} maxlength="4" />
-				<input class="num" placeholder="Max HP" bind:value={charHp} maxlength="6" />
-				<input class="color" type="color" bind:value={charColor} title="Token color" />
-				<button type="submit">Add</button>
-			</form>
-			{#if characters.length === 0}
-				<p class="empty">No characters yet. Create one, then send them their link.</p>
-			{/if}
-			<ul class="char-list">
-				{#each characters as c (c.id)}
-					<li>
-						<span class="dot" style="background:{c.color}"></span>
-						<span class="cname">{c.name}</span>
-						<span class="cmeta">{c.player_name ? c.player_name + ' · ' : ''}{c.speed}ft · init {c.init_bonus >= 0 ? '+' : ''}{c.init_bonus} · {c.hp}/{c.max_hp}hp</span>
-						<button type="button" class="tiny" title="Add to board" aria-label="Add to board" onclick={() => addPlayerToBoard(c.id)}>⚔</button>
-						<button type="button" class="tiny" title="Copy player link" aria-label="Copy player link" onclick={() => copyLink(c)}>🔗</button>
-						<button type="button" class="tiny" title="Delete" aria-label="Delete" onclick={() => deleteCharacter(c.id)}>✕</button>
-					</li>
-				{/each}
-			</ul>
-		</section>
-	{/if}
-
-	{#if showMonsters}
-		<section class="panel monsters">
-			<h2>Monsters</h2>
-			<form class="add-char" onsubmit={editingMonId ? saveMonsterEdit : addMonster}>
-				<input class="nm" placeholder="Monster name" bind:value={monName} maxlength="60" />
-				<input class="num" placeholder="Speed" title="Speed (ft)" bind:value={monSpeed} maxlength="4" />
-				<input class="num" placeholder="Init+" title="Init bonus" bind:value={monInit} maxlength="4" />
-				<input class="num" placeholder="Max HP" bind:value={monHp} maxlength="6" />
-				<input class="color" type="color" bind:value={monColor} title="Token color" />
-				{#if editingMonId}
-					<button type="submit">Save</button>
-					<button type="button" onclick={cancelEditMonster}>Cancel</button>
-				{:else}
-					<button type="submit">Add</button>
-				{/if}
-			</form>
-			{#if monsters.length === 0}
-				<p class="empty">No monsters yet. Add reusable monster templates, then drop them into encounters.</p>
-			{/if}
-			<ul class="char-list">
-				{#each monsters as m (m.id)}
-					<li>
-						<span class="dot" style="background:{m.color}"></span>
-						<span class="cname">{m.name}</span>
-						<span class="cmeta">{m.speed}ft · init {m.init_bonus >= 0 ? '+' : ''}{m.init_bonus} · {m.max_hp}hp</span>
-						<button type="button" class="tiny" title="Add to board" aria-label="Add to board" onclick={() => spawnMonster(m.id, 1)}>⚔</button>
-						<button type="button" class="tiny" title="Edit" aria-label="Edit" onclick={() => startEditMonster(m)}>✎</button>
-						<button type="button" class="tiny" title="Delete" aria-label="Delete" onclick={() => deleteMonster(m.id)}>✕</button>
-					</li>
-				{/each}
-			</ul>
-		</section>
-	{/if}
-
 	<section class="panel board">
 		{#if activeName}
 			<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
@@ -414,6 +217,15 @@
 
 	<section class="panel setup">
 		<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
+		<form class="add-player" onsubmit={addPlayerToBoard}>
+			<select class="nm player-select" bind:value={playerSel} aria-label="Player character to add">
+				<option value="">Pick character…</option>
+				{#each characters as c (c.id)}
+					<option value={c.id}>{c.name}</option>
+				{/each}
+			</select>
+			<button type="submit">Add player</button>
+		</form>
 		<form class="add-encounter" onsubmit={addEncounter}>
 			<select class="nm enc-select" bind:value={encMonId} aria-label="Monster to add">
 				<option value="">Pick monster…</option>
@@ -520,11 +332,6 @@
 		text-decoration: none;
 		color: var(--ink-soft);
 	}
-	.bar button.on {
-		color: var(--accent);
-		border-color: var(--gold);
-		background: var(--parchment-deep);
-	}
 	.logout {
 		margin: 0;
 	}
@@ -543,12 +350,6 @@
 		border-radius: 8px;
 		padding: 0.9rem;
 		margin-bottom: 1rem;
-	}
-	.panel h2 {
-		font-family: var(--font-display);
-		color: var(--accent);
-		margin: 0 0 0.6rem;
-		font-size: 1rem;
 	}
 	.turn-status {
 		font-family: var(--font-display);
@@ -572,18 +373,18 @@
 		margin-left: 0.4rem;
 		background: var(--parchment-light);
 	}
-	.add-char,
 	.add-enemy,
-	.add-encounter {
+	.add-encounter,
+	.add-player {
 		display: flex;
 		gap: 0.35rem;
 		flex-wrap: wrap;
 		margin-bottom: 0.6rem;
 	}
-	.add-char input,
 	.add-enemy input,
 	.add-encounter input,
-	.add-encounter select {
+	.add-encounter select,
+	.add-player select {
 		border: 1px solid var(--rule);
 		border-radius: 5px;
 		padding: 0.3rem 0.4rem;
@@ -592,77 +393,32 @@
 		background: var(--parchment-deep);
 		color: var(--ink);
 	}
-	.add-char .nm,
 	.add-enemy .nm,
-	.add-encounter .nm {
+	.add-encounter .nm,
+	.add-player .nm {
 		flex: 1 1 10rem;
 	}
-	.add-char .pn {
-		flex: 1 1 8rem;
-	}
-	.add-char .num,
 	.add-enemy .num,
 	.add-encounter .num {
 		width: 3.4rem;
 	}
-	.add-encounter .enc-select {
+	.add-encounter .enc-select,
+	.add-player .player-select {
 		flex: 1 1 10rem;
 	}
-	.add-char input.color,
-	.add-enemy input.color,
-	.add-encounter input.color {
+	.add-enemy input.color {
 		width: 2.4rem;
 		padding: 0.1rem;
 	}
-	.add-char button,
 	.add-enemy button,
-	.add-encounter button {
+	.add-encounter button,
+	.add-player button {
 		border: 0;
 		background: var(--accent);
 		color: var(--parchment-light);
 		border-radius: 5px;
 		padding: 0.3rem 0.7rem;
 		cursor: pointer;
-	}
-	.empty {
-		color: var(--ink-soft);
-		font-style: italic;
-		font-size: 0.9rem;
-	}
-	.char-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	.char-list li {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.3rem 0;
-		border-top: 1px solid var(--rule);
-	}
-	.char-list .dot {
-		width: 0.9rem;
-		height: 0.9rem;
-		border-radius: 50%;
-		flex: none;
-	}
-	.char-list .cname {
-		font-weight: 600;
-		min-width: 6rem;
-	}
-	.char-list .cmeta {
-		flex: 1;
-		color: var(--ink-soft);
-		font-size: 0.8rem;
-	}
-	.tiny {
-		border: 1px solid var(--rule);
-		background: var(--parchment-light);
-		border-radius: 4px;
-		cursor: pointer;
-		padding: 0.1rem 0.3rem;
-		font-size: 0.8rem;
 	}
 	.setup {
 		display: flex;

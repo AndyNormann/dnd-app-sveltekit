@@ -308,6 +308,7 @@
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab" class:active={true}>Notes</a>
 		<a href={`/c/${data.campaignId}/combat`} class="tab">Combat</a>
+		<a href={`/c/${data.campaignId}/combat/roster`} class="tab">Roster</a>
 	</nav>
 	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
 		{#if saveState === 'saving'}Saving…

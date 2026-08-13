@@ -205,6 +205,13 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       count, spawns that many enemy tokens on the board (full HP, staggered
       positions) via a new `add-monster` action on `/combat/units`; spawning
       names multiples "Monster 1/2/3" and copies the template's stats.
+- [x] **39. Roster page for character/monster management**
+      Character and monster creation/editing moved off the Combat page onto a
+      dedicated DM-only **Roster** page (`/c/[id]/combat/roster`, reached via a
+      Roster tab on the DM Notes + Combat pages) with add/edit/delete for both
+      and per-character player links. The Combat page keeps the board + setup:
+      roll initiative, quick-add a player via a picker, the encounter picker,
+      manual add-enemy, and clear board.
 
 ## Hardening pass (5 rounds of polish)
 
