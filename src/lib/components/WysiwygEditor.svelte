@@ -249,7 +249,7 @@
 		background: var(--parchment-light);
 		border: 1px solid var(--gold);
 		border-radius: 8px;
-		box-shadow: 0 6px 24px rgba(43, 35, 23, 0.25);
+		box-shadow: var(--shadow-lg);
 		padding: 0.25rem;
 		display: flex;
 		flex-direction: column;

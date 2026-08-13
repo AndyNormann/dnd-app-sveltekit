@@ -346,11 +346,13 @@
 		width: 0.6rem;
 		height: 0.6rem;
 		border-radius: 50%;
-		background: #c33;
+		background: transparent;
+		border: 1.5px solid #c33;
 		flex: none;
 	}
 	.conn.on {
 		background: #3a9b45;
+		border-color: #3a9b45;
 	}
 	.bar button,
 	.bar a[target] {
@@ -532,7 +534,7 @@
 		border: 1px solid var(--gold);
 		border-left: 4px solid #3a9b45;
 		border-radius: 6px;
-		box-shadow: 0 4px 16px rgba(43, 35, 23, 0.25);
+		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);
 		color: var(--ink);
 	}

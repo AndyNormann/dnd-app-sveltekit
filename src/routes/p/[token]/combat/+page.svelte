@@ -158,10 +158,12 @@
 		width: 0.6rem;
 		height: 0.6rem;
 		border-radius: 50%;
-		background: #c33;
+		background: transparent;
+		border: 1.5px solid #c33;
 	}
 	.conn.on {
 		background: #3a9b45;
+		border-color: #3a9b45;
 	}
 	.order {
 		margin-top: 1rem;

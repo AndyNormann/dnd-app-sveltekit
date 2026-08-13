@@ -195,7 +195,7 @@
 		background: var(--parchment-light);
 		border-left: 1px solid var(--rule);
 		border-right: 1px solid var(--rule);
-		box-shadow: 0 0 18px rgba(43, 35, 23, 0.1);
+		box-shadow: var(--shadow-glow);
 		padding: 1.5rem 2.5rem 32vh;
 		margin: 1rem 0 3rem;
 		line-height: 1.6;
@@ -209,10 +209,12 @@
 		width: 0.6rem;
 		height: 0.6rem;
 		border-radius: 50%;
-		background: #c33;
+		background: transparent;
+		border: 1.5px solid #c33;
 	}
 	.conn.on {
 		background: #3a9b45;
+		border-color: #3a9b45;
 	}
 	.reconnect {
 		position: absolute;
@@ -234,7 +236,7 @@
 		font-family: var(--font-body);
 		font-size: 0.9rem;
 		font-weight: 600;
-		box-shadow: 0 2px 8px rgba(43, 35, 23, 0.3);
+		box-shadow: var(--shadow-md);
 		animation: banner-in 0.2s ease;
 	}
 	@keyframes banner-in {

@@ -724,7 +724,7 @@
 		border: 1px solid var(--gold);
 		border-radius: 8px;
 		padding: 0.5rem;
-		box-shadow: 0 4px 16px rgba(43, 35, 23, 0.3);
+		box-shadow: var(--shadow-lg);
 		font-family: system-ui, sans-serif;
 	}
 	.hp-pop .hpn {

@@ -34,6 +34,11 @@
 		--accent-soft: #9db4fa;
 		--gold: #7d9cf7;
 		--section-hl: rgba(111, 143, 245, 0.08);
+		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
+		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.55);
+		--shadow-glow: 0 0 18px rgba(0, 0, 0, 0.35);
 	}
 	:global(body) {
 		margin: 0;
@@ -42,6 +47,11 @@
 	}
 	:global(a) {
 		color: var(--accent);
+	}
+	/* Keyboard focus must always be visible, on every custom-styled control. */
+	:global(:focus-visible) {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		:global(*),

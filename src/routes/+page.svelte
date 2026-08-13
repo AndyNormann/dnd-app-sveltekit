@@ -262,7 +262,7 @@
 		border: 1px solid var(--rule);
 		border-top: 3px solid var(--gold);
 		border-radius: 6px;
-		box-shadow: 0 1px 4px rgba(43, 35, 23, 0.08);
+		box-shadow: var(--shadow);
 	}
 	.title {
 		font-size: 1.15rem;

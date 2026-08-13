@@ -496,7 +496,7 @@
 		background: var(--parchment-deep);
 		border-top: 3px solid var(--accent);
 		border-bottom: 3px solid var(--accent);
-		box-shadow: 0 1px 4px rgba(43, 35, 23, 0.12);
+		box-shadow: var(--shadow);
 		color: var(--ink);
 	}
 	.rendered :global(blockquote p:first-child strong:first-child) {
