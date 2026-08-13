@@ -183,7 +183,7 @@
 		vertical-align: middle;
 	}
 	:global(.dm-heading-controls .dhc-collapse) {
-		color: #6b7280;
+		color: #94845f;
 	}
 	:global(.dm-heading-controls .dhc-vis) {
 		border: 1px solid var(--gold);

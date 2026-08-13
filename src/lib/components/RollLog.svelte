@@ -244,7 +244,7 @@
 	}
 	.input input {
 		border: 1px solid var(--rule);
-		background: #fff;
+		background: var(--parchment-deep);
 		color: var(--ink);
 		border-radius: 5px;
 		padding: 0.3rem 0.4rem;

@@ -58,4 +58,58 @@
 	:global(.cm-host .cm-scroller) {
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 	}
+	/* dark theme for the raw-markdown source editor (matches the dark parchment scheme) */
+	:global(.cm-host .cm-editor) {
+		background: var(--parchment-light);
+		color: var(--ink);
+	}
+	:global(.cm-host .cm-content) {
+		caret-color: var(--accent-soft);
+	}
+	:global(.cm-host .cm-gutters) {
+		background: var(--parchment-deep);
+		color: var(--ink-soft);
+		border-right: 1px solid var(--rule);
+	}
+	:global(.cm-host .cm-activeLine) {
+		background: rgba(200, 161, 61, 0.06);
+	}
+	:global(.cm-host .cm-activeLineGutter) {
+		background: rgba(200, 161, 61, 0.08);
+		color: var(--gold);
+	}
+	:global(.cm-host .cm-selectionBackground),
+	:global(.cm-host ::selection) {
+		background: rgba(192, 82, 72, 0.35);
+	}
+	:global(.cm-host .cm-cursor) {
+		border-left-color: var(--accent-soft);
+	}
+	:global(.cm-host .cm-cursor-secondary) {
+		border-left-color: var(--accent-soft);
+	}
+	:global(.cm-host span.cm-heading) {
+		color: var(--gold);
+		font-weight: 600;
+	}
+	:global(.cm-host span.cm-header),
+	:global(.cm-host span.cm-strong) {
+		color: var(--gold);
+	}
+	:global(.cm-host span.cm-em) {
+		color: var(--accent-soft);
+	}
+	:global(.cm-host span.cm-link),
+	:global(.cm-host span.cm-url) {
+		color: var(--accent-soft);
+	}
+	:global(.cm-host span.cm-quote) {
+		color: var(--ink-soft);
+	}
+	:global(.cm-host span.cm-comment) {
+		color: var(--ink-soft);
+	}
+	:global(.cm-host span.cm-meta) {
+		color: var(--ink-soft);
+	}
 </style>

@@ -17,15 +17,16 @@
 
 <style>
 	:global(:root) {
-		--parchment: #f6efe0;
-		--parchment-deep: #efe5cd;
-		--parchment-light: #fbf7ec;
-		--ink: #2b2317;
-		--ink-soft: #5a4d3a;
-		--accent: #8b2020;
-		--accent-soft: #a94444;
-		--gold: #b8912f;
-		--rule: #d8c9a8;
+		/* warm dark parchment — a D&D-flavored dark theme (medium dark, not pure black) */
+		--parchment: #241d15;
+		--parchment-deep: #1a140d;
+		--parchment-light: #2d261c;
+		--ink: #e7dcc3;
+		--ink-soft: #a79a81;
+		--accent: #c05248;
+		--accent-soft: #d17a70;
+		--gold: #c8a13d;
+		--rule: #3d3426;
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: 'Crimson Pro', 'Georgia', serif;
 	}

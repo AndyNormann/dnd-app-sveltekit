@@ -357,8 +357,8 @@
 		font-family: var(--font-display);
 		font-size: 1.05rem;
 		font-weight: 700;
-		color: var(--accent);
-		background: #fff;
+		color: var(--ink);
+		background: var(--parchment-light);
 		padding: 0.15rem 0.3rem;
 		border: 1px solid var(--gold);
 		border-radius: 5px;
@@ -466,7 +466,7 @@
 		box-sizing: border-box;
 	}
 	.source {
-		background: #fdfbf5;
+		background: var(--parchment-light);
 		position: relative;
 	}
 	.conn {

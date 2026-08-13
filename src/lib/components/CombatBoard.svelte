@@ -101,11 +101,11 @@
 		canvas.width = cols * CELL;
 		canvas.height = rows * CELL;
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = '#f6f1e3';
+		ctx.fillStyle = '#241d15';
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		for (const d of drawings) {
-			ctx.strokeStyle = d.mode === 'erase' ? '#f6f1e3' : d.color;
-			ctx.fillStyle = d.mode === 'erase' ? '#f6f1e3' : d.color;
+			ctx.strokeStyle = d.mode === 'erase' ? '#241d15' : d.color;
+			ctx.fillStyle = d.mode === 'erase' ? '#241d15' : d.color;
 			ctx.lineWidth = d.width;
 			ctx.lineCap = 'round';
 			ctx.lineJoin = 'round';
@@ -122,7 +122,7 @@
 			});
 			ctx.stroke();
 		}
-		ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+		ctx.strokeStyle = 'rgba(231,220,195,0.10)';
 		ctx.lineWidth = 1;
 		for (let i = 0; i <= cols; i++) {
 			ctx.beginPath();
@@ -202,7 +202,7 @@
 			// live draw current stroke
 			const ctx = canvas?.getContext('2d');
 			if (ctx && currentPoints.length > 1) {
-				ctx.strokeStyle = tool === 'erase' ? '#f6f1e3' : color;
+				ctx.strokeStyle = tool === 'erase' ? '#241d15' : color;
 				ctx.lineWidth = 4;
 				ctx.lineCap = 'round';
 				ctx.lineJoin = 'round';
@@ -571,7 +571,7 @@
 	.board {
 		position: relative;
 		border: 2px solid var(--rule);
-		background: #f6f1e3;
+		background: #241d15;
 		border-radius: 4px;
 		overflow: hidden;
 		touch-action: none;
