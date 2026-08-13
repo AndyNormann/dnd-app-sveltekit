@@ -225,9 +225,9 @@
 	function onPointerDown(e: PointerEvent) {
 		const pos = toCell(e);
 		if (tool === 'ping') {
-			const x = Math.max(0, Math.min(config.grid_cols - 1, Math.round(pos[0])));
-			const y = Math.max(0, Math.min(config.grid_rows - 1, Math.round(pos[1])));
-			sendPing(x, y);
+			// free-floating: ping anywhere, in board pixel coordinates (not grid-snapped)
+			const r = canvas?.getBoundingClientRect();
+			sendPing(e.clientX - (r?.left ?? 0), e.clientY - (r?.top ?? 0));
 			return;
 		}
 		if (tool === 'dmg') {
@@ -537,7 +537,7 @@
 		{#each pings as p (p.id)}
 			<div
 				class="ping"
-				style="left:{p.x * CELL + CELL / 2}px;top:{p.y * CELL + CELL / 2}px;--pc:{p.color}"
+				style="left:{p.x}px;top:{p.y}px;--pc:{p.color}"
 				title="{p.name} is here"
 			>
 				<span class="ring"></span>
