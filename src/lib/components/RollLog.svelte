@@ -81,18 +81,36 @@
 		undoTo = setTimeout(() => (undo = null), 6000);
 	}
 
-	/** Undo a clear within the toast window: restore the snapshot via the server, then locally. */
+	/** Undo a clear within the toast window: restore via the server, then set the list from the response.
+	 *  On failure the toast stays so the user can retry. */
 	async function undoClear() {
 		if (!undo) return;
-		const { key, snapshot } = undo;
-		undo = null;
+		const { key } = undo;
 		clearTimeout(undoTo);
-		const res = await fetch(`/c/${campaignId}/roll`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'undo', key })
-		});
-		if (res.ok) rolls = snapshot; // optimistic; SSE rolls-restored reconciles with the server
+		let failed = false;
+		try {
+			const res = await fetch(`/c/${campaignId}/roll`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'undo', key })
+			});
+			if (res.ok) {
+				const body = (await res.json()) as { ok: boolean; rolls?: RollData[] };
+				if (body.rolls) rolls = body.rolls;
+				else rolls = [];
+				scrollToEnd();
+			} else {
+				failed = true;
+			}
+		} catch {
+			failed = true;
+		}
+		if (failed) {
+			// keep the toast (with a fresh window) so the user can retry
+			undoTo = setTimeout(() => (undo = null), 6000);
+		} else {
+			undo = null;
+		}
 	}
 
 	async function submit(e: Event) {

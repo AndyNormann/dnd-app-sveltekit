@@ -70,7 +70,9 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			{ type: 'rolls-restored', rolls: full },
 			{ type: 'rolls-restored', rolls: player }
 		);
-		return json({ ok: true });
+		// return the restored rolls so the DM's own list is set deterministically from
+		// the response (doesn't depend on the SSE broadcast or the captured snapshot)
+		return json({ ok: true, rolls: full });
 	}
 
 	const roller = (body.roller ?? '').trim().slice(0, 40) || 'Anonymous';
