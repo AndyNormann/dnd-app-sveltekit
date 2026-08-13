@@ -87,7 +87,7 @@
 		outline: none;
 		padding: 1rem 1.75rem 30vh 4rem;
 		font-family: var(--font-body);
-		font-size: 1.2rem;
+		font-size: 1.35rem;
 		line-height: 1.45;
 		color: var(--ink);
 	}
