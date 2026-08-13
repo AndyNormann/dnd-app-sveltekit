@@ -51,7 +51,7 @@ test('show/hide toggle propagates to a live player via SSE', async ({ browser })
 
 	// reveal it: single button flips to shared AND the live player sees it via SSE
 	await vis.click();
-	await expect(vis).toHaveText('🔓');
+	await expect(vis).toHaveText('👥');
 	await expect(docHeading).toBeVisible({ timeout: 10000 });
 
 	// hide again: button flips back to private AND the player hides it
