@@ -1,9 +1,9 @@
 <script lang="ts">
 	import '@fontsource/cinzel/600.css';
 	import '@fontsource/cinzel/700.css';
-	import '@fontsource/crimson-pro/400.css';
-	import '@fontsource/crimson-pro/600.css';
-	import '@fontsource/crimson-pro/400-italic.css';
+	import '@fontsource/literata/400.css';
+	import '@fontsource/literata/600.css';
+	import '@fontsource/literata/400-italic.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
@@ -18,7 +18,7 @@
 <style>
 	:global(:root) {
 		--font-display: 'Cinzel', 'Georgia', serif;
-		--font-body: 'Crimson Pro', 'Georgia', serif;
+		--font-body: 'Literata', 'Georgia', serif;
 	}
 	/* Theme — Indigo on an Obsidian (neutral near-black) base. */
 	:global(:root) {

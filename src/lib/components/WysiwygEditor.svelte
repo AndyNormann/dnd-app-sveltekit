@@ -102,7 +102,7 @@
 	:global(.mdx-host .ProseMirror h6) {
 		position: relative;
 		/* headings read as plain text; sections are marked by the controls in the gutter */
-		font-family: var(--font-body);
+		font-family: var(--font-display);
 		color: var(--ink);
 		letter-spacing: normal;
 		font-weight: 600;
@@ -112,32 +112,32 @@
 		   headings override margin/weight below to stay connected to their parent. */
 	}
 	:global(.mdx-host .ProseMirror h1) {
-		font-size: 1.32rem;
+		font-size: 1.6rem;
 		font-weight: 600;
 		margin: 1.6em 0 0.35em;
 	}
 	:global(.mdx-host .ProseMirror h2) {
-		font-size: 1.2rem;
+		font-size: 1.42rem;
 		font-weight: 560;
 		margin: 1.05em 0 0.3em;
 	}
 	:global(.mdx-host .ProseMirror h3) {
-		font-size: 1.1rem;
+		font-size: 1.28rem;
 		font-weight: 520;
 		margin: 0.8em 0 0.25em;
 	}
 	:global(.mdx-host .ProseMirror h4) {
-		font-size: 1.04rem;
+		font-size: 1.16rem;
 		font-weight: 500;
 		margin: 0.7em 0 0.25em;
 	}
 	:global(.mdx-host .ProseMirror h5) {
-		font-size: 1rem;
+		font-size: 1.08rem;
 		font-weight: 500;
 		margin: 0.65em 0 0.2em;
 	}
 	:global(.mdx-host .ProseMirror h6) {
-		font-size: 0.96rem;
+		font-size: 1.02rem;
 		font-weight: 500;
 		margin: 0.6em 0 0.2em;
 	}

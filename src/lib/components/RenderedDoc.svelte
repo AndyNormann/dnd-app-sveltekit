@@ -365,10 +365,27 @@
 		font-family: var(--font-display);
 		color: var(--accent);
 		letter-spacing: 0.02em;
+		line-height: 1.2;
 	}
 	.rendered :global(h1) {
+		font-size: 2.3rem;
 		border-bottom: 1px solid var(--gold);
 		padding-bottom: 0.25rem;
+	}
+	.rendered :global(h2) {
+		font-size: 1.8rem;
+	}
+	.rendered :global(h3) {
+		font-size: 1.45rem;
+	}
+	.rendered :global(h4) {
+		font-size: 1.25rem;
+	}
+	.rendered :global(h5) {
+		font-size: 1.12rem;
+	}
+	.rendered :global(h6) {
+		font-size: 1.05rem;
 	}
 	.rendered :global(h3),
 	.rendered :global(h4),
