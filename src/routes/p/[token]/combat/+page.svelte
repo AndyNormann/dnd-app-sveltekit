@@ -57,6 +57,9 @@
 					boardConfig = ev.config;
 					board?.applyConfig(ev.config);
 					break;
+				case 'combat-ping':
+					board?.applyPing(ev.ping);
+					break;
 				case 'title-changed':
 					title = ev.title;
 					break;

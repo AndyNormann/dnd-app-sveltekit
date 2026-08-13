@@ -57,6 +57,9 @@
 				case 'layer-changed':
 					doc?.applyLayer(ev.mapId, ev.layer);
 					break;
+				case 'map-ping':
+					doc?.applyMapPing(ev.mapId, ev.ping);
+					break;
 				case 'map-added':
 					if (!maps.some((m) => m.id === ev.map.id)) maps = [...maps, ev.map];
 					break;

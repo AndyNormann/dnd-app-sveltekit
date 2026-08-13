@@ -26,12 +26,14 @@
 	let units = $state<CombatUnit[]>(initialUnits);
 	let drawings = $state<CombatDrawing[]>(initialDrawings);
 	let config = $state<BoardConfig>(initialConfig);
-	let tool = $state<'draw' | 'erase' | 'measure' | 'dmg'>(dm ? 'draw' : 'measure');
+	let tool = $state<'draw' | 'erase' | 'measure' | 'dmg' | 'ping'>(dm ? 'draw' : 'measure');
 	let color = $state('#222');
 	let errorMsg = $state('');
 	let selectedId = $state<string | null>(null);
 	let hpAmount = $state('');
 	let dmgError = $state('');
+	let pings = $state<{ id: string; x: number; y: number; color: string; name: string }[]>([]);
+	const PING_MS = 2000;
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let measureCanvas: HTMLCanvasElement | undefined = $state();
@@ -85,6 +87,23 @@
 	}
 	export function applyConfig(next: BoardConfig) {
 		config = next;
+	}
+
+	/** Show a transient ping marker on the board (from the DM or a player). */
+	export function applyPing(ping: { id: string; x: number; y: number; color: string; name: string }) {
+		if (pings.some((p) => p.id === ping.id)) return;
+		pings = [...pings, ping];
+		setTimeout(() => {
+			pings = pings.filter((p) => p.id !== ping.id);
+		}, PING_MS);
+	}
+
+	async function sendPing(x: number, y: number) {
+		await fetch(`/c/${campaignId}/combat/ping`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ x, y })
+		});
 	}
 
 	function toCell(e: { clientX: number; clientY: number }): [number, number] {
@@ -205,6 +224,12 @@
 
 	function onPointerDown(e: PointerEvent) {
 		const pos = toCell(e);
+		if (tool === 'ping') {
+			const x = Math.max(0, Math.min(config.grid_cols - 1, Math.round(pos[0])));
+			const y = Math.max(0, Math.min(config.grid_rows - 1, Math.round(pos[1])));
+			sendPing(x, y);
+			return;
+		}
 		if (tool === 'dmg') {
 			// clicking empty board clears the selection
 			selectedId = null;
@@ -306,6 +331,7 @@
 		return (e: MouseEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
+			if (tool === 'ping') return; // ping tool: no dragging
 			if (tool === 'dmg') {
 				// damage tool: select the token (players only their own), don't drag
 				if (!dm && u.id !== myUnit?.id) return;
@@ -448,6 +474,7 @@
 			<button type="button" class:on={tool === 'erase'} onclick={() => (tool = 'erase')}>🧽 Erase</button>
 			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
 			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
+			<button type="button" class:on={tool === 'ping'} onclick={() => (tool = 'ping')}>📌 Ping</button>
 			<span class="colors">
 				{#each COLORS as c}
 					<button
@@ -468,6 +495,7 @@
 		<div class="toolbar">
 			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
 			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
+			<button type="button" class:on={tool === 'ping'} onclick={() => (tool = 'ping')}>📌 Ping</button>
 			{#if myUnit}
 				<span class="budget"
 					>Turn: <b>{myUnit.name}</b> · moved {Math.min(usedCells, budgetCells)}/{budgetCells} cells</span
@@ -504,6 +532,17 @@
 				{#if u.alive === 0}<span class="skull">💀</span>{/if}
 				<span class="label">{u.name}</span>
 				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
+			</div>
+		{/each}
+		{#each pings as p (p.id)}
+			<div
+				class="ping"
+				style="left:{p.x * CELL + CELL / 2}px;top:{p.y * CELL + CELL / 2}px;--pc:{p.color}"
+				title="{p.name} is here"
+			>
+				<span class="ring"></span>
+				<span class="dot"></span>
+				<span class="lbl">{p.name}</span>
 			</div>
 		{/each}
 		{#if draggingId && dragTemp[draggingId]}
@@ -704,6 +743,64 @@
 		background: rgba(212, 175, 55, 0.14);
 		border-radius: 3px;
 		pointer-events: none;
+	}
+	.ping {
+		position: absolute;
+		width: 1.5rem;
+		height: 1.5rem;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+		z-index: 20;
+		animation: ping-fade 2s ease-out forwards;
+	}
+	.ping .dot {
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		background: var(--pc, #f0c040);
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+	}
+	.ping .ring {
+		position: absolute;
+		inset: -0.5rem;
+		border-radius: 50%;
+		border: 2px solid var(--pc, #f0c040);
+		animation: ping-ring 0.8s ease-out infinite;
+	}
+	.ping .lbl {
+		position: absolute;
+		top: 1.6rem;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.7rem;
+		line-height: 1.1;
+		white-space: nowrap;
+		color: #fff;
+		background: var(--pc, #f0c040);
+		padding: 0.05rem 0.35rem;
+		border-radius: 3px;
+		font-family: system-ui, sans-serif;
+	}
+	@keyframes ping-fade {
+		0% {
+			opacity: 1;
+		}
+		80% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+	@keyframes ping-ring {
+		from {
+			opacity: 0.9;
+			transform: scale(0.3);
+		}
+		to {
+			opacity: 0;
+			transform: scale(1.5);
+		}
 	}
 	.drag-feedback {
 		position: absolute;

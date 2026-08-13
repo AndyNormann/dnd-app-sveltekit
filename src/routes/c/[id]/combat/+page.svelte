@@ -143,6 +143,9 @@
 					boardConfig = ev.config;
 					board?.applyConfig(ev.config);
 					break;
+				case 'combat-ping':
+					board?.applyPing(ev.ping);
+					break;
 				case 'characters-updated':
 					refreshCharacters();
 					break;

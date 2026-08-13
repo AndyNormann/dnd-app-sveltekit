@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { MilkdownHandle } from './milkdown/editor';
 	import type { HeadingMeta } from './milkdown/interactive';
-	import type { MapData, TokenData } from '$lib/types';
+	import type { MapData, TokenData, PingData } from '$lib/types';
 
 	let {
 		value = $bindable(''),
@@ -72,6 +72,9 @@
 	}
 	export function applyState(maps: MapData[], tokenList: { mapId: string; tokens: TokenData[] }[]) {
 		handle?.applyState(maps, tokenList);
+	}
+	export function applyMapPing(mapId: string, ping: PingData) {
+		handle?.applyMapPing(mapId, ping);
 	}
 </script>
 

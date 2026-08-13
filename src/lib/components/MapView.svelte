@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { MapData, RevealOp, TokenData } from '$lib/types';
+	import type { MapData, RevealOp, TokenData, PingData } from '$lib/types';
 
 	let {
 		map,
@@ -8,7 +8,7 @@
 		campaignId
 	}: { map: MapData; dm?: boolean; campaignId: string } = $props();
 
-	type Mode = 'off' | 'rect-reveal' | 'rect-erase' | 'brush-reveal' | 'brush-erase';
+	type Mode = 'off' | 'rect-reveal' | 'rect-erase' | 'brush-reveal' | 'brush-erase' | 'ping';
 
 	let reveals = $state<RevealOp[]>([...map.reveals]);
 	let mode = $state<Mode>('off');
@@ -18,6 +18,8 @@
 	let tokens = $state<TokenData[]>([]);
 	let placingToken = $state(false);
 	let dragTokenId = $state<string | null>(null);
+	let pings = $state<PingData[]>([]);
+	const PING_MS = 2000;
 
 	let img: HTMLImageElement;
 	let canvas: HTMLCanvasElement;
@@ -75,6 +77,23 @@
 		layer = mapData.active_layer ?? 0;
 		tokens = [...tokenList];
 		paint();
+	}
+
+	/** Show a transient ping marker (from another user or the DM). */
+	export function applyPing(ping: PingData) {
+		if (pings.some((p) => p.id === ping.id)) return;
+		pings = [...pings, ping];
+		setTimeout(() => {
+			pings = pings.filter((p) => p.id !== ping.id);
+		}, PING_MS);
+	}
+
+	async function sendPing(x: number, y: number) {
+		await fetch(`/c/${campaignId}/maps/${map.id}/ping`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ x: x / img.clientWidth, y: y / img.clientHeight })
+		});
 	}
 
 	function fogColor() {
@@ -225,7 +244,7 @@
 	}
 
 	function onPointerDown(e: PointerEvent) {
-		if (!dm || mode === 'off' || placingToken) return;
+		if (!dm || mode === 'off' || placingToken || mode === 'ping') return;
 		e.preventDefault();
 		canvas.setPointerCapture(e.pointerId);
 		const p = pointerPos(e);
@@ -342,19 +361,26 @@
 	}
 
 	function onMapClick(e: MouseEvent) {
-		if (!dm || !placingToken) return;
-		const p = pointerPos(e);
-		placingToken = false;
-		fetch(`/c/${campaignId}/maps/${map.id}/tokens`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				label: 'Token',
-				color: '#8b2020',
-				x: p.x / img.clientWidth,
-				y: p.y / img.clientHeight
-			})
-		});
+		if (dm && placingToken) {
+			const p = pointerPos(e);
+			placingToken = false;
+			fetch(`/c/${campaignId}/maps/${map.id}/tokens`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					label: 'Token',
+					color: '#8b2020',
+					x: p.x / img.clientWidth,
+					y: p.y / img.clientHeight
+				})
+			});
+			return;
+		}
+		// ping: DM in 📌 Ping mode, or any player click on a read-only map
+		if (dm ? mode === 'ping' : true) {
+			const p = pointerPos(e);
+			sendPing(p.x, p.y);
+		}
 	}
 
 	function onTokenDrag(e: MouseEvent, t: TokenData) {
@@ -483,6 +509,9 @@
 			<button class:active={placingToken} onclick={() => (placingToken = !placingToken)}>
 				🎭 Token
 			</button>
+			<button class:active={mode === 'ping'} onclick={() => (mode = 'ping')} title="Ping a spot for everyone to see">
+				📌 Ping
+			</button>
 		</div>
 	{/if}
 	<div class="stage" class:drawing={dm && mode !== 'off'} onclick={onMapClick}>
@@ -505,6 +534,13 @@
 				{#if dm}
 					<button type="button" class="rm" onmousedown={(e) => e.stopPropagation()} onclick={() => removeToken(t)} title="Remove token">✕</button>
 				{/if}
+			</div>
+		{/each}
+		{#each pings as p (p.id)}
+			<div class="ping" style="left:{p.x * 100}%;top:{p.y * 100}%;--pc:{p.color}" title="{p.name} is here">
+				<span class="ring"></span>
+				<span class="dot"></span>
+				<span class="lbl">{p.name}</span>
 			</div>
 		{/each}
 	</div>
@@ -593,5 +629,63 @@
 		line-height: 1.1rem;
 		cursor: pointer;
 		padding: 0;
+	}
+	.ping {
+		position: absolute;
+		width: 1.5rem;
+		height: 1.5rem;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+		z-index: 20;
+		animation: ping-fade 2s ease-out forwards;
+	}
+	.ping .dot {
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		background: var(--pc, #f0c040);
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+	}
+	.ping .ring {
+		position: absolute;
+		inset: -0.5rem;
+		border-radius: 50%;
+		border: 2px solid var(--pc, #f0c040);
+		animation: ping-ring 0.8s ease-out infinite;
+	}
+	.ping .lbl {
+		position: absolute;
+		top: 1.6rem;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.7rem;
+		line-height: 1.1;
+		white-space: nowrap;
+		color: #fff;
+		background: var(--pc, #f0c040);
+		padding: 0.05rem 0.35rem;
+		border-radius: 3px;
+		font-family: system-ui, sans-serif;
+	}
+	@keyframes ping-fade {
+		0% {
+			opacity: 1;
+		}
+		80% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+	@keyframes ping-ring {
+		from {
+			opacity: 0.9;
+			transform: scale(0.3);
+		}
+		to {
+			opacity: 0;
+			transform: scale(1.5);
+		}
 	}
 </style>

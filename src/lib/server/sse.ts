@@ -26,6 +26,8 @@ export type CampaignEvent =
 	| { type: 'combat-drawings-updated'; drawings: import('./db').CombatDrawing[] }
 	| { type: 'board-config-updated'; config: import('./db').BoardConfig }
 	| { type: 'combat-log'; entry: import('./db').CombatLogEntry }
+	| { type: 'map-ping'; mapId: string; ping: import('../types').PingData }
+	| { type: 'combat-ping'; ping: import('../types').PingData }
 	| {
 			type: 'snapshot';
 			title: string;

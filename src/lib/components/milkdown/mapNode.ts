@@ -1,7 +1,7 @@
 import { $node, $view } from '@milkdown/utils';
 import { mount, unmount } from 'svelte';
 import MapView from '../MapView.svelte';
-import type { MapData, TokenData } from '$lib/types';
+import type { MapData, TokenData, PingData } from '$lib/types';
 
 const mapInstances = new Map<string, ReturnType<typeof mount>>();
 let getMaps: () => MapData[] = () => [];
@@ -127,6 +127,7 @@ type MapInstance = ReturnType<typeof mount> & {
 	applyRevealRemoved?: (id: number) => void;
 	applyLayerCleared?: (l: number) => void;
 	applyState?: (m: MapData, tokens: TokenData[]) => void;
+	applyPing?: (p: PingData) => void;
 };
 
 /** Forward realtime/SSE map updates to the mounted MapView instances. */
@@ -152,5 +153,8 @@ export const mapApi = {
 			const tokens = tokenList.find((t) => t.mapId === m.id)?.tokens ?? [];
 			inst?.applyState?.(m, tokens);
 		}
+	},
+	applyMapPing(mapId: string, ping: PingData) {
+		(mapInstances.get(mapId) as MapInstance | undefined)?.applyPing?.(ping);
 	}
 };

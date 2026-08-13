@@ -241,6 +241,7 @@
 			else if (ev.type === 'layer-changed') wysiwyg?.applyLayer(ev.mapId, ev.layer);
 			else if (ev.type === 'reveal-undone') wysiwyg?.applyRevealRemoved(ev.mapId, ev.opId);
 			else if (ev.type === 'reveals-cleared') wysiwyg?.applyLayerCleared(ev.mapId, ev.layer);
+			else if (ev.type === 'map-ping') wysiwyg?.applyMapPing(ev.mapId, ev.ping);
 		};
 		// close the ⋮ overflow menu when clicking anywhere outside it
 		const closeMore = (e: PointerEvent) => {

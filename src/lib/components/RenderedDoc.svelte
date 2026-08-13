@@ -2,7 +2,7 @@
 	import { mount, unmount } from 'svelte';
 	import MapView from './MapView.svelte';
 	import { INLINE_DICE_RE } from '$lib/dice';
-	import type { MapData, RevealOp, RollData, TokenData } from '$lib/types';
+	import type { MapData, RevealOp, RollData, TokenData, PingData } from '$lib/types';
 
 	let {
 		html,
@@ -64,6 +64,12 @@
 	export function applyLayerCleared(mapId: string, layer: number) {
 		const inst = mapInstances.get(mapId) as { applyLayerCleared?: (l: number) => void } | undefined;
 		inst?.applyLayerCleared?.(layer);
+	}
+
+	/** Forward a transient ping to the matching mounted map. */
+	export function applyMapPing(mapId: string, ping: PingData) {
+		const inst = mapInstances.get(mapId) as { applyPing?: (p: PingData) => void } | undefined;
+		inst?.applyPing?.(ping);
 	}
 
 	/** Apply a full snapshot (reveals/grid/layer + tokens) to every mounted map. */

@@ -34,6 +34,14 @@ export interface TokenData {
 	y: number;
 }
 
+export interface PingData {
+	id: string;
+	x: number;
+	y: number;
+	color: string;
+	name: string;
+}
+
 export interface RollData {
 	id: number;
 	roller: string;

@@ -11,7 +11,7 @@ import { buildInteractivePlugin, type HeadingMeta } from './interactive';
 import { buildSlashPlugin } from './slash';
 import { mapBlock, mapBlockView, mapDirectiveTransformer, mapApi, configureMaps } from './mapNode';
 import { headingHashRemark, headingHashPlugin } from './headingHash';
-import type { MapData, TokenData } from '$lib/types';
+import type { MapData, TokenData, PingData } from '$lib/types';
 
 export interface MilkdownHandle {
 	/** Current document serialized to markdown. */
@@ -26,6 +26,7 @@ export interface MilkdownHandle {
 	applyRevealRemoved(mapId: string, opId: number): void;
 	applyLayerCleared(mapId: string, layer: number): void;
 	applyState(maps: MapData[], tokenList: { mapId: string; tokens: TokenData[] }[]): void;
+	applyMapPing(mapId: string, ping: PingData): void;
 }
 
 export interface CreateEditorOptions {
@@ -141,6 +142,7 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 		applyLayer: (mapId, layer) => mapApi.applyLayer(mapId, layer),
 		applyRevealRemoved: (mapId, opId) => mapApi.applyRevealRemoved(mapId, opId),
 		applyLayerCleared: (mapId, layer) => mapApi.applyLayerCleared(mapId, layer),
-		applyState: (maps, tokenList) => mapApi.applyState(maps, tokenList)
+		applyState: (maps, tokenList) => mapApi.applyState(maps, tokenList),
+		applyMapPing: (mapId, ping) => mapApi.applyMapPing(mapId, ping)
 	};
 }
