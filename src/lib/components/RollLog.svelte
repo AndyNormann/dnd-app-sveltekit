@@ -15,6 +15,8 @@
 	let roller = $state('');
 	let secret = $state(false);
 	let errorMsg = $state('');
+	let undo = $state<{ key: string; snapshot: RollData[] } | null>(null);
+	let undoTo: ReturnType<typeof setTimeout> | undefined;
 	let listEl: HTMLDivElement | undefined = $state();
 
 	onMount(() => {
@@ -60,7 +62,7 @@
 		scrollToEnd();
 	}
 
-	/** Wipe the roll history for real: POST the DM-only clear, then drop it locally. */
+	/** Wipe the roll history for real: POST the DM-only clear, then drop it locally and offer Undo. */
 	export async function clearRolls() {
 		if (!dm) return;
 		const res = await fetch(`/c/${campaignId}/roll`, {
@@ -68,10 +70,29 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'clear' })
 		});
-		if (res.ok) {
-			rolls = [];
-			expression = '';
-		}
+		if (!res.ok) return;
+		const body = (await res.json()) as { ok: boolean; undoKey?: string };
+		if (!body.undoKey) return;
+		const snapshot = rolls;
+		rolls = [];
+		expression = '';
+		undo = { key: body.undoKey, snapshot };
+		clearTimeout(undoTo);
+		undoTo = setTimeout(() => (undo = null), 6000);
+	}
+
+	/** Undo a clear within the toast window: restore the snapshot via the server, then locally. */
+	async function undoClear() {
+		if (!undo) return;
+		const { key, snapshot } = undo;
+		undo = null;
+		clearTimeout(undoTo);
+		const res = await fetch(`/c/${campaignId}/roll`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'undo', key })
+		});
+		if (res.ok) rolls = snapshot; // optimistic; SSE rolls-restored reconciles with the server
 	}
 
 	async function submit(e: Event) {
@@ -124,6 +145,12 @@
 			<button type="button" class="clear" title="Wipe the roll history" onclick={clearRolls}>Clear</button>
 		{/if}
 	</div>
+	{#if undo}
+		<div class="undo">
+			<span>Rolls cleared</span>
+			<button type="button" onclick={undoClear}>Undo</button>
+		</div>
+	{/if}
 	{#if open}
 		<div class="list" bind:this={listEl}>
 			{#if rolls.length === 0}
@@ -196,6 +223,32 @@
 	.d20 {
 		width: 1.1rem;
 		height: 1.1rem;
+	}
+	.undo {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.4rem 0.75rem;
+		background: var(--parchment-deep);
+		border-top: 1px solid var(--rule);
+		border-bottom: 1px solid var(--rule);
+		font-size: 0.82rem;
+		color: var(--ink);
+	}
+	.undo button {
+		border: 1px solid var(--accent);
+		background: none;
+		color: var(--accent);
+		border-radius: 5px;
+		padding: 0.15rem 0.6rem;
+		cursor: pointer;
+		font-family: var(--font-display);
+		font-weight: 600;
+	}
+	.undo button:hover {
+		background: var(--accent);
+		color: var(--parchment-light);
 	}
 	.clear {
 		margin-right: 0.5rem;

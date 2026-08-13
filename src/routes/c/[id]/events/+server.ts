@@ -35,7 +35,7 @@ export const GET: RequestHandler = ({ params, cookies }) => {
 
 			// Subscribe FIRST, then read the snapshot, so no broadcast between the
 			// two can be missed by a connecting client.
-			unsubscribe = subscribe(params.id, send);
+			unsubscribe = subscribe(params.id, send, dm);
 			controller.enqueue(enc.encode(': connected\n\n'));
 
 			// Snapshot of current state so a (re)connecting client self-heals.

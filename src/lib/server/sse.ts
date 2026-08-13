@@ -11,6 +11,7 @@ export type CampaignEvent =
 	| { type: 'map-hidden'; mapId: string; op: RevealOp }
 	| { type: 'roll'; roll: RollData }
 	| { type: 'rolls-cleared' }
+	| { type: 'rolls-restored'; rolls: RollData[] }
 	| { type: 'title-changed'; title: string }
 	| { type: 'handout-revealed'; headingId: string }
 	| { type: 'initiative-updated'; entries: InitEntry[]; round: number }
@@ -36,17 +37,24 @@ export type CampaignEvent =
 
 type Subscriber = (event: CampaignEvent) => void;
 
-const channels = new Map<string, Set<Subscriber>>();
+interface Sub {
+	fn: Subscriber;
+	dm: boolean;
+}
 
-export function subscribe(campaignId: string, fn: Subscriber): () => void {
+const channels = new Map<string, Set<Sub>>();
+
+/** Subscribe to a campaign's events. `dm` marks a subscriber that may receive secret rolls. */
+export function subscribe(campaignId: string, fn: Subscriber, dm = false): () => void {
 	let set = channels.get(campaignId);
 	if (!set) {
 		set = new Set();
 		channels.set(campaignId, set);
 	}
-	set.add(fn);
+	const sub: Sub = { fn, dm };
+	set.add(sub);
 	return () => {
-		set!.delete(fn);
+		set!.delete(sub);
 		if (set!.size === 0) channels.delete(campaignId);
 	};
 }
@@ -54,9 +62,26 @@ export function subscribe(campaignId: string, fn: Subscriber): () => void {
 export function broadcast(campaignId: string, event: CampaignEvent): void {
 	const set = channels.get(campaignId);
 	if (!set) return;
-	for (const fn of set) {
+	for (const sub of set) {
 		try {
-			fn(event);
+			sub.fn(event);
+		} catch {
+			// drop broken subscribers silently; their close handler will clean up
+		}
+	}
+}
+
+/** Broadcast a different event to DM vs player subscribers (e.g. secret-roll visibility). */
+export function broadcastRole(
+	campaignId: string,
+	dmEvent: CampaignEvent,
+	playerEvent: CampaignEvent
+): void {
+	const set = channels.get(campaignId);
+	if (!set) return;
+	for (const sub of set) {
+		try {
+			sub.fn(sub.dm ? dmEvent : playerEvent);
 		} catch {
 			// drop broken subscribers silently; their close handler will clean up
 		}

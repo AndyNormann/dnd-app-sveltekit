@@ -180,11 +180,23 @@ test('realtime: DM clearing the roll history wipes it for open players and on re
 		headers: { cookie: cookieHeader }
 	});
 	expect(cleared.status()).toBe(200);
+	const undoKey = ((await cleared.json()) as { undoKey: string }).undoKey;
+	expect(undoKey).toBeTruthy();
 	await expect(player.getByText('CLEAR-ME')).not.toBeVisible();
 
 	// a fresh (reconnecting) player must NOT see the wiped roll either (persistent)
 	const fresh = await openPlayer(anon, id);
 	await expect(fresh.getByText('CLEAR-ME')).not.toBeVisible();
+
+	// DM undoes within the window — the roll is restored and re-shared to everyone
+	const undid = await dm.request.post(`/c/${id}/roll`, {
+		data: { action: 'undo', key: undoKey },
+		headers: { cookie: cookieHeader }
+	});
+	expect(undid.status()).toBe(200);
+	await expect(player.getByText('CLEAR-ME')).toBeVisible();
+	const restored = await openPlayer(anon, id);
+	await expect(restored.getByText('CLEAR-ME')).toBeVisible();
 
 	await anon.close();
 	await dm.close();

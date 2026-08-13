@@ -691,6 +691,16 @@ export function clearRolls(campaignId: string): void {
 	db.query('DELETE FROM rolls WHERE campaign_id = ?').run(campaignId);
 }
 
+/** Re-insert a snapshot of rolls by their original ids (used to undo a clear). */
+export function restoreRolls(rows: RollRow[]): void {
+	const stmt = db.query(
+		'INSERT INTO rolls (id, campaign_id, roller, expression, result, breakdown, label, secret, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING'
+	);
+	for (const r of rows) {
+		stmt.run(r.id, r.campaign_id, r.roller, r.expression, r.result, r.breakdown, r.label ?? null, r.secret, r.created_at);
+	}
+}
+
 export function listRolls(campaignId: string, includeSecret: boolean): RollRow[] {
 	const rows = includeSecret
 		? db

@@ -82,6 +82,9 @@
 				case 'rolls-cleared':
 					rollLog?.setRolls([]);
 					break;
+				case 'rolls-restored':
+					rollLog?.setRolls(ev.rolls);
+					break;
 				case 'reveal-undone':
 					doc?.applyRevealRemoved(ev.mapId, ev.opId);
 					break;

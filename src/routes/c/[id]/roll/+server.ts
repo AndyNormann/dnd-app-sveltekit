@@ -1,10 +1,32 @@
-import { addRoll, clearRolls, getCampaign } from '$lib/server/db';
-import { broadcast } from '$lib/server/sse';
+import { addRoll, clearRolls, getCampaign, listRolls, restoreRolls, type RollRow } from '$lib/server/db';
+import { broadcast, broadcastRole } from '$lib/server/sse';
 import { rollDice } from '$lib/dice';
 import { isDM } from '$lib/server/auth';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { RollData } from '$lib/types';
+
+const UNDO_TTL = 15_000;
+// in-memory undo snapshots for a recent clear, so the DM can restore within the toast window
+const undoMap = new Map<string, { campaignId: string; rows: RollRow[]; expires: number }>();
+
+function toRollData(r: RollRow): RollData {
+	return {
+		id: r.id,
+		roller: r.roller,
+		expression: r.expression,
+		result: r.result,
+		breakdown: r.breakdown,
+		secret: !!r.secret,
+		label: r.label ?? undefined,
+		created_at: r.created_at
+	};
+}
+
+function sweepExpired() {
+	const now = Date.now();
+	for (const [k, v] of undoMap) if (v.expires < now) undoMap.delete(k);
+}
 
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const campaign = getCampaign(params.id);
@@ -16,13 +38,38 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		secret?: boolean;
 		label?: string;
 		action?: string;
+		key?: string;
 	};
 
 	// Clear (wipe) the roll history — DM only, persistent, broadcast to everyone.
 	if (body.action === 'clear') {
 		if (!isDM(cookies)) throw error(401, 'Clear requires DM');
+		sweepExpired();
+		const snapshot = listRolls(params.id, true); // keep secrets too, so undo restores them for the DM
+		const key = crypto.randomUUID();
+		undoMap.set(key, { campaignId: params.id, rows: snapshot, expires: Date.now() + UNDO_TTL });
 		clearRolls(params.id);
 		broadcast(params.id, { type: 'rolls-cleared' });
+		return json({ ok: true, undoKey: key });
+	}
+
+	// Undo a clear within the toast window — restores the snapshot and re-broadcasts it.
+	if (body.action === 'undo') {
+		if (!isDM(cookies)) throw error(401, 'Undo requires DM');
+		const key = typeof body.key === 'string' ? body.key : '';
+		const entry = key ? undoMap.get(key) : undefined;
+		if (!entry || entry.campaignId !== params.id || entry.expires < Date.now()) {
+			throw error(400, 'Undo window expired');
+		}
+		undoMap.delete(key);
+		restoreRolls(entry.rows);
+		const full = entry.rows.map(toRollData);
+		const player = entry.rows.filter((r) => !r.secret).map(toRollData);
+		broadcastRole(
+			params.id,
+			{ type: 'rolls-restored', rolls: full },
+			{ type: 'rolls-restored', rolls: player }
+		);
 		return json({ ok: true });
 	}
 

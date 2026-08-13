@@ -200,6 +200,7 @@
 			const ev = JSON.parse(e.data);
 			if (ev.type === 'roll') rollLog?.addRoll(ev.roll as RollData);
 			else if (ev.type === 'rolls-cleared') rollLog?.setRolls([]);
+			else if (ev.type === 'rolls-restored') rollLog?.setRolls(ev.rolls);
 			else if (ev.type === 'snapshot') {
 				rollLog?.setRolls(ev.rolls);
 				data.maps = ev.maps;
