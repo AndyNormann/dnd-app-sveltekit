@@ -223,10 +223,11 @@
 		position: absolute;
 		pointer-events: none;
 		z-index: 1; /* above the editor text; heading controls sit higher so they stay on top */
-		background: var(--section-hl, rgba(184, 155, 99, 0.10));
-		border: 1px solid rgba(184, 155, 99, 0.32);
-		border-radius: 8px;
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+		background: var(--section-hl, rgba(200, 161, 61, 0.055));
+		border: none;
+		border-radius: 6px;
+		/* a gentle shade: no border, no hard shadow — just a faint wash so it
+		   reads as a soft highlight rather than a drawn box */
 		/* glide smoothly when the highlight moves between sections, and fade in/out */
 		transition: left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease,
 			opacity 0.17s ease;
