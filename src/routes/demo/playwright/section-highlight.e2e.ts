@@ -130,3 +130,49 @@ test('box stays glued to the section while the editor scrolls', async ({ browser
 	// the same padding must hold at the new scroll offset — the box stayed glued
 	expect(Math.abs(after!.y - hb2!.y - pad)).toBeLessThanOrEqual(3);
 });
+
+test('hovering the gap between lines keeps the highlighted section (does not jump to caret)', async ({
+	browser
+}) => {
+	const dm = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	await dm.page.goto(`/c/${id}`);
+	const pm = dm.page.locator('.mdx-host .ProseMirror');
+	await expect(pm).toBeVisible({ timeout: 10000 });
+	await pm.click();
+	await dm.page.keyboard.type(
+		'# Section One\nPara A.\nMore A.\n# Section Two\nPara B.\n'
+	);
+	await dm.page.waitForTimeout(700);
+	const hl = () => pm.locator('.section-hl').count();
+
+	// put the caret in section one
+	await pm.locator('h1').first().click();
+	await dm.page.waitForTimeout(250);
+	expect(await hl()).toBe(3); // h1 + 2 paras = caret highlights section one
+
+	// hover over a block in section two -> section two highlights
+	await pm.locator('text=Para B.').hover();
+	await dm.page.waitForTimeout(250);
+	expect(await hl()).toBe(2);
+
+	// move the pointer into the gap between the two paragraphs of section two.
+	// compute a point in the empty space between 'More A.' and 'Para B.'
+	const gap = await dm.page.evaluate(() => {
+		const more = [...document.querySelectorAll('.mdx-host .ProseMirror p')].find(
+			(el) => (el.textContent ?? '').trim() === 'More A.'
+		) as HTMLElement;
+		const paraB = [...document.querySelectorAll('.mdx-host .ProseMirror p')].find(
+			(el) => (el.textContent ?? '').trim() === 'Para B.'
+		) as HTMLElement;
+		const a = more.getBoundingClientRect();
+		const b = paraB.getBoundingClientRect();
+		return { x: (a.left + a.right) / 2, y: (a.bottom + b.top) / 2 };
+	});
+	await dm.page.mouse.move(gap.x, gap.y);
+	await dm.page.waitForTimeout(300);
+
+	// the gap is still within section two -> it must keep section two highlighted,
+	// NOT jump back to the caret's section one
+	expect(await hl()).toBe(2);
+});

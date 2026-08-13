@@ -313,13 +313,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					const block = (e.target as HTMLElement).closest(
 						'h1,h2,h3,h4,h5,h6,p,ul,ol,li,blockquote,pre,hr,.map-widget'
 					);
-					if (!block) {
-						if (hoveredPos !== null) {
-							hoveredPos = null;
-							view.dispatch(view.state.tr);
-						}
-						return;
-					}
+					if (!block) return; // a gap between blocks inside the editor: keep the current section
 					const P = view.posAtDOM(block, 0);
 					let hPos: number | null = null;
 					for (const h of sectionIndex) {
@@ -332,6 +326,14 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					}
 				};
 				view.dom.addEventListener('mouseover', onMouseOver);
+				// only revert to the caret's section once the pointer actually leaves the editor
+				const onMouseLeave = () => {
+					if (hoveredPos !== null) {
+						hoveredPos = null;
+						view.dispatch(view.state.tr);
+					}
+				};
+				view.dom.addEventListener('mouseleave', onMouseLeave);
 
 				// A single box drawn as an overlay around the whole section (ProseMirror
 				// renders the section's blocks as flat siblings, so a wrapper box needs a
@@ -410,6 +412,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					destroy: () => {
 						view.dom.removeEventListener('mousedown', onMouseDown);
 						view.dom.removeEventListener('mouseover', onMouseOver);
+						view.dom.removeEventListener('mouseleave', onMouseLeave);
 						host?.removeEventListener('scroll', onScroll);
 						window.removeEventListener('resize', onResize);
 						if (hideTimer) {
