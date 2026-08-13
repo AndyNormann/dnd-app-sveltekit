@@ -42,10 +42,15 @@ test('rolls live in a right sidebar; initiative lives on its own combat page (li
 	// DM combat page: initiative is the page content with DM controls
 	await page.goto(`/c/${id}/combat`);
 	await expect(page.locator('.initiative')).toBeVisible({ timeout: 10000 });
-	await expect(page.locator('.initiative .add')).toBeVisible();
-	await page.locator('.add .nm').fill('Goblin');
-	await page.locator('.add .in').fill('20');
-	await page.locator('.add button[type=submit], .add button').last().click();
+	await expect(page.locator('.rail.left .initiative')).toBeVisible();
+
+	// add an enemy to the board, then roll initiative (combat units populate the tracker)
+	await page.locator('.add-enemy input[placeholder="Enemy name"]').fill('Goblin');
+	await page.locator('.add-enemy input[placeholder="HP"]').fill('7');
+	await page.click('.add-enemy button[type=submit]');
+	await expect(page.locator('.board .token').filter({ hasText: 'Goblin' })).toBeVisible();
+	await page.click('button:has-text("Roll initiative")');
+	await expect(page.locator('.rail.left .initiative').getByText('Goblin')).toBeVisible({ timeout: 10000 });
 
 	// player combat page sees it live
 	const player = await browser.newPage();

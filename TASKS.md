@@ -217,6 +217,11 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       tracker as the left sidebar, the board (with setup/quick-adds for the DM)
       in the center, and the combat log as the right sidebar. Rails are sticky
       with independent scroll and collapse to a single column under 72rem.
+- [x] **41. Remove manual initiative add**
+      The DM add form in the initiative tracker is gone — combatants now enter
+      the tracker only as combat units (via the player picker, the encounter
+      picker, or manual add-enemy on the board, then Roll initiative). The dead
+      `add` action was removed from the initiative route.
 
 ## Hardening pass (5 rounds of polish)
 

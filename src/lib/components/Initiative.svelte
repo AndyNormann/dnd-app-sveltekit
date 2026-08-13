@@ -20,9 +20,6 @@
 	let entries = $state<InitEntry[]>([...initial]);
 	let round = $state(initialRound);
 	let open = $state(true);
-	let name = $state('');
-	let init = $state('');
-	let hp = $state('');
 
 	/** Apply the latest list + round from the server (SSE). */
 	export function applyEntries(next: InitEntry[], nextRound: number = round) {
@@ -36,15 +33,6 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)
 		});
-	}
-
-	async function add(e: Event) {
-		e.preventDefault();
-		if (!name.trim()) return;
-		await post(`/c/${campaignId}/initiative`, { action: 'add', name, init: init || '0', hp: hp || '0' });
-		name = '';
-		init = '';
-		hp = '';
 	}
 
 	function setActive(entry: InitEntry) {
@@ -106,12 +94,6 @@
 			{/each}
 		</div>
 		{#if dm}
-			<form class="add" onsubmit={add}>
-				<input class="nm" placeholder="Name" bind:value={name} maxlength="60" />
-				<input class="in" placeholder="Init" bind:value={init} maxlength="5" />
-				<input class="hp" placeholder="HP" bind:value={hp} maxlength="6" />
-				<button type="submit">Add</button>
-			</form>
 			<div class="actions">
 				<button type="button" onclick={nextTurn}>Next ▸</button>
 				<button type="button" onclick={clear}>Clear</button>
@@ -208,34 +190,6 @@
 		background: none;
 		cursor: pointer;
 		color: var(--rule);
-	}
-	.add {
-		display: flex;
-		gap: 0.3rem;
-		padding: 0.5rem;
-		border-top: 1px solid var(--rule);
-	}
-	.add input {
-		border: 1px solid var(--rule);
-		border-radius: 4px;
-		padding: 0.25rem 0.35rem;
-		font-size: 0.8rem;
-		min-width: 0;
-	}
-	.add .nm {
-		flex: 1.4;
-	}
-	.add .in,
-	.add .hp {
-		width: 2.6rem;
-	}
-	.add button {
-		border: 0;
-		background: var(--accent);
-		color: var(--parchment-light);
-		border-radius: 4px;
-		padding: 0.25rem 0.6rem;
-		cursor: pointer;
 	}
 	.actions {
 		display: flex;

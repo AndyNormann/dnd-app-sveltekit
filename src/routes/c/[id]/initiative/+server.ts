@@ -42,13 +42,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		hp?: number;
 	};
 
-	if (body.action === 'add') {
-		const name = (body.name ?? '').trim().slice(0, 60);
-		if (!name) throw error(400, 'Name required');
-		const init = Number(body.init);
-		if (!Number.isFinite(init)) throw error(400, 'Invalid initiative');
-		addInitiative(params.id, name, init, Number(body.hp) || 0);
-	} else if (body.action === 'clear') {
+	if (body.action === 'clear') {
 		clearInitiative(params.id);
 		setInitiativeRound(params.id, 1);
 	} else if (body.action === 'roll') {
