@@ -299,7 +299,24 @@
 	}
 	function onPointerUp() {
 		if (drawing) {
-			if (currentPoints.length >= 1 && (tool === 'draw' || tool === 'erase')) postStroke(tool, currentPoints);
+			if (currentPoints.length >= 1 && (tool === 'draw' || tool === 'erase')) {
+				postStroke(tool, currentPoints);
+				// Optimistically keep the finished stroke visible: redraw() paints from
+				// `drawings`, which only updates after the SSE round-trip, so without this
+				// the stroke vanishes until the next stroke triggers a repaint.
+				drawings = [
+					...drawings,
+					{
+						id: `local-${Date.now()}-${currentPoints.length}`,
+						campaign_id: campaignId,
+						color,
+						width: 4,
+						mode: tool,
+						points: currentPoints,
+						created_at: Date.now()
+					}
+				];
+			}
 			drawing = false;
 			currentPoints = [];
 			scheduleRedraw();
