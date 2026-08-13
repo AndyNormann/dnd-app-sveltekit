@@ -230,6 +230,27 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       blue for anonymous spectators. Notes map: DM uses a 📌 Ping toolbar mode
       and players just click the read-only map. Combat board: a 📌 Ping tool on
       both DM and player toolbars.
+- [x] **43. Player identity on portal rolls**
+      Rolls made from a player portal (`/p/<token>`) now carry the character's
+      name as the roller (via a `roller` prop on RenderedDoc), so the DM and
+      others see who rolled instead of “Anonymous”. Pings already used the
+      character name/colour.
+- [x] **44. Connection resilience for the DM editor**
+      The DM save path now notices when the client is offline: a failed save
+      while offline is queued (with an “Offline · will save when back” /
+      “Queued…” indicator) and auto-flushed on reconnect (`navigator.onLine`
+      listeners + SSE reopen), instead of firing a misleading “Save failed”
+      toast or losing the edit.
+- [x] **45. Attack + damage helper on the combat board**
+      The DM HP popover gained an attack section: roll d20+Atk bonus vs a target
+      AC (logged to the combat log as Hit/Miss/Crit/Fumble), and a damage helper
+      that rolls a dice expression and applies it to the token's HP (via the
+      hp action, which logs the damage).
+- [x] **46. Conditions / status markers on combat tokens**
+      `combat_units` gained a `conditions` text field; the DM HP popover has a
+      conditions editor (quick chips: Concentrating/Prone/Grappled/Stunned/
+      Restrained/Blinded + custom comma-separated input, saved to the unit),
+      and condition badges render on the tokens with per-condition colours.
 
 ## Hardening pass (5 rounds of polish)
 

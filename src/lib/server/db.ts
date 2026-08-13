@@ -124,6 +124,7 @@ db.exec(`
 		max_hp INTEGER NOT NULL DEFAULT 0,
 		alive INTEGER NOT NULL DEFAULT 1,
 		movement_used INTEGER NOT NULL DEFAULT 0,
+		conditions TEXT NOT NULL DEFAULT '',
 		x INTEGER NOT NULL DEFAULT 0,
 		y INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL
@@ -216,6 +217,9 @@ db.exec(`
 	}
 	if (!unitCols.includes('movement_used')) {
 		db.exec(`ALTER TABLE combat_units ADD COLUMN movement_used INTEGER NOT NULL DEFAULT 0`);
+	}
+	if (!unitCols.includes('conditions')) {
+		db.exec(`ALTER TABLE combat_units ADD COLUMN conditions TEXT NOT NULL DEFAULT ''`);
 	}
 	// link initiative entries to combat units so turns gate movement
 	const initCols = (db.query('PRAGMA table_info(initiative_entries)').all() as { name: string }[]).map(
@@ -1074,6 +1078,7 @@ export interface CombatUnit {
 	max_hp: number;
 	alive: number;
 	movement_used: number;
+	conditions: string;
 	x: number;
 	y: number;
 }
@@ -1137,6 +1142,7 @@ export function updateCombatUnit(
 		speed?: number;
 		init_bonus?: number;
 		max_hp?: number;
+		conditions?: string;
 	}
 ): CombatUnit | null {
 	const cur = db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit | null;
@@ -1145,7 +1151,7 @@ export function updateCombatUnit(
 	// alive follows hp: at 0 the unit is down, above 0 it is back up
 	const alive = hp > 0 ? 1 : 0;
 	db.query(
-		`UPDATE combat_units SET x = ?, y = ?, hp = ?, alive = ?, name = ?, color = ?, speed = ?, init_bonus = ?, max_hp = ? WHERE id = ?`
+		`UPDATE combat_units SET x = ?, y = ?, hp = ?, alive = ?, name = ?, color = ?, speed = ?, init_bonus = ?, max_hp = ?, conditions = ? WHERE id = ?`
 	).run(
 		patch.x != null ? Math.max(0, Math.floor(patch.x)) : cur.x,
 		patch.y != null ? Math.max(0, Math.floor(patch.y)) : cur.y,
@@ -1156,6 +1162,7 @@ export function updateCombatUnit(
 		patch.speed != null ? Math.max(0, Math.floor(patch.speed)) : cur.speed,
 		patch.init_bonus != null ? Math.floor(patch.init_bonus) : cur.init_bonus,
 		patch.max_hp != null ? Math.max(0, Math.floor(patch.max_hp)) : cur.max_hp,
+		patch.conditions ?? cur.conditions,
 		id
 	);
 	return db.query('SELECT * FROM combat_units WHERE id = ?').get(id) as CombatUnit;

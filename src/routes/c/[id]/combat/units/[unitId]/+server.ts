@@ -71,6 +71,14 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		return json({ ok: true, hp, alive: hp > 0 ? 1 : 0, delta });
 	}
 
+	if (body.action === 'conditions') {
+		if (!dm) throw error(401, 'DM required');
+		const conditions = String(body.conditions ?? '').slice(0, 300);
+		updateCombatUnit(unit.id, { conditions });
+		broadcastUnits(params.id);
+		return json({ ok: true, conditions });
+	}
+
 	if (body.action === 'move') {
 		const nx = Math.max(0, Math.floor(Number(body.x)));
 		const ny = Math.max(0, Math.floor(Number(body.y)));

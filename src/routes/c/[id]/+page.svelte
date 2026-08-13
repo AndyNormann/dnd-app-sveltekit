@@ -16,6 +16,8 @@
 	let editingTitle = $state(false);
 	let saveState = $state<'idle' | 'saving' | 'saved' | 'error' | 'conflict'>('idle');
 	let connected = $state(false);
+	let offline = $state(false);
+	let queued = $state(false); // a save is waiting until we're back online
 	let toast = $state<{ msg: string; type: 'ok' | 'err' } | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout>;
 	function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
@@ -118,6 +120,12 @@
 				return;
 			}
 			if (!res.ok) {
+				if (!navigator.onLine) {
+					// client is offline — keep the edit and retry once the connection returns
+					queued = true;
+					saveState = 'idle';
+					return;
+				}
 				saveState = 'error';
 				showToast('Save failed', 'err');
 				return;
@@ -127,6 +135,7 @@
 				rev: number;
 			};
 			rev = nextRev;
+			queued = false;
 			// resync editor if the server injected heading ids
 			if (canonical !== content) {
 				content = canonical;
@@ -137,8 +146,21 @@
 			savedTimer = setTimeout(() => (saveState = 'idle'), 1800);
 			// routine saves are shown by the inline save-state; the toast is reserved for errors/conflicts
 		} catch {
+			if (!navigator.onLine) {
+				queued = true;
+				saveState = 'idle';
+				return;
+			}
 			saveState = 'error';
 			showToast('Save failed', 'err');
+		}
+	}
+
+	/** Retry a save that was queued while the client was offline. */
+	function flushQueuedSave() {
+		if (queued) {
+			queued = false;
+			save();
 		}
 	}
 
@@ -222,7 +244,10 @@
 		}
 		// listen for rolls made by players (and co-DM tabs)
 		const es = new EventSource(`/c/${data.campaignId}/events`);
-		es.onopen = () => (connected = true);
+		es.onopen = () => {
+			connected = true;
+			flushQueuedSave(); // if a save was queued while offline, push it now
+		};
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
 			const ev = JSON.parse(e.data);
@@ -249,10 +274,22 @@
 		};
 		document.addEventListener('pointerdown', closeMore);
 		window.addEventListener('pagehide', flushPendingSave);
+		offline = !navigator.onLine;
+		const goOnline = () => {
+			offline = false;
+			flushQueuedSave();
+		};
+		const goOffline = () => {
+			offline = true;
+		};
+		window.addEventListener('online', goOnline);
+		window.addEventListener('offline', goOffline);
 		return () => {
 			es.close();
 			document.removeEventListener('pointerdown', closeMore);
 			window.removeEventListener('pagehide', flushPendingSave);
+			window.removeEventListener('online', goOnline);
+			window.removeEventListener('offline', goOffline);
 		};
 	});
 </script>
@@ -312,7 +349,9 @@
 		<a href={`/c/${data.campaignId}/combat/roster`} class="tab">Roster</a>
 	</nav>
 	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
-		{#if saveState === 'saving'}Saving…
+		{#if offline}Offline · will save when back
+		{:else if queued}Queued…
+		{:else if saveState === 'saving'}Saving…
 		{:else if saveState === 'saved'}Saved ✓
 		{:else if saveState === 'conflict'}Out of sync ·
 			<button type="button" class="reload" onclick={() => location.reload()}>Reload</button>

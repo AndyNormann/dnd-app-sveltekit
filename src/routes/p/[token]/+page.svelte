@@ -90,7 +90,7 @@
 		{#if html.trim() === ''}
 			<p class="empty">The DM hasn't shared anything yet. Hang tight!</p>
 		{:else}
-			<RenderedDoc bind:this={doc} {html} campaignId={data.campaignId} {maps} onrender={refreshOutline} />
+			<RenderedDoc bind:this={doc} {html} campaignId={data.campaignId} {maps} roller={data.character.name} onrender={refreshOutline} />
 		{/if}
 	</main>
 </div>

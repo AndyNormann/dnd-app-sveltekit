@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
+	import { rollDice } from '$lib/dice';
 
 	let {
 		campaignId,
@@ -34,6 +35,30 @@
 	let dmgError = $state('');
 	let pings = $state<{ id: string; x: number; y: number; color: string; name: string }[]>([]);
 	const PING_MS = 2000;
+	// attack helper + conditions (DM popover)
+	let atkBonus = $state('0');
+	let atkAc = $state('15');
+	let dmgDice = $state('1d8');
+	let condText = $state('');
+	let condErr = $state('');
+	const COND_PRESETS = [
+		'Concentrating',
+		'Prone',
+		'Grappled',
+		'Stunned',
+		'Restrained',
+		'Blinded'
+	];
+	const COND_COLORS: Record<string, string> = {
+		Concentrating: '#d68910',
+		Prone: '#8e44ad',
+		Grappled: '#c0392b',
+		Stunned: '#e67e22',
+		Restrained: '#7f8c8d',
+		Blinded: '#2c3e50',
+		Poisoned: '#27ae60',
+		Frightened: '#2980b9'
+	};
 
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let measureCanvas: HTMLCanvasElement | undefined = $state();
@@ -298,6 +323,15 @@
 	function unitById(id: string) {
 		return units.find((u) => u.id === id) ?? null;
 	}
+	function conditionsList(u: CombatUnit): string[] {
+		return (u.conditions ?? '')
+			.split(',')
+			.map((s) => s.trim())
+			.filter(Boolean);
+	}
+	function condColor(name: string) {
+		return COND_COLORS[name] ?? '#5d6d7e';
+	}
 	async function applyHpSet() {
 		const id = selectedId;
 		const n = parseInt(hpAmount, 10);
@@ -310,6 +344,67 @@
 		});
 		if (!res.ok) dmgError = 'Could not apply';
 		hpAmount = '';
+	}
+
+	async function rollAttack() {
+		const id = selectedId;
+		if (!id) return;
+		const unit = unitById(id);
+		if (!unit) return;
+		dmgError = '';
+		const bonus = parseInt(atkBonus, 10) || 0;
+		const ac = parseInt(atkAc, 10) || 10;
+		const die = rollDice('1d20');
+		if (!die) return;
+		const raw = die.total; // 1..20
+		const total = raw + bonus;
+		let outcome = total >= ac ? 'Hit' : 'Miss';
+		if (raw === 20) outcome = 'Crit';
+		else if (raw === 1) outcome = 'Fumble';
+		const note = raw === 20 ? ' (nat 20)' : raw === 1 ? ' (nat 1)' : '';
+		const res = await fetch(`/c/${campaignId}/combat/log`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ text: `${unit.name} attacks → ${total} vs AC ${ac} — ${outcome}${note}` })
+		});
+		if (!res.ok) dmgError = 'Could not log attack';
+	}
+
+	async function rollDamage() {
+		const id = selectedId;
+		if (!id) return;
+		const unit = unitById(id);
+		if (!unit) return;
+		dmgError = '';
+		const r = rollDice(dmgDice.trim() || '1d8');
+		if (!r) {
+			dmgError = 'Invalid damage dice';
+			return;
+		}
+		const res = await fetch(`/c/${campaignId}/combat/units/${id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'hp', hp: (unit.hp ?? 0) - r.total })
+		});
+		if (!res.ok) dmgError = 'Could not apply damage';
+	}
+
+	function toggleCond(name: string) {
+		const cur = condText.split(',').map((s) => s.trim()).filter(Boolean);
+		condText = (cur.includes(name) ? cur.filter((c) => c !== name) : [...cur, name]).join(', ');
+	}
+
+	async function saveConditions() {
+		const id = selectedId;
+		if (!id) return;
+		condErr = '';
+		const conds = condText.split(',').map((s) => s.trim()).filter(Boolean);
+		const res = await fetch(`/c/${campaignId}/combat/units/${id}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'conditions', conditions: conds.join(',') })
+		});
+		if (!res.ok) condErr = 'Could not save conditions';
 	}
 
 	async function postStroke(mode: 'draw' | 'erase', points: [number, number][]) {
@@ -335,9 +430,11 @@
 			if (tool === 'dmg') {
 				// damage tool: select the token (players only their own), don't drag
 				if (!dm && u.id !== myUnit?.id) return;
-				selectedId = selectedId === u.id ? null : u.id;
+				const selecting = selectedId !== u.id;
+				selectedId = selecting ? u.id : null;
 				hpAmount = '';
 				dmgError = '';
+				condText = selecting ? conditionsList(u).join(', ') : '';
 				return;
 			}
 			if (dm) {
@@ -532,6 +629,9 @@
 				{#if u.alive === 0}<span class="skull">💀</span>{/if}
 				<span class="label">{u.name}</span>
 				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
+				{#each conditionsList(u) as c}
+					<span class="cond" style="--cc:{condColor(c)}">{c}</span>
+				{/each}
 			</div>
 		{/each}
 		{#each pings as p (p.id)}
@@ -569,7 +669,7 @@
 			{@const su = unitById(selectedId)}
 			{#if su}
 				{@const px = Math.max(0, Math.min(config.grid_cols * CELL - 150, su.x * CELL + 44))}
-				<div class="hp-pop" style="left:{px}px;top:{Math.max(0, su.y * CELL + 44)}px">
+				<div class="hp-pop" style="left:{px}px;top:{Math.max(0, su.y * CELL + 44)}px" onpointerdown={(e) => e.stopPropagation()}>
 					<div class="hpn">{su.name} · <b>{su.hp}{su.max_hp ? `/${su.max_hp}` : ''}</b></div>
 					<div class="btns">
 						<button type="button" onclick={() => applyHpDelta(-1)}>−1</button>
@@ -581,6 +681,38 @@
 						<input bind:value={hpAmount} inputmode="numeric" placeholder="Set HP" />
 						<button type="submit">Set</button>
 					</form>
+					{#if dm}
+						<div class="atk">
+							<div class="row">
+								<input class="num" bind:value={atkBonus} inputmode="numeric" placeholder="Atk+" title="Attack bonus" />
+								<span class="vs">vs</span>
+								<input class="num" bind:value={atkAc} inputmode="numeric" placeholder="AC" title="Target AC" />
+								<button type="button" onclick={rollAttack}>⚔ Attack</button>
+							</div>
+							<div class="row">
+								<input class="dice" bind:value={dmgDice} placeholder="1d8" title="Damage dice" />
+								<button type="button" onclick={rollDamage}>💥 Damage</button>
+							</div>
+							<div class="condrow">
+								<span class="cl">Conditions</span>
+								<div class="chips">
+									{#each COND_PRESETS as c}
+										<button
+											type="button"
+											class:on={condText.split(',').map((x) => x.trim()).includes(c)}
+											onclick={() => toggleCond(c)}
+											>{c}</button
+										>
+									{/each}
+								</div>
+								<div class="crow">
+									<input class="cd" bind:value={condText} placeholder="Custom, comma-separated…" onchange={saveConditions} />
+									<button type="button" onclick={saveConditions}>Save</button>
+								</div>
+							</div>
+							{#if condErr}<div class="err">{condErr}</div>{/if}
+						</div>
+					{/if}
 					{#if dmgError}<div class="err">{dmgError}</div>{/if}
 				</div>
 			{/if}
@@ -881,6 +1013,98 @@
 		color: var(--accent-soft);
 		font-size: 0.75rem;
 		margin-top: 0.35rem;
+	}
+	.cond {
+		position: absolute;
+		top: 40px;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.55rem;
+		line-height: 1;
+		white-space: nowrap;
+		color: #fff;
+		background: var(--cc, #5d6d7e);
+		border-radius: 3px;
+		padding: 0.08rem 0.22rem;
+		pointer-events: none;
+		z-index: 4;
+	}
+	.hp-pop .atk {
+		margin-top: 0.4rem;
+		padding-top: 0.4rem;
+		border-top: 1px solid var(--rule);
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.hp-pop .row {
+		display: flex;
+		gap: 0.3rem;
+		align-items: center;
+	}
+	.hp-pop .num {
+		width: 2.6rem;
+	}
+	.hp-pop .dice {
+		flex: 1;
+		min-width: 0;
+	}
+	.hp-pop .row input,
+	.hp-pop .condrow input {
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		padding: 0.2rem 0.35rem;
+		font-size: 0.8rem;
+	}
+	.hp-pop .vs {
+		color: var(--ink-soft);
+		font-size: 0.8rem;
+	}
+	.hp-pop .row button,
+	.hp-pop .crow button {
+		border: 0;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 4px;
+		padding: 0.25rem 0.6rem;
+		cursor: pointer;
+		font-size: 0.8rem;
+	}
+	.hp-pop .condrow {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.hp-pop .cl {
+		font-size: 0.75rem;
+		color: var(--ink-soft);
+	}
+	.hp-pop .chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+	.hp-pop .chips button {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 4px;
+		padding: 0.15rem 0.4rem;
+		cursor: pointer;
+		font-size: 0.72rem;
+		color: var(--ink);
+	}
+	.hp-pop .chips button.on {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--parchment-light);
+	}
+	.hp-pop .crow {
+		display: flex;
+		gap: 0.3rem;
+	}
+	.hp-pop .cd {
+		flex: 1;
+		min-width: 0;
 	}
 	.error {
 		color: var(--accent-soft);

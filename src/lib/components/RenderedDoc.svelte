@@ -12,7 +12,8 @@
 		meta = {},
 		onrender,
 		onroll,
-		getSecret
+		getSecret,
+		roller
 	}: {
 		html: string;
 		dm?: boolean;
@@ -22,6 +23,7 @@
 		onrender?: (container: HTMLElement) => void;
 		onroll?: (roll: RollData) => void;
 		getSecret?: () => boolean;
+		roller?: string;
 	} = $props();
 
 	let container: HTMLDivElement;
@@ -295,11 +297,11 @@
 	}
 
 	async function rollInline(expression: string) {
-		const roller = dm ? 'DM' : localStorage.getItem('dnd-roller-name') || 'Anonymous';
+		const rollerName = dm ? 'DM' : roller ?? (localStorage.getItem('dnd-roller-name') || 'Anonymous');
 		const res = await fetch(`/c/${campaignId}/roll`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ roller, expression, secret: getSecret?.() ?? false })
+			body: JSON.stringify({ roller: rollerName, expression, secret: getSecret?.() ?? false })
 		});
 		if (res.ok) onroll?.((await res.json()) as RollData);
 	}
