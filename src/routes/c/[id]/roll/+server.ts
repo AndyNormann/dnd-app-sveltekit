@@ -2,13 +2,10 @@ import { addRoll, clearRolls, getCampaign, listRolls, restoreRolls, type RollRow
 import { broadcast, broadcastRole } from '$lib/server/sse';
 import { rollDice } from '$lib/dice';
 import { isDM } from '$lib/server/auth';
+import { snapshotRolls, consumeRollUndo } from '$lib/server/rollUndo';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { RollData } from '$lib/types';
-
-const UNDO_TTL = 30_000;
-// in-memory undo snapshots for a recent clear, so the DM can restore within the toast window
-const undoMap = new Map<string, { campaignId: string; rows: RollRow[]; expires: number }>();
 
 function toRollData(r: RollRow): RollData {
 	return {
@@ -21,11 +18,6 @@ function toRollData(r: RollRow): RollData {
 		label: r.label ?? undefined,
 		created_at: r.created_at
 	};
-}
-
-function sweepExpired() {
-	const now = Date.now();
-	for (const [k, v] of undoMap) if (v.expires < now) undoMap.delete(k);
 }
 
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
@@ -44,10 +36,8 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	// Clear (wipe) the roll history — DM only, persistent, broadcast to everyone.
 	if (body.action === 'clear') {
 		if (!isDM(cookies)) throw error(401, 'Clear requires DM');
-		sweepExpired();
 		const snapshot = listRolls(params.id, true); // keep secrets too, so undo restores them for the DM
-		const key = crypto.randomUUID();
-		undoMap.set(key, { campaignId: params.id, rows: snapshot, expires: Date.now() + UNDO_TTL });
+		const key = snapshotRolls(params.id, snapshot);
 		clearRolls(params.id);
 		broadcast(params.id, { type: 'rolls-cleared' });
 		return json({ ok: true, undoKey: key });
@@ -57,14 +47,11 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	if (body.action === 'undo') {
 		if (!isDM(cookies)) throw error(401, 'Undo requires DM');
 		const key = typeof body.key === 'string' ? body.key : '';
-		const entry = key ? undoMap.get(key) : undefined;
-		if (!entry || entry.campaignId !== params.id || entry.expires < Date.now()) {
-			throw error(400, 'Undo window expired');
-		}
-		undoMap.delete(key);
-		restoreRolls(entry.rows);
-		const full = entry.rows.map(toRollData);
-		const player = entry.rows.filter((r) => !r.secret).map(toRollData);
+		const rows = consumeRollUndo(key, params.id);
+		if (!rows) throw error(400, 'Undo window expired');
+		restoreRolls(rows);
+		const full = rows.map(toRollData);
+		const player = rows.filter((r) => !r.secret).map(toRollData);
 		broadcastRole(
 			params.id,
 			{ type: 'rolls-restored', rolls: full },
