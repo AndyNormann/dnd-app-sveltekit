@@ -304,7 +304,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		padding: 0.6rem 1rem;
+		padding: 0.6rem 14rem 0.6rem 1rem;
 		background: var(--parchment-light);
 		border-bottom: 2px solid var(--rule);
 		font-family: system-ui, sans-serif;

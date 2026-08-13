@@ -93,6 +93,15 @@
 		return [(e.clientX - rect.left) / CELL, (e.clientY - rect.top) / CELL];
 	}
 
+	function boardTheme() {
+	// board colours follow the active theme's CSS vars
+	const cs = getComputedStyle(document.documentElement);
+	return {
+		bg: cs.getPropertyValue('--board-bg').trim() || '#2d261c',
+		grid: cs.getPropertyValue('--board-grid').trim() || 'rgba(255,255,255,0.08)'
+	};
+}
+
 	function redraw() {
 		const ctx = canvas?.getContext('2d');
 		if (!ctx || !canvas) return;
@@ -101,11 +110,12 @@
 		canvas.width = cols * CELL;
 		canvas.height = rows * CELL;
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = '#241d15';
+		const th = boardTheme();
+		ctx.fillStyle = th.bg;
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		for (const d of drawings) {
-			ctx.strokeStyle = d.mode === 'erase' ? '#241d15' : d.color;
-			ctx.fillStyle = d.mode === 'erase' ? '#241d15' : d.color;
+			ctx.strokeStyle = d.mode === 'erase' ? th.bg : d.color;
+			ctx.fillStyle = d.mode === 'erase' ? th.bg : d.color;
 			ctx.lineWidth = d.width;
 			ctx.lineCap = 'round';
 			ctx.lineJoin = 'round';
@@ -122,7 +132,7 @@
 			});
 			ctx.stroke();
 		}
-		ctx.strokeStyle = 'rgba(231,220,195,0.10)';
+		ctx.strokeStyle = th.grid;
 		ctx.lineWidth = 1;
 		for (let i = 0; i <= cols; i++) {
 			ctx.beginPath();
@@ -202,7 +212,7 @@
 			// live draw current stroke
 			const ctx = canvas?.getContext('2d');
 			if (ctx && currentPoints.length > 1) {
-				ctx.strokeStyle = tool === 'erase' ? '#241d15' : color;
+				ctx.strokeStyle = tool === 'erase' ? boardTheme().bg : color;
 				ctx.lineWidth = 4;
 				ctx.lineCap = 'round';
 				ctx.lineJoin = 'round';
@@ -571,7 +581,7 @@
 	.board {
 		position: relative;
 		border: 2px solid var(--rule);
-		background: #241d15;
+		background: var(--board-bg, #2d261c);
 		border-radius: 4px;
 		overflow: hidden;
 		touch-action: none;

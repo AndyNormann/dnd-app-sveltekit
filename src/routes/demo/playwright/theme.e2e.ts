@@ -15,6 +15,7 @@ const lum = (c: string) => {
 	const m = c.match(/rgba?\((\d+)/);
 	return m ? +m[1] : 0;
 };
+const noOverlap = (a: any, b: any) => !a || !b || a.x + a.width <= b.x || b.x + b.width <= a.x;
 
 test('dark parchment theme: dark backgrounds, light text', async ({ browser }) => {
 	const { page, request } = await loginDM(browser);
@@ -46,4 +47,42 @@ test('dark parchment theme: dark backgrounds, light text', async ({ browser }) =
 	expect(lum(dump.editorBg)).toBeLessThan(80);
 	expect(lum(dump.text)).toBeGreaterThan(180);
 	expect(lum(dump.heading)).toBeGreaterThan(180);
+});
+
+test('theme switcher: present, switches dark themes, no header overlap', async ({ browser }) => {
+	const { page, request } = await loginDM(browser);
+	const switcher = page.locator('.themes');
+	await expect(switcher).toBeVisible();
+
+	// home: switcher clear of the auth pill
+	const s0 = await switcher.boundingBox();
+	const auth = await page.locator('.auth').last().boundingBox();
+	expect(noOverlap(s0, auth)).toBeTruthy();
+
+	// open a campaign page
+	const res = await request.post('/?/create', {
+		form: { title: 'T' },
+		headers: { Origin: 'http://localhost:4173' },
+		maxRedirects: 0
+	});
+	const loc = res.headers()['location'] ?? ((await res.json()) as any).location;
+	await page.goto(loc);
+	await expect(switcher).toBeVisible({ timeout: 10000 });
+
+	// each theme gives a distinct dark background and updates the active label
+	const bodies: Record<string, string> = {};
+	for (const lbl of ['Midnight', 'Ember', 'Forest', 'Obsidian', 'Parchment']) {
+		await page.locator('.themes .dotbtn[title="' + lbl + '"]').click();
+		await expect(page.locator('.themes .name')).toHaveText(lbl);
+		const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+		bodies[lbl] = bg;
+		expect(lum(bg)).toBeLessThan(80); // always dark
+	}
+	const uniq = new Set(Object.values(bodies));
+	expect(uniq.size).toBe(5); // all five distinct
+
+	// DM header: switcher clear of the Log out button
+	const s = await switcher.boundingBox();
+	const logout = await page.getByRole('button', { name: /log out/i }).boundingBox();
+	expect(noOverlap(s, logout)).toBeTruthy();
 });
