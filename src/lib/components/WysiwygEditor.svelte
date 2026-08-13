@@ -227,15 +227,9 @@
 		border: 1px solid rgba(184, 155, 99, 0.32);
 		border-radius: 8px;
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-		animation: dnd-section-box-in 0.18s ease;
-	}
-	@keyframes dnd-section-box-in {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
+		/* glide smoothly when the highlight moves between sections, and fade in/out */
+		transition: left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease,
+			opacity 0.17s ease;
 	}
 	:global(.collapsed-child) {
 		display: none !important;

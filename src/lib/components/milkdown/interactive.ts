@@ -348,15 +348,23 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					overlay.style.display = 'none';
 					host.appendChild(overlay);
 				};
+				let hideTimer: ReturnType<typeof setTimeout> | null = null;
 				const updateOverlay = () => {
 					if (!overlay || !host) return;
-					if (!hlRange) {
-						overlay.style.display = 'none';
-						return;
+					if (hideTimer) {
+						clearTimeout(hideTimer);
+						hideTimer = null;
 					}
-					const blocks = view.dom.querySelectorAll('.section-hl');
-					if (!blocks.length) {
-						overlay.style.display = 'none';
+					const blocks = hlRange ? view.dom.querySelectorAll('.section-hl') : null;
+					if (!hlRange || !blocks?.length) {
+						// fade out, then detach after the transition so it doesn't vanish abruptly
+						if (overlay.style.display !== 'none') {
+							overlay.style.opacity = '0';
+							hideTimer = setTimeout(() => {
+								overlay!.style.display = 'none';
+								hideTimer = null;
+							}, 170);
+						}
 						return;
 					}
 					let l = Infinity,
@@ -372,11 +380,18 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					}
 					const hr = host.getBoundingClientRect();
 					const pad = 10; // px of breathing room around the section content
+					const wasHidden = overlay.style.display === 'none';
 					overlay.style.display = 'block';
 					overlay.style.left = `${l - hr.left - pad}px`;
 					overlay.style.top = `${t - hr.top - pad}px`;
 					overlay.style.width = `${r - l + pad * 2}px`;
 					overlay.style.height = `${b - t + pad * 2}px`;
+					if (wasHidden) {
+						// start the fade-in from 0 (reflow so the opacity transition has a start value)
+						overlay.style.opacity = '0';
+						void overlay.offsetHeight;
+					}
+					overlay.style.opacity = '1';
 				};
 				ensureOverlay();
 				const onScroll = () => updateOverlay();
@@ -394,6 +409,10 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 						view.dom.removeEventListener('mouseover', onMouseOver);
 						host?.removeEventListener('scroll', onScroll);
 						window.removeEventListener('resize', onResize);
+						if (hideTimer) {
+							clearTimeout(hideTimer);
+							hideTimer = null;
+						}
 						overlay?.remove();
 						overlay = null;
 						host = null;
