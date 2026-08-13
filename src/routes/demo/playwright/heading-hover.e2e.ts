@@ -16,26 +16,19 @@ async function loginDM(browser: Browser) {
 	await expect(page).toHaveURL('/');
 	return { page, request: ctx.request };
 }
-test('heading controls are hidden until the heading is hovered', async ({ browser }) => {
+test('heading controls are always visible (not hover-only)', async ({ browser }) => {
 	const dm = await loginDM(browser);
 	const id = await createCampaign(dm.request);
 	await dm.page.goto(`/c/${id}`);
 	await dm.page.waitForSelector('.mdx-host .ProseMirror');
 	await dm.page.locator('.mdx-host .ProseMirror').click();
-	await dm.page.keyboard.type('# Hidden Controls\n\n');
+	await dm.page.keyboard.type('# Always Visible\n\n');
 	// wait for the heading-id marker to be injected server-side on save
 	await expect(dm.page.locator('.dm-heading-controls').first()).toBeVisible({ timeout: 5000 });
 
-	const h1 = dm.page.locator('.mdx-host .ProseMirror h1').first();
-	await h1.scrollIntoViewIfNeeded();
 	const btns = dm.page.locator('.dm-heading-controls .dhc-btns').first();
-	const hidden = await btns.evaluate((el) => getComputedStyle(el).opacity);
-	console.log('HOVPROBE hidden', hidden);
-	expect(Number(hidden)).toBe(0);
-
-	await h1.hover();
-	await dm.page.waitForTimeout(250);
+	// visible without hovering
 	const shown = await btns.evaluate((el) => getComputedStyle(el).opacity);
-	console.log('HOVPROBE shown', shown);
+	console.log('VISPROBE shown', shown);
 	expect(Number(shown)).toBe(1);
 });

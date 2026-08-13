@@ -100,13 +100,15 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 			currentView?.dispatch(currentView.state.tr);
 		};
 
-		// single show/hide toggle for players: 👁 reveal, 🙈 hide. Reveal uses the
+		// single show/hide toggle for players: 🔒 private, 🔓 shared. Reveal uses the
 		// handout flow (live reveal + scroll/flash), hide unshares.
 		const vis = document.createElement('button');
 		vis.type = 'button';
 		vis.className = 'dhc-vis';
-		vis.textContent = effectiveShared(id) ? '🙈' : '👁';
-		vis.title = effectiveShared(id) ? 'Hide from players' : 'Reveal to players';
+		const sharedNow = effectiveShared(id);
+		vis.textContent = sharedNow ? '🔓' : '🔒';
+		vis.title = sharedNow ? 'Shared with players — click to make private' : 'Private — click to share with players';
+		vis.classList.toggle('on', sharedNow);
 		vis.onmousedown = (e) => e.stopPropagation();
 		vis.onclick = (e) => {
 			e.stopPropagation();

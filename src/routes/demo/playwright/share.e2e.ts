@@ -39,7 +39,7 @@ test('show/hide toggle propagates to a live player via SSE', async ({ browser })
 	const controls = editor.locator('.dm-heading-controls').first();
 	await expect(controls).toBeVisible({ timeout: 5000 });
 	const vis = controls.locator('.dhc-vis');
-	await expect(vis).toHaveText('👁'); // hidden by default
+	await expect(vis).toHaveText('🔒'); // private by default
 
 	// a live player should NOT see the unshared heading — instead the empty state
 	const player = await browser.newPage();
@@ -49,14 +49,14 @@ test('show/hide toggle propagates to a live player via SSE', async ({ browser })
 	const docHeading = player.locator('.rendered').getByText('Main Section');
 	await expect(docHeading).toHaveCount(0);
 
-	// reveal it: single button flips to hide AND the live player sees it via SSE
+	// reveal it: single button flips to shared AND the live player sees it via SSE
 	await vis.click();
-	await expect(vis).toHaveText('🙈');
+	await expect(vis).toHaveText('🔓');
 	await expect(docHeading).toBeVisible({ timeout: 10000 });
 
-	// hide again: button flips back to reveal AND the player hides it
+	// hide again: button flips back to private AND the player hides it
 	await vis.click();
-	await expect(vis).toHaveText('👁');
+	await expect(vis).toHaveText('🔒');
 	await expect(docHeading).toHaveCount(0, { timeout: 10000 });
 
 	await anon.close();

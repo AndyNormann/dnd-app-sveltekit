@@ -59,13 +59,13 @@ test('show/hide is hierarchical: hiding a heading hides everything below it', as
 	await expect(rendered.getByText('Parent')).toBeVisible({ timeout: 10000 });
 	await expect(rendered.getByText('Child', { exact: true })).toBeVisible();
 
-	// the child's own toggle reflects the inherited visibility (🙈 = visible)
-	await expect(childControls.locator('.dhc-vis')).toHaveText('🙈');
+	// the child's own toggle reflects the inherited visibility (🔓 = shared/visible)
+	await expect(childControls.locator('.dhc-vis')).toHaveText('🔓');
 
 	// hide Parent -> everything below (Child) hides too, back to empty state
 	await parentControls.locator('.dhc-vis').click();
 	await expect(player.getByText("The DM hasn't shared anything yet")).toBeVisible({ timeout: 10000 });
-	await expect(childControls.locator('.dhc-vis')).toHaveText('👁');
+	await expect(childControls.locator('.dhc-vis')).toHaveText('🔒');
 
 	// reveal Parent again -> Child reappears live
 	await parentControls.locator('.dhc-vis').click();

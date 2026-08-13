@@ -155,16 +155,6 @@
 		display: inline-flex;
 		gap: 0.25rem;
 		align-items: center;
-		opacity: 0;
-		transition: opacity 0.15s ease;
-	}
-	:global(.mdx-host .ProseMirror h1:hover .dm-heading-controls .dhc-btns),
-	:global(.mdx-host .ProseMirror h2:hover .dm-heading-controls .dhc-btns),
-	:global(.mdx-host .ProseMirror h3:hover .dm-heading-controls .dhc-btns),
-	:global(.mdx-host .ProseMirror h4:hover .dm-heading-controls .dhc-btns),
-	:global(.mdx-host .ProseMirror h5:hover .dm-heading-controls .dhc-btns),
-	:global(.mdx-host .ProseMirror h6:hover .dm-heading-controls .dhc-btns) {
-		opacity: 1;
 	}
 	:global(.dm-heading-controls button) {
 		border: 0;
@@ -172,9 +162,9 @@
 		cursor: pointer;
 		padding: 0;
 		/* fixed control size, independent of the heading font size */
-		width: 1.15rem;
-		height: 1.15rem;
-		font-size: 0.85rem;
+		width: 1.38rem;
+		height: 1.38rem;
+		font-size: 1.02rem;
 		line-height: 1;
 		display: inline-flex;
 		align-items: center;
@@ -186,9 +176,15 @@
 		color: #94845f;
 	}
 	:global(.dm-heading-controls .dhc-vis) {
-		border: 1px solid var(--gold);
+		color: var(--ink-soft);
+		border: 1px solid var(--rule);
 		background: var(--parchment-deep);
 		border-radius: 4px;
+	}
+	:global(.dm-heading-controls .dhc-vis.on) {
+		color: var(--gold);
+		border-color: var(--gold);
+		background: rgba(200, 161, 61, 0.08);
 	}
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);
