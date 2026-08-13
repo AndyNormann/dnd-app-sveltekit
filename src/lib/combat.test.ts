@@ -2,6 +2,7 @@ import { afterAll, expect, test } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { CombatActor } from './server/combat';
 
 // Point the DB at a fresh temp file BEFORE the server modules are loaded so the
 // combat module is testable through its real (db-backed) surface, not a mock.
@@ -13,7 +14,7 @@ const combat = await import('./server/combat');
 const rules = await import('./combatRules');
 
 const DM = { isDm: true, playerForUnit: false };
-const player = (own: boolean): combat.CombatActor => ({ isDm: false, playerForUnit: own });
+const player = (own: boolean): CombatActor => ({ isDm: false, playerForUnit: own });
 
 function campaign() {
 	return db.createCampaign('Combat Unit Test');
