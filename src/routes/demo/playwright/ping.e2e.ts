@@ -56,7 +56,7 @@ test('combat ping relays from the DM to an open player portal (golden GM)', asyn
 	const ping = player.locator('.board-wrap .ping').first();
 	await expect(ping).toBeVisible();
 	await expect(ping.locator('.lbl')).toHaveText('GM');
-	await expect(ping.locator('.dot')).toHaveCSS('background-color', 'rgb(240, 192, 64)');
+	await expect(ping.locator('.ring')).toHaveCSS('border-color', 'rgb(240, 192, 64)');
 
 	await dm.close();
 	await player.close();
@@ -88,7 +88,7 @@ test('notes map ping shows on the DM editor with the golden GM colour', async ({
 	// the echo ping appears on the DM editor (golden, 'GM')
 	await expect(widget.locator('.ping')).toBeVisible({ timeout: 3000 });
 	await expect(widget.locator('.ping .lbl')).toHaveText('GM');
-	await expect(widget.locator('.ping .dot')).toHaveCSS('background-color', 'rgb(240, 192, 64)');
+	await expect(widget.locator('.ping .ring')).toHaveCSS('border-color', 'rgb(240, 192, 64)');
 
 	await dm.close();
 });

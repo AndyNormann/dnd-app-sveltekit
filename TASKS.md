@@ -225,7 +225,7 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - [x] **42. Realtime pings on maps + combat board**
       GM and players can ping a spot on the notes-view maps and on the combat
       board; pings relay live via SSE (`map-ping` / `combat-ping`), auto-fade
-      after ~2s, and are coloured per user — golden for the GM
+      after ~2s as a pulsing ripple ring, and are coloured per user — golden for the GM
       (`#f0c040`), the character's token colour for portal players, a neutral
       blue for anonymous spectators. Notes map: DM uses a 📌 Ping toolbar mode
       and players just click the read-only map. Combat board: a 📌 Ping tool on

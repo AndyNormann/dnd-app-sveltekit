@@ -539,7 +539,6 @@
 		{#each pings as p (p.id)}
 			<div class="ping" style="left:{p.x * 100}%;top:{p.y * 100}%;--pc:{p.color}" title="{p.name} is here">
 				<span class="ring"></span>
-				<span class="dot"></span>
 				<span class="lbl">{p.name}</span>
 			</div>
 		{/each}
@@ -638,13 +637,6 @@
 		pointer-events: none;
 		z-index: 20;
 		animation: ping-fade 2s ease-out forwards;
-	}
-	.ping .dot {
-		position: absolute;
-		inset: 0;
-		border-radius: 50%;
-		background: var(--pc, #f0c040);
-		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
 	}
 	.ping .ring {
 		position: absolute;
