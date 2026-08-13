@@ -88,8 +88,11 @@
 		padding: 1rem 1.75rem 30vh 4rem;
 		font-family: var(--font-body);
 		font-size: 1.08rem;
-		line-height: 1.55;
+		line-height: 1.45;
 		color: var(--ink);
+	}
+	:global(.mdx-host .ProseMirror p) {
+		margin: 0.55em 0;
 	}
 	:global(.mdx-host .ProseMirror h1),
 	:global(.mdx-host .ProseMirror h2),
@@ -103,8 +106,10 @@
 		color: var(--ink);
 		letter-spacing: normal;
 		font-weight: 600;
-		line-height: 1.5;
-		margin: 1.1em 0 0.4em;
+		line-height: 1.45;
+		/* heading hangs over its content: a big gap above marks the section boundary,
+		   a small gap below glues the heading to the text it introduces */
+		margin: 1.6em 0 0.35em;
 	}
 	:global(.mdx-host .ProseMirror h1) {
 		font-size: 1.32rem;
