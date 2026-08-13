@@ -371,11 +371,12 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 						b = Math.max(b, rc.bottom);
 					}
 					const hr = host.getBoundingClientRect();
+					const pad = 10; // px of breathing room around the section content
 					overlay.style.display = 'block';
-					overlay.style.left = `${l - hr.left}px`;
-					overlay.style.top = `${t - hr.top}px`;
-					overlay.style.width = `${r - l}px`;
-					overlay.style.height = `${b - t}px`;
+					overlay.style.left = `${l - hr.left - pad}px`;
+					overlay.style.top = `${t - hr.top - pad}px`;
+					overlay.style.width = `${r - l + pad * 2}px`;
+					overlay.style.height = `${b - t + pad * 2}px`;
 				};
 				ensureOverlay();
 				const onScroll = () => updateOverlay();

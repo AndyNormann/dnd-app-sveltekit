@@ -221,11 +221,20 @@
 	:global(.mdx-host .section-box) {
 		position: absolute;
 		pointer-events: none;
-		z-index: 0;
+		z-index: -1; /* behind the text + heading controls, so padding can bleed into the gutter */
 		background: var(--section-hl, rgba(184, 155, 99, 0.10));
-		border: 1px solid rgba(184, 155, 99, 0.35);
-		border-radius: 6px;
+		border: 1px solid rgba(184, 155, 99, 0.32);
+		border-radius: 8px;
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+		animation: dnd-section-box-in 0.18s ease;
+	}
+	@keyframes dnd-section-box-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 	:global(.collapsed-child) {
 		display: none !important;
