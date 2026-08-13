@@ -24,6 +24,8 @@
 		toastTimer = setTimeout(() => (toast = null), 2600);
 	}
 	let showOutline = $state(true);
+	let outlineW = $state(13); // rem, outline rail width
+	let rollsW = $state(19); // rem, rolls rail width
 	let sourceMode = $state(false); // false = WYSIWYG, true = raw CodeMirror
 	let more = $state(false); // ⋮ overflow menu
 	let editor: Editor | undefined = $state();
@@ -37,7 +39,7 @@
 	);
 
 	function persistUi() {
-		localStorage.setItem(uiKey, JSON.stringify({ showOutline }));
+		localStorage.setItem(uiKey, JSON.stringify({ showOutline, outlineW, rollsW }));
 	}
 
 	function toggleOutline() {
@@ -47,6 +49,30 @@
 
 	function toggleSource() {
 		sourceMode = !sourceMode;
+	}
+
+	// drag-to-resize the two sidebars (outline left, rolls right)
+	function startResize(side: 'outline' | 'rolls') {
+		return (e: MouseEvent) => {
+			e.preventDefault();
+			const startX = e.clientX;
+			const startW = side === 'outline' ? outlineW : rollsW;
+			const onMove = (ev: MouseEvent) => {
+				const delta = ev.clientX - startX;
+				if (side === 'outline') {
+					outlineW = Math.max(6, Math.min(34, startW + delta / 16));
+				} else {
+					rollsW = Math.max(14, Math.min(44, startW - delta / 16));
+				}
+			};
+			const onUp = () => {
+				window.removeEventListener('mousemove', onMove);
+				window.removeEventListener('mouseup', onUp);
+				persistUi();
+			};
+			window.addEventListener('mousemove', onMove);
+			window.addEventListener('mouseup', onUp);
+		};
 	}
 
 	function onKeydown(e: KeyboardEvent) {
@@ -189,6 +215,8 @@
 		try {
 			const saved = JSON.parse(localStorage.getItem(uiKey) ?? '{}');
 			if (typeof saved.showOutline === 'boolean') showOutline = saved.showOutline;
+			if (typeof saved.outlineW === 'number') outlineW = saved.outlineW;
+			if (typeof saved.rollsW === 'number') rollsW = saved.rollsW;
 		} catch {
 			// corrupt localStorage entry; keep defaults
 		}
@@ -339,11 +367,22 @@
 	</form>
 </header>
 
-<div class="layout" class:no-rail={!showOutline}>
+<div
+	class="layout"
+	class:no-rail={!showOutline}
+	style={`--outline-w: ${outlineW}rem; --rolls-w: ${rollsW}rem`}
+>
 	{#if showOutline}
 		<aside class="rail">
 			<Outline items={outlineItems} />
 		</aside>
+		<div
+			class="rh rh-outline"
+			role="separator"
+			aria-orientation="vertical"
+			title="Drag to resize outline"
+			onmousedown={startResize('outline')}
+		></div>
 	{/if}
 	<div class="split">
 		<section class="pane source">
@@ -373,6 +412,13 @@
 			{/if}
 		</section>
 	</div>
+	<div
+		class="rh rh-rolls"
+		role="separator"
+		aria-orientation="vertical"
+		title="Drag to resize rolls"
+		onmousedown={startResize('rolls')}
+	></div>
 	<aside class="rail rolls">
 		<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
 	</aside>
@@ -521,12 +567,34 @@
 	}
 	.layout {
 		display: grid;
-		grid-template-columns: 13rem 1fr 19rem;
+		grid-template-columns: var(--outline-w, 13rem) 1fr var(--rolls-w, 19rem);
 		grid-template-rows: 1fr;
 		height: calc(100vh - 3.3rem);
+		position: relative;
 	}
 	.layout.no-rail {
-		grid-template-columns: 1fr 19rem;
+		grid-template-columns: 1fr var(--rolls-w, 19rem);
+	}
+	/* drag handles on the sidebar borders */
+	.rh {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 8px;
+		cursor: col-resize;
+		z-index: 5;
+	}
+	.rh-outline {
+		left: var(--outline-w, 13rem);
+		margin-left: -4px;
+	}
+	.rh-rolls {
+		right: var(--rolls-w, 19rem);
+		margin-right: -4px;
+	}
+	.rh:hover {
+		background: var(--accent-soft);
+		opacity: 0.35;
 	}
 	.rail {
 		border-right: 1px solid var(--rule);
