@@ -87,7 +87,8 @@
 </script>
 
 <div class="roll-log" class:open>
-	<button type="button" class="header" onclick={() => (open = !open)}>
+		<div class="headrow">
+<button type="button" class="header" onclick={() => (open = !open)}>
 		<svg class="d20" viewBox="0 0 100 100" aria-hidden="true">
 			<g fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round">
 				<polygon points="50,4 89,26 89,74 50,96 11,74 11,26" />
@@ -105,6 +106,10 @@
 		</svg>
 		Rolls {open ? '▾' : '▴'}
 	</button>
+		{#if rolls.length > 0}
+			<button type="button" class="clear" title="Clear the roll list" onclick={() => (rolls = [])}>Clear</button>
+		{/if}
+	</div>
 	{#if open}
 		<div class="list" bind:this={listEl}>
 			{#if rolls.length === 0}
@@ -154,6 +159,12 @@
 		overflow: hidden;
 		box-sizing: border-box;
 	}
+	.headrow {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.4rem;
+	}
 	.header {
 		width: 100%;
 		display: flex;
@@ -171,6 +182,20 @@
 	.d20 {
 		width: 1.1rem;
 		height: 1.1rem;
+	}
+	.clear {
+		margin-right: 0.5rem;
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		color: var(--ink-soft);
+		border-radius: 4px;
+		font-size: 0.72rem;
+		padding: 0.15rem 0.45rem;
+		cursor: pointer;
+	}
+	.clear:hover {
+		border-color: var(--danger);
+		color: var(--danger);
 	}
 	.list {
 		flex: 1;
@@ -275,7 +300,7 @@
 		background: var(--accent-soft);
 	}
 	.error {
-		color: var(--accent-soft);
+		color: var(--danger);
 		padding: 0 0.75rem 0.5rem;
 		margin: 0;
 	}

@@ -34,6 +34,7 @@
 		--accent-soft: #9db4fa;
 		--gold: #7d9cf7;
 		--section-hl: rgba(111, 143, 245, 0.08);
+		--danger: #e25d54; /* a real warning/error red (success stays green) */
 		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
 		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);

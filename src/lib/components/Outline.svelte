@@ -18,7 +18,7 @@
 <nav class="outline">
 	<div class="label">Outline</div>
 	{#if items.length === 0}
-		<p class="empty">No headings</p>
+		<p class="empty">No headings yet</p>
 	{/if}
 	{#each items as item (item.id)}
 		<button

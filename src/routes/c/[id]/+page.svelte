@@ -25,6 +25,7 @@
 	}
 	let showOutline = $state(true);
 	let sourceMode = $state(false); // false = WYSIWYG, true = raw CodeMirror
+	let more = $state(false); // ⋮ overflow menu
 	let editor: Editor | undefined = $state();
 	let wysiwyg: WysiwygEditor | undefined = $state();
 	let rollLog: RollLog;
@@ -49,6 +50,10 @@
 	}
 
 	function onKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			more = false;
+			return;
+		}
 		if (!(e.ctrlKey || e.metaKey)) return;
 		if (e.key === '\\') {
 			e.preventDefault();
@@ -104,7 +109,7 @@
 			saveState = 'saved';
 			clearTimeout(savedTimer);
 			savedTimer = setTimeout(() => (saveState = 'idle'), 1800);
-			showToast('Saved');
+			// routine saves are shown by the inline save-state; the toast is reserved for errors/conflicts
 		} catch {
 			saveState = 'error';
 			showToast('Save failed', 'err');
@@ -207,9 +212,15 @@
 			else if (ev.type === 'reveal-undone') wysiwyg?.applyRevealRemoved(ev.mapId, ev.opId);
 			else if (ev.type === 'reveals-cleared') wysiwyg?.applyLayerCleared(ev.mapId, ev.layer);
 		};
+		// close the ⋮ overflow menu when clicking anywhere outside it
+		const closeMore = (e: PointerEvent) => {
+			if (more && !(e.target as HTMLElement).closest('.more')) more = false;
+		};
+		document.addEventListener('pointerdown', closeMore);
 		window.addEventListener('pagehide', flushPendingSave);
 		return () => {
 			es.close();
+			document.removeEventListener('pointerdown', closeMore);
 			window.removeEventListener('pagehide', flushPendingSave);
 		};
 	});
@@ -280,9 +291,46 @@
 		Add map
 		<input type="file" accept="image/*" onchange={uploadMap} hidden />
 	</label>
-	<button onclick={copyPlayerLink}>Copy player link</button>
-	<a href={`/c/${data.campaignId}/export`} class="export">Export</a>
-	<a href={`/c/${data.campaignId}/play`} target="_blank" rel="noreferrer">Open player view</a>
+	<div class="more">
+		<button
+			type="button"
+			class="toggle"
+			class:on={more}
+			title="More actions"
+			aria-label="More actions"
+			aria-haspopup="menu"
+			aria-expanded={more}
+			onclick={() => (more = !more)}
+			>⋮</button
+		>
+		{#if more}
+			<div class="menu" role="menu">
+				<button
+					type="button"
+					role="menuitem"
+					onclick={() => {
+						more = false;
+						copyPlayerLink();
+					}}
+					>Copy player link</button
+				>
+				<a
+					role="menuitem"
+					href={`/c/${data.campaignId}/export`}
+					onclick={() => (more = false)}
+					>Export</a
+				>
+				<a
+					role="menuitem"
+					href={`/c/${data.campaignId}/play`}
+					target="_blank"
+					rel="noreferrer"
+					onclick={() => (more = false)}
+					>Open player view</a
+				>
+			</div>
+		{/if}
+	</div>
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
 	</form>
@@ -369,7 +417,7 @@
 		min-width: 4.5rem;
 	}
 	.save-state.error {
-		color: var(--accent);
+		color: var(--danger);
 	}
 	.reload {
 		margin-left: 0.2rem;
@@ -391,7 +439,6 @@
 	}
 	.bar button,
 	.bar .upload,
-	.bar .export,
 	.bar a[target] {
 		font-size: 0.85rem;
 		padding: 0.4rem 0.7rem;
@@ -428,6 +475,40 @@
 		color: var(--accent);
 		border-color: var(--gold);
 		background: var(--parchment-deep);
+	}
+	.more {
+		position: relative;
+	}
+	.menu {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		right: 0;
+		z-index: 60;
+		min-width: 11rem;
+		background: var(--parchment-light);
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		box-shadow: var(--shadow-md);
+		overflow: hidden;
+	}
+	.menu button,
+	.menu a {
+		display: block;
+		width: 100%;
+		text-align: left;
+		padding: 0.5rem 0.8rem;
+		border: 0;
+		background: none;
+		font-family: var(--font-body);
+		font-size: 0.9rem;
+		color: var(--ink);
+		text-decoration: none;
+		cursor: pointer;
+	}
+	.menu button:hover,
+	.menu a:hover {
+		background: var(--parchment-deep);
+		color: var(--accent);
 	}
 	.layout {
 		display: grid;
@@ -520,7 +601,7 @@
 		animation: toast-in 0.18s ease;
 	}
 	.toast.err {
-		border-left-color: var(--accent);
+		border-left-color: var(--danger);
 	}
 	@keyframes toast-in {
 		from {

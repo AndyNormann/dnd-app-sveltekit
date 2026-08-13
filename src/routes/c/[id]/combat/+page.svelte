@@ -521,7 +521,7 @@
 		flex: 1;
 	}
 	.error {
-		color: var(--accent-soft);
+		color: var(--danger);
 		font-size: 0.9rem;
 	}
 	.toast {

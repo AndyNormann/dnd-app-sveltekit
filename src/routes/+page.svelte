@@ -243,7 +243,7 @@
 		cursor: pointer;
 	}
 	.import-error {
-		color: var(--accent-soft);
+		color: var(--danger);
 		margin: 0 0 1rem;
 	}
 	.grid {
@@ -260,7 +260,7 @@
 		padding: 1.1rem 1.2rem 0.9rem;
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
-		border-top: 3px solid var(--gold);
+		border-top: 2px solid rgba(111, 143, 245, 0.3);
 		border-radius: 6px;
 		box-shadow: var(--shadow);
 	}
