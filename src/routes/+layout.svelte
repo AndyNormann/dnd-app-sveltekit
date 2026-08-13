@@ -82,20 +82,20 @@
 		--board-grid: rgba(220, 233, 220, 0.09);
 		--section-hl: rgba(201, 173, 94, 0.06);
 	}
-	/* theme: Obsidian — neutral near-black, highest contrast */
+	/* theme: Obsidian — neutral near-black, highest contrast; refined with blue + green highlights */
 	:global(:root[data-theme='obsidian']) {
 		--parchment: #161616;
 		--parchment-deep: #101010;
 		--parchment-light: #222222;
 		--ink: #ececec;
 		--ink-soft: #a8a8a8;
-		--accent: #e87d76;
-		--accent-soft: #f09a93;
-		--gold: #d0a849;
+		--accent: #7aa8f5;
+		--accent-soft: #9cc2fa;
+		--gold: #7bc680;
 		--rule: #333333;
 		--board-bg: #222222;
 		--board-grid: rgba(236, 236, 236, 0.09);
-		--section-hl: rgba(208, 168, 73, 0.06);
+		--section-hl: rgba(122, 168, 245, 0.07);
 	}
 	:global(body) {
 		margin: 0;

@@ -6,7 +6,7 @@
 		{ id: 'midnight', label: 'Midnight', swatch: '#1a2130', dot: '#d8736c' },
 		{ id: 'crimson', label: 'Ember', swatch: '#241517', dot: '#e8625a' },
 		{ id: 'forest', label: 'Forest', swatch: '#17201a', dot: '#d07a5e' },
-		{ id: 'obsidian', label: 'Obsidian', swatch: '#161616', dot: '#e87d76' }
+		{ id: 'obsidian', label: 'Obsidian', swatch: '#161616', dot: '#7aa8f5' }
 	] as const;
 
 	type ThemeId = (typeof THEMES)[number]['id'];
