@@ -212,6 +212,11 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       and per-character player links. The Combat page keeps the board + setup:
       roll initiative, quick-add a player via a picker, the encounter picker,
       manual add-enemy, and clear board.
+- [x] **40. Combat sidebar layout**
+      The DM and player-portal combat pages are now three columns: initiative
+      tracker as the left sidebar, the board (with setup/quick-adds for the DM)
+      in the center, and the combat log as the right sidebar. Rails are sticky
+      with independent scroll and collapse to a single column under 72rem.
 
 ## Hardening pass (5 rounds of polish)
 

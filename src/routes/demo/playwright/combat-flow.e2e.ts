@@ -70,7 +70,7 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 
 	// roll initiative
 	await dm.page.click('button:has-text("Roll initiative")');
-	await expect(dm.page.locator('.order .initiative .entry').first()).toBeVisible({ timeout: 10000 });
+	await expect(dm.page.locator('.rail.left .initiative .entry').first()).toBeVisible({ timeout: 10000 });
 
 	// advance turns until Aria is active (deterministic movement test)
 	const playerUnit = await playerUnitId(dm.request, id);
@@ -107,9 +107,9 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 
 	// player sees own hp but NOT enemy hp in the turn order
 	await player.waitForTimeout(800);
-	await expect(player.locator('.order .initiative').getByText(/20\/20/)).toBeVisible();
+	await expect(player.locator('.rail.left .initiative').getByText(/20\/20/)).toBeVisible();
 	// goblin hp (7) must not appear for the player
-	await expect(player.locator('.order .initiative').getByText(/\/7/)).toHaveCount(0);
+	await expect(player.locator('.rail.left .initiative').getByText(/\/7/)).toHaveCount(0);
 
 	await dm.ctx.close();
 	await playerCtx.close();

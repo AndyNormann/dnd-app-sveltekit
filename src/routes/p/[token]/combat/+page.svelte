@@ -75,37 +75,43 @@
 </nav>
 
 <main class="combat">
-	<h1 class="campaign-title">{title}</h1>
-	<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
-	<LiveStamp at={lastActivity} />
-	{#if activeName}
-		<div class="turn-banner" class:mine={isMyTurn}>
-			{#if isMyTurn}✨ Your turn — go!{:else}⏳ Waiting on {activeName}…{/if}
-		</div>
-	{/if}
-	<CombatBoard
-		bind:this={board}
-		campaignId={data.campaignId}
-		dm={false}
-		characterId={data.character.id}
-		initialUnits={units}
-		initialDrawings={drawings}
-		initialConfig={boardConfig}
-		activeUnitId={data.activeUnitId}
-	/>
-	<section class="order">
-		<Initiative
-			bind:this={initiative}
-			campaignId={data.campaignId}
-			initial={data.initiative}
-			initialRound={data.initiativeRound}
-			units={units}
-			viewerUnitId={myUnitId}
-		/>
-	</section>
-	<section class="clog">
-		<CombatLog bind:this={log} initial={data.logs} />
-	</section>
+	<div class="top">
+		<h1 class="campaign-title">{title}</h1>
+		<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
+		<LiveStamp at={lastActivity} />
+	</div>
+	<div class="layout">
+		<section class="rail left">
+			<Initiative
+				bind:this={initiative}
+				campaignId={data.campaignId}
+				initial={data.initiative}
+				initialRound={data.initiativeRound}
+				units={units}
+				viewerUnitId={myUnitId}
+			/>
+		</section>
+		<section class="col">
+			{#if activeName}
+				<div class="turn-banner" class:mine={isMyTurn}>
+					{#if isMyTurn}✨ Your turn — go!{:else}⏳ Waiting on {activeName}…{/if}
+				</div>
+			{/if}
+			<CombatBoard
+				bind:this={board}
+				campaignId={data.campaignId}
+				dm={false}
+				characterId={data.character.id}
+				initialUnits={units}
+				initialDrawings={drawings}
+				initialConfig={boardConfig}
+				activeUnitId={data.activeUnitId}
+			/>
+		</section>
+		<section class="rail right">
+			<CombatLog bind:this={log} initial={data.logs} />
+		</section>
+	</div>
 </main>
 
 <style>
@@ -137,10 +143,41 @@
 		background: var(--parchment-deep);
 	}
 	.combat {
-		max-width: 64rem;
+		max-width: 96rem;
 		margin: 1rem auto;
 		padding: 0 1rem;
+	}
+	.top {
 		position: relative;
+		margin-bottom: 1rem;
+	}
+	.layout {
+		display: grid;
+		grid-template-columns: minmax(15rem, 19rem) 1fr minmax(15rem, 19rem);
+		gap: 1rem;
+		align-items: start;
+	}
+	.col {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		min-width: 0;
+	}
+	.rail {
+		position: sticky;
+		top: 1rem;
+		max-height: calc(100vh - 2rem);
+		overflow-y: auto;
+	}
+	@media (max-width: 72rem) {
+		.layout {
+			grid-template-columns: 1fr;
+		}
+		.rail {
+			position: static;
+			max-height: none;
+			overflow: visible;
+		}
 	}
 	.campaign-title {
 		font-family: var(--font-display);
@@ -164,12 +201,6 @@
 	.conn.on {
 		background: #3a9b45;
 		border-color: #3a9b45;
-	}
-	.order {
-		margin-top: 1rem;
-	}
-	.clog {
-		margin-top: 1rem;
 	}
 	.turn-banner {
 		text-align: center;

@@ -200,55 +200,7 @@
 </header>
 
 <main class="combat">
-	<section class="panel board">
-		{#if activeName}
-			<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
-		{/if}
-		<CombatBoard
-			bind:this={board}
-			campaignId={data.campaignId}
-			dm
-			initialUnits={units}
-			initialDrawings={drawings}
-			initialConfig={boardConfig}
-			activeUnitId={data.activeUnitId}
-		/>
-	</section>
-
-	<section class="panel setup">
-		<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
-		<form class="add-player" onsubmit={addPlayerToBoard}>
-			<select class="nm player-select" bind:value={playerSel} aria-label="Player character to add">
-				<option value="">Pick character…</option>
-				{#each characters as c (c.id)}
-					<option value={c.id}>{c.name}</option>
-				{/each}
-			</select>
-			<button type="submit">Add player</button>
-		</form>
-		<form class="add-encounter" onsubmit={addEncounter}>
-			<select class="nm enc-select" bind:value={encMonId} aria-label="Monster to add">
-				<option value="">Pick monster…</option>
-				{#each monsters as m (m.id)}
-					<option value={m.id}>{m.name}</option>
-				{/each}
-			</select>
-			<input class="num" placeholder="Count" title="How many" bind:value={encCount} maxlength="2" />
-			<button type="submit">Add encounter</button>
-		</form>
-		<form class="add-enemy" onsubmit={addEnemy}>
-			<input class="nm" placeholder="Enemy name" bind:value={enemyName} maxlength="60" />
-			<input class="num" placeholder="Init+" bind:value={enemyInit} maxlength="4" />
-			<input class="num" placeholder="HP" bind:value={enemyHp} maxlength="6" />
-			<input class="color" type="color" bind:value={enemyColor} title="Enemy color" />
-			<button type="submit">Add enemy</button>
-		</form>
-		<button type="button" class="big danger" onclick={clearBoard}>🗑 Clear board</button>
-	</section>
-
-	{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
-
-	<section class="panel order">
+	<section class="panel rail left">
 		<Initiative
 			bind:this={initiative}
 			campaignId={data.campaignId}
@@ -259,7 +211,57 @@
 		/>
 	</section>
 
-	<section class="panel log">
+	<section class="col">
+		<section class="panel board">
+			{#if activeName}
+				<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
+			{/if}
+			<CombatBoard
+				bind:this={board}
+				campaignId={data.campaignId}
+				dm
+				initialUnits={units}
+				initialDrawings={drawings}
+				initialConfig={boardConfig}
+				activeUnitId={data.activeUnitId}
+			/>
+		</section>
+
+		<section class="panel setup">
+			<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
+			<form class="add-player" onsubmit={addPlayerToBoard}>
+				<select class="nm player-select" bind:value={playerSel} aria-label="Player character to add">
+					<option value="">Pick character…</option>
+					{#each characters as c (c.id)}
+						<option value={c.id}>{c.name}</option>
+					{/each}
+				</select>
+				<button type="submit">Add player</button>
+			</form>
+			<form class="add-encounter" onsubmit={addEncounter}>
+				<select class="nm enc-select" bind:value={encMonId} aria-label="Monster to add">
+					<option value="">Pick monster…</option>
+					{#each monsters as m (m.id)}
+						<option value={m.id}>{m.name}</option>
+					{/each}
+				</select>
+				<input class="num" placeholder="Count" title="How many" bind:value={encCount} maxlength="2" />
+				<button type="submit">Add encounter</button>
+			</form>
+			<form class="add-enemy" onsubmit={addEnemy}>
+				<input class="nm" placeholder="Enemy name" bind:value={enemyName} maxlength="60" />
+				<input class="num" placeholder="Init+" bind:value={enemyInit} maxlength="4" />
+				<input class="num" placeholder="HP" bind:value={enemyHp} maxlength="6" />
+				<input class="color" type="color" bind:value={enemyColor} title="Enemy color" />
+				<button type="submit">Add enemy</button>
+			</form>
+			<button type="button" class="big danger" onclick={clearBoard}>🗑 Clear board</button>
+		</section>
+
+		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
+	</section>
+
+	<section class="panel rail right">
 		<CombatLog bind:this={combatLog} initial={data.logs} />
 	</section>
 </main>
@@ -340,9 +342,39 @@
 		color: var(--accent-soft);
 	}
 	.combat {
-		max-width: 68rem;
+		max-width: 96rem;
 		margin: 1rem auto;
 		padding: 0 1rem;
+		display: grid;
+		grid-template-columns: minmax(15rem, 19rem) 1fr minmax(15rem, 19rem);
+		gap: 1rem;
+		align-items: start;
+	}
+	.col {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		min-width: 0;
+	}
+	.rail {
+		position: sticky;
+		top: 1rem;
+		max-height: calc(100vh - 2rem);
+		overflow-y: auto;
+		margin-bottom: 0;
+	}
+	.board {
+		overflow-x: auto;
+	}
+	@media (max-width: 72rem) {
+		.combat {
+			grid-template-columns: 1fr;
+		}
+		.rail {
+			position: static;
+			max-height: none;
+			overflow: visible;
+		}
 	}
 	.panel {
 		background: var(--parchment-light);
