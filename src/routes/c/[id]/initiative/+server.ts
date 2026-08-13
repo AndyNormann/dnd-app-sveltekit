@@ -1,7 +1,8 @@
 import { getCampaign, listInitiative } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
-import { rollInitiative, advanceTurn, clearCombat, broadcastInitiativePayload } from '$lib/server/combat';
+import { rollInitiative, advanceTurn, clearCombat } from '$lib/server/combat';
+import { emitInitiative } from '$lib/server/feed';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -25,6 +26,6 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	else throw error(400, 'Unknown action');
 
 	if (result.data.log) broadcast(params.id, { type: 'combat-log', entry: result.data.log });
-	broadcast(params.id, { type: 'initiative-updated', ...broadcastInitiativePayload(params.id) });
+	emitInitiative(params.id);
 	return json({ ok: true });
 };

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { CharacterRow, Monster } from '$lib/server/db';
 
@@ -165,11 +166,11 @@
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
-		es.onmessage = (e) => {
-			const ev = JSON.parse(e.data);
-			if (ev.type === 'characters-updated') refreshCharacters();
-			else if (ev.type === 'monsters-updated') refreshMonsters();
-			else if (ev.type === 'title-changed') title = ev.title;
+		es.onmessage = (e) => applyFeedEvent(JSON.parse(e.data), feed);
+		const feed: FeedHandlers = {
+			onCharacters: () => refreshCharacters(),
+			onMonsters: () => refreshMonsters(),
+			onTitle: (t) => (title = t)
 		};
 		return () => es.close();
 	});

@@ -3,6 +3,7 @@
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
+	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { CharacterRow, Monster, CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
@@ -117,45 +118,32 @@
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
-		es.onmessage = (e) => {
-			const ev = JSON.parse(e.data);
-			switch (ev.type) {
-				case 'initiative-updated': {
-					initiative?.applyEntries(ev.entries, ev.round);
-					const active = ev.entries.find((x: { active: number }) => x.active === 1)?.unit_id ?? null;
-					board?.setActiveUnitId(active);
-					activeName = ev.entries.find((x: { active: number }) => x.active === 1)?.name ?? '';
-					round = ev.round;
-					break;
-				}
-				case 'combat-units-updated':
-					units = ev.units;
-					board?.applyUnits(ev.units);
-					break;
-				case 'combat-log':
-					combatLog?.add(ev.entry);
-					break;
-				case 'combat-drawings-updated':
-					drawings = ev.drawings;
-					board?.applyDrawings(ev.drawings);
-					break;
-				case 'board-config-updated':
-					boardConfig = ev.config;
-					board?.applyConfig(ev.config);
-					break;
-				case 'combat-ping':
-					board?.applyPing(ev.ping);
-					break;
-				case 'characters-updated':
-					refreshCharacters();
-					break;
-				case 'monsters-updated':
-					refreshMonsters();
-					break;
-				case 'title-changed':
-					title = ev.title;
-					break;
-			}
+		es.onmessage = (e) => applyFeedEvent(JSON.parse(e.data), feed);
+		const feed: FeedHandlers = {
+			applyInitiative: (entries, r) => {
+				initiative?.applyEntries(entries, r);
+				const active = entries.find((x) => x.active === 1)?.unit_id ?? null;
+				board?.setActiveUnitId(active);
+				activeName = entries.find((x) => x.active === 1)?.name ?? '';
+				round = r;
+			},
+			applyCombatUnits: (u) => {
+				units = u;
+				board?.applyUnits(u);
+			},
+			applyCombatLog: (entry) => combatLog?.add(entry),
+			applyCombatDrawings: (d) => {
+				drawings = d;
+				board?.applyDrawings(d);
+			},
+			applyBoardConfig: (config) => {
+				boardConfig = config;
+				board?.applyConfig(config);
+			},
+			applyCombatPing: (ping) => board?.applyPing(ping),
+			onCharacters: () => refreshCharacters(),
+			onMonsters: () => refreshMonsters(),
+			onTitle: (t) => (title = t)
 		};
 		return () => es.close();
 	});

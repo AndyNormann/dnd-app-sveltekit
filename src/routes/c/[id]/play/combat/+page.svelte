@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
+	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -19,10 +20,12 @@
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => {
-			const ev = JSON.parse(e.data);
 			poke();
-			if (ev.type === 'initiative-updated') initiative?.applyEntries(ev.entries, ev.round);
-			else if (ev.type === 'title-changed') title = ev.title;
+			applyFeedEvent(JSON.parse(e.data), feed);
+		};
+		const feed: FeedHandlers = {
+			applyInitiative: (entries, r) => initiative?.applyEntries(entries, r),
+			onTitle: (t) => (title = t)
 		};
 		return () => es.close();
 	});

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import Outline from '$lib/components/Outline.svelte';
+	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp } from '$lib/types';
 
@@ -31,42 +32,26 @@
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
+		const feed: FeedHandlers = {
+			onDoc: (h) => (html = h),
+			applyMapOp: (mapId, op) => doc?.applyMapOp(mapId, op),
+			applyTokens: (mapId, tokens) => doc?.applyTokens(mapId, tokens),
+			applyGrid: (mapId, size) => doc?.applyGrid(mapId, size),
+			applyLayer: (mapId, layer) => doc?.applyLayer(mapId, layer),
+			applyMapPing: (mapId, ping) => doc?.applyMapPing(mapId, ping),
+			applySnapshot: (s) => {
+				title = s.title;
+				html = s.html;
+				maps = s.maps;
+				doc?.applySnapshot(s.maps, s.tokens);
+			},
+			onMapAdded: (m) => {
+				if (!maps.some((x) => x.id === m.id)) maps = [...maps, m];
+			},
+			onTitle: (t) => (title = t)
+		};
 		es.onmessage = (e) => {
-			const ev = JSON.parse(e.data);
-			switch (ev.type) {
-				case 'snapshot':
-					title = ev.title;
-					html = ev.html;
-					maps = ev.maps;
-					doc?.applySnapshot(ev.maps, ev.tokens);
-					break;
-				case 'doc-updated':
-				case 'share-changed':
-					html = ev.html;
-					break;
-				case 'map-revealed':
-				case 'map-hidden':
-					doc?.applyMapOp(ev.mapId, ev.op as RevealOp);
-					break;
-				case 'tokens-updated':
-					doc?.applyTokens(ev.mapId, ev.tokens);
-					break;
-				case 'grid-updated':
-					doc?.applyGrid(ev.mapId, ev.grid_size);
-					break;
-				case 'layer-changed':
-					doc?.applyLayer(ev.mapId, ev.layer);
-					break;
-				case 'map-ping':
-					doc?.applyMapPing(ev.mapId, ev.ping);
-					break;
-				case 'map-added':
-					if (!maps.some((m) => m.id === ev.map.id)) maps = [...maps, ev.map];
-					break;
-				case 'title-changed':
-					title = ev.title;
-					break;
-			}
+			applyFeedEvent(JSON.parse(e.data), feed);
 		};
 		return () => es.close();
 	});

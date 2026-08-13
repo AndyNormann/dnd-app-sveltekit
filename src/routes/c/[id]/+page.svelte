@@ -5,6 +5,7 @@
 	import RollLog from '$lib/components/RollLog.svelte';
 	import Outline from '$lib/components/Outline.svelte';
 	import { parseHeadings } from '$lib/markdown';
+	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { RollData } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -249,24 +250,25 @@
 			flushQueuedSave(); // if a save was queued while offline, push it now
 		};
 		es.onerror = () => (connected = false);
-		es.onmessage = (e) => {
-			const ev = JSON.parse(e.data);
-			if (ev.type === 'roll') rollLog?.addRoll(ev.roll as RollData);
-			else if (ev.type === 'rolls-cleared') rollLog?.setRolls([]);
-			else if (ev.type === 'rolls-restored') rollLog?.setRolls(ev.rolls);
-			else if (ev.type === 'snapshot') {
-				rollLog?.setRolls(ev.rolls);
-				data.maps = ev.maps;
-				rev = ev.rev;
-				wysiwyg?.applyState(ev.maps, ev.tokens);
-			} else if (ev.type === 'map-added') {
-				if (!data.maps.some((m: { id: string }) => m.id === ev.map.id)) data.maps = [...data.maps, ev.map];
-			} else if (ev.type === 'tokens-updated') wysiwyg?.applyTokens(ev.mapId, ev.tokens);
-			else if (ev.type === 'grid-updated') wysiwyg?.applyGrid(ev.mapId, ev.grid_size);
-			else if (ev.type === 'layer-changed') wysiwyg?.applyLayer(ev.mapId, ev.layer);
-			else if (ev.type === 'reveal-undone') wysiwyg?.applyRevealRemoved(ev.mapId, ev.opId);
-			else if (ev.type === 'reveals-cleared') wysiwyg?.applyLayerCleared(ev.mapId, ev.layer);
-			else if (ev.type === 'map-ping') wysiwyg?.applyMapPing(ev.mapId, ev.ping);
+		es.onmessage = (e) => applyFeedEvent(JSON.parse(e.data), feed);
+		const feed: FeedHandlers = {
+			addRoll: (r) => rollLog?.addRoll(r),
+			setRolls: (rolls) => rollLog?.setRolls(rolls),
+			applySnapshot: (s) => {
+				rollLog?.setRolls(s.rolls);
+				data.maps = s.maps;
+				rev = s.rev;
+				wysiwyg?.applyState(s.maps, s.tokens);
+			},
+			onMapAdded: (m) => {
+				if (!data.maps.some((x: { id: string }) => x.id === m.id)) data.maps = [...data.maps, m];
+			},
+			applyTokens: (mapId, tokens) => wysiwyg?.applyTokens(mapId, tokens),
+			applyGrid: (mapId, size) => wysiwyg?.applyGrid(mapId, size),
+			applyLayer: (mapId, layer) => wysiwyg?.applyLayer(mapId, layer),
+			applyRevealRemoved: (mapId, opId) => wysiwyg?.applyRevealRemoved(mapId, opId),
+			applyLayerCleared: (mapId, layer) => wysiwyg?.applyLayerCleared(mapId, layer),
+			applyMapPing: (mapId, ping) => wysiwyg?.applyMapPing(mapId, ping)
 		};
 		// close the ⋮ overflow menu when clicking anywhere outside it
 		const closeMore = (e: PointerEvent) => {

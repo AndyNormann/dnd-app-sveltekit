@@ -9,7 +9,8 @@ import {
 import type { CombatUnit } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
-import { clearBoard, broadcastInitiativePayload } from '$lib/server/combat';
+import { clearBoard } from '$lib/server/combat';
+import { emitInitiative, emitUnits } from '$lib/server/feed';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -28,8 +29,8 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 
 	if (body.action === 'clear') {
 		const r = clearBoard(params.id);
-		broadcast(params.id, { type: 'combat-units-updated', units: [] });
-		broadcast(params.id, { type: 'initiative-updated', ...broadcastInitiativePayload(params.id) });
+		emitUnits(params.id);
+		emitInitiative(params.id);
 		broadcast(params.id, { type: 'combat-log', entry: r.data.log });
 		return json({ ok: true });
 	}
@@ -53,7 +54,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			x,
 			y
 		});
-		broadcast(params.id, { type: 'combat-units-updated', units: listCombatUnits(params.id) });
+		emitUnits(params.id);
 		return json(unit);
 	}
 
@@ -76,7 +77,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			x,
 			y
 		});
-		broadcast(params.id, { type: 'combat-units-updated', units: listCombatUnits(params.id) });
+		emitUnits(params.id);
 		return json(unit);
 	}
 
@@ -105,7 +106,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 				})
 			);
 		}
-		broadcast(params.id, { type: 'combat-units-updated', units: listCombatUnits(params.id) });
+		emitUnits(params.id);
 		return json({ ok: true, added });
 	}
 
