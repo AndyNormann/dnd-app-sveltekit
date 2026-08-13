@@ -44,6 +44,10 @@ test('hovering anywhere in a section wraps that whole section in a box', async (
 
 	// a single box overlay wraps the whole highlighted section (heading top -> last block bottom)
 	await expect(box).toBeVisible({ timeout: 3000 });
+	// the quick fade-in should have completed, leaving the box opaque and actually painted on top
+	await dm.page.waitForTimeout(300);
+	const boxOp = await box.evaluate((el) => getComputedStyle(el).opacity);
+	expect(parseFloat(boxOp)).toBeGreaterThan(0.9);
 	const bb = await box.boundingBox();
 	const h1b = await pm.locator('h1').first().boundingBox();
 	const lastb = await pm.locator('text=Sub body').boundingBox();

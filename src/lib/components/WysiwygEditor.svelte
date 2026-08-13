@@ -143,6 +143,7 @@
 	}
 	:global(.dm-heading-controls) {
 		position: absolute;
+		z-index: 5; /* above the section box when it pads into the gutter */
 		/* left is set inline per heading (depth compensation); this centers vertically */
 		top: 50%;
 		transform: translateY(-50%);
@@ -221,7 +222,7 @@
 	:global(.mdx-host .section-box) {
 		position: absolute;
 		pointer-events: none;
-		z-index: -1; /* behind the text + heading controls, so padding can bleed into the gutter */
+		z-index: 1; /* above the editor text; heading controls sit higher so they stay on top */
 		background: var(--section-hl, rgba(184, 155, 99, 0.10));
 		border: 1px solid rgba(184, 155, 99, 0.32);
 		border-radius: 8px;
