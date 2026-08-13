@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 	import { rollDice } from '$lib/dice';
+	import { clampToBudget, moveBudget, moveCost, isOwnTurn } from '$lib/combatRules';
 
 	let {
 		campaignId,
@@ -80,12 +81,12 @@
 	const prevHp = new Map<string, number>(initialUnits.map((u) => [u.id, u.hp]));
 
 	const myUnit = $derived(units.find((u) => u.character_id === characterId) ?? null);
-	const isMyTurn = $derived(!!myUnit && myUnit.id === activeId);
+	const isMyTurn = $derived(isOwnTurn(myUnit?.id, activeId));
 
 	export function setActiveUnitId(id: string | null) {
 		activeId = id;
 	}
-	const budgetCells = $derived(myUnit ? Math.floor(myUnit.speed / (config.grid_scale || 5)) : 0);
+	const budgetCells = $derived(myUnit ? moveBudget(myUnit.speed, config.grid_scale || 5) : 0);
 	const usedCells = $derived(myUnit ? myUnit.movement_used : 0);
 
 	export function applyUnits(next: CombatUnit[]) {
@@ -462,37 +463,6 @@
 		};
 	}
 
-	function clampToBudget(
-		target: { x: number; y: number },
-		origin: { x: number; y: number },
-		steps: number
-	): { x: number; y: number } {
-		let tx = origin.x;
-		let ty = origin.y;
-		const cx = Math.sign(target.x - origin.x);
-		const cy = Math.sign(target.y - origin.y);
-		for (let i = 0; i < steps; i++) {
-			const rx = Math.abs(target.x - tx);
-			const ry = Math.abs(target.y - ty);
-			if (rx === 0 && ry === 0) break;
-			if (rx >= ry) {
-				if (rx !== 0) tx += cx;
-				else if (ry !== 0) ty += cy;
-			} else {
-				if (ry !== 0) ty += cy;
-				else if (rx !== 0) tx += cx;
-			}
-		}
-		return {
-			x: Math.max(0, Math.min(config.grid_cols - 1, tx)),
-			y: Math.max(0, Math.min(config.grid_rows - 1, ty))
-		};
-	}
-
-	function manhattan(a: { x: number; y: number }, b: { x: number; y: number }) {
-		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-	}
-
 	function onDragMove(e: MouseEvent) {
 		if (!draggingId || !dragStart || !grabOffset) return;
 		const r = boardEl?.getBoundingClientRect();
@@ -505,9 +475,9 @@
 		if (!dm) {
 			// player: clamp to the speed budget and report cost/remaining live
 			const allowed = Math.max(0, budgetCells - usedCells);
-			const cost = manhattan(cell, dragStart);
-			if (cost > allowed) cell = clampToBudget(cell, dragStart, allowed);
-			dragCost = manhattan(cell, dragStart);
+			const cost = moveCost(cell, dragStart);
+			if (cost > allowed) cell = clampToBudget(cell, dragStart, allowed, { cols: config.grid_cols, rows: config.grid_rows });
+			dragCost = moveCost(cell, dragStart);
 		}
 		dragTemp = { ...dragTemp, [draggingId]: cell };
 	}
@@ -532,7 +502,7 @@
 			return;
 		}
 		if (!dm) {
-			const cost = manhattan(cell, unit);
+			const cost = moveCost(cell, unit);
 			if (usedCells + cost > budgetCells) {
 				errorMsg = `Movement limit reached (max ${budgetCells} cells this turn)`;
 				dragTemp = {};

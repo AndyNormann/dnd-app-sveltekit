@@ -15,6 +15,7 @@ import {
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
 import { playerCharacter } from '$lib/server/player';
+import { moveBudget, moveCost, isOwnTurn } from '$lib/combatRules';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -101,9 +102,9 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		if (!isPlayerForUnit) {
 			throw error(401, 'Not your character');
 		}
-		if (getActiveUnitId(params.id) !== unit.id) throw error(401, 'Not your turn');
-		const budget = Math.floor(unit.speed / cfg.grid_scale);
-		const cost = Math.abs(nx - unit.x) + Math.abs(ny - unit.y);
+		if (!isOwnTurn(unit.id, getActiveUnitId(params.id))) throw error(401, 'Not your turn');
+		const budget = moveBudget(unit.speed, cfg.grid_scale);
+		const cost = moveCost({ x: unit.x, y: unit.y }, { x: nx, y: ny });
 		const used = unit.movement_used;
 		if (used + cost > budget) throw error(409, 'Movement limit reached');
 		updateCombatUnit(unit.id, { x: nx, y: ny });
