@@ -33,7 +33,7 @@
 		--accent: #6f8ff5;
 		--accent-soft: #9db4fa;
 		--gold: #7d9cf7;
-		--section-hl: rgba(111, 143, 245, 0.08);
+		--section-hl: rgba(236, 236, 236, 0.04); /* a barely-there neutral wash, close to the bg */
 		--danger: #e25d54; /* a real warning/error red (success stays green) */
 		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
 		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
