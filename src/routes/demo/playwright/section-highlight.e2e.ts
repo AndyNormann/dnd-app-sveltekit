@@ -22,7 +22,7 @@ async function loginDM(browser: Browser): Promise<{ page: Page; request: APIRequ
 	return { page, request: ctx.request };
 }
 
-test('hovering anywhere in a section highlights that whole section', async ({ browser }) => {
+test('hovering anywhere in a section wraps that whole section in a box', async ({ browser }) => {
 	const dm = await loginDM(browser);
 	const id = await createCampaign(dm.request);
 	await dm.page.goto(`/c/${id}`);
@@ -35,11 +35,22 @@ test('hovering anywhere in a section highlights that whole section', async ({ br
 	await dm.page.waitForTimeout(700);
 	await expect(pm.locator('h1').first()).toBeVisible();
 	const hl = () => pm.locator('.section-hl').count();
+	const box = dm.page.locator('.mdx-host .section-box');
 
 	// hovering the top heading highlights the whole top-level section (h1+p+p+h2+p)
 	await pm.locator('h1').first().hover();
 	await dm.page.waitForTimeout(250);
 	expect(await hl()).toBe(5);
+
+	// a single box overlay wraps the whole highlighted section (heading top -> last block bottom)
+	await expect(box).toBeVisible({ timeout: 3000 });
+	const bb = await box.boundingBox();
+	const h1b = await pm.locator('h1').first().boundingBox();
+	const lastb = await pm.locator('text=Sub body').boundingBox();
+	expect(bb).toBeTruthy();
+	expect(bb!.width).toBeGreaterThan(200);
+	expect(bb!.y).toBeLessThanOrEqual((h1b?.y ?? Infinity) + 2);
+	expect(bb!.y + bb!.height).toBeGreaterThanOrEqual((lastb?.y ?? 0) + (lastb?.height ?? 0) - 2);
 
 	// hovering body text inside the section highlights the same whole section
 	await pm.locator('text=More A.').hover();
@@ -55,13 +66,6 @@ test('hovering anywhere in a section highlights that whole section', async ({ br
 	await pm.locator('text=Para B.').hover();
 	await dm.page.waitForTimeout(250);
 	expect(await hl()).toBe(2);
-
-	// highlighted blocks carry the tinted background
-	const bg = await pm
-		.locator('.section-hl')
-		.first()
-		.evaluate((el) => getComputedStyle(el).backgroundColor);
-	expect(bg).toMatch(/rgba?\(/);
 
 	// caret placement should also highlight the section (not just mouse hover)
 	await pm.locator('text=Para B.').click();

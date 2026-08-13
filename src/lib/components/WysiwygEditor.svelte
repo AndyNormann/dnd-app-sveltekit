@@ -215,10 +215,17 @@
 		overflow-y: auto;
 	}
 	:global(.mdx-host .ProseMirror .section-hl) {
-		/* background + box-shadow don't affect layout, so highlighting never shifts content */
-		background-color: var(--section-hl, rgba(184, 155, 99, 0.10));
-		box-shadow: inset 3px 0 0 rgba(184, 155, 99, 0.35);
-		border-radius: 2px;
+		/* marker only — the actual box is the measured .section-box overlay, so
+		   highlighting never adds padding/border and never shifts content */
+	}
+	:global(.mdx-host .section-box) {
+		position: absolute;
+		pointer-events: none;
+		z-index: 0;
+		background: var(--section-hl, rgba(184, 155, 99, 0.10));
+		border: 1px solid rgba(184, 155, 99, 0.35);
+		border-radius: 6px;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 	}
 	:global(.collapsed-child) {
 		display: none !important;

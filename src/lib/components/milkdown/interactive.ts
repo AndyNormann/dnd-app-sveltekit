@@ -49,6 +49,8 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 	let currentView: EditorView | undefined;
 	/** pos of the heading whose section is currently hovered (for the highlight). */
 	let hoveredPos: number | null = null;
+	/** the currently-highlighted section's doc range (heading start .. section end), if any. */
+	let hlRange: { from: number; to: number } | null = null;
 	/** sorted heading start positions + levels, rebuilt each decoration pass. */
 	const sectionIndex: { pos: number; level: number }[] = [];
 	/** heading id -> parent heading id (built during decoration traversal). */
@@ -256,6 +258,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					}
 					// mouse hover wins transiently while present; otherwise the caret's section shows
 					const target = hoveredPos ?? caretHeading;
+					hlRange = null;
 					if (target !== null) {
 						const hi = headings.findIndex((h) => h.pos === target);
 						if (hi >= 0) {
@@ -265,6 +268,7 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 							while (j < headings.length && (headings[j].node.attrs.level as number) > level) j++;
 							const from = pos + node.nodeSize;
 							const to = j < headings.length ? headings[j].pos : state.doc.content.size;
+							hlRange = { from: pos, to };
 							// the heading row itself
 							decos.push(Decoration.node(pos, pos + node.nodeSize, { class: 'section-hl' }));
 							if (to > from) {
@@ -328,11 +332,72 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					}
 				};
 				view.dom.addEventListener('mouseover', onMouseOver);
+
+				// A single box drawn as an overlay around the whole section (ProseMirror
+				// renders the section's blocks as flat siblings, so a wrapper box needs a
+				// measured overlay element instead of per-block backgrounds).
+				let host: HTMLElement | null = null;
+				let overlay: HTMLDivElement | null = null;
+				const ensureOverlay = () => {
+					if (overlay) return;
+					host = view.dom.closest('.mdx-host') as HTMLElement | null;
+					if (!host) return;
+					host.style.position = 'relative';
+					overlay = document.createElement('div');
+					overlay.className = 'section-box';
+					overlay.style.display = 'none';
+					host.appendChild(overlay);
+				};
+				const updateOverlay = () => {
+					if (!overlay || !host) return;
+					if (!hlRange) {
+						overlay.style.display = 'none';
+						return;
+					}
+					const blocks = view.dom.querySelectorAll('.section-hl');
+					if (!blocks.length) {
+						overlay.style.display = 'none';
+						return;
+					}
+					let l = Infinity,
+						t = Infinity,
+						r = -Infinity,
+						b = -Infinity;
+					for (const el of blocks) {
+						const rc = (el as HTMLElement).getBoundingClientRect();
+						l = Math.min(l, rc.left);
+						t = Math.min(t, rc.top);
+						r = Math.max(r, rc.right);
+						b = Math.max(b, rc.bottom);
+					}
+					const hr = host.getBoundingClientRect();
+					overlay.style.display = 'block';
+					overlay.style.left = `${l - hr.left}px`;
+					overlay.style.top = `${t - hr.top}px`;
+					overlay.style.width = `${r - l}px`;
+					overlay.style.height = `${b - t}px`;
+				};
+				ensureOverlay();
+				const onScroll = () => updateOverlay();
+				const onResize = () => updateOverlay();
+				(host as HTMLElement | null)?.addEventListener('scroll', onScroll);
+				window.addEventListener('resize', onResize);
+
 				return {
+					update() {
+						ensureOverlay();
+						updateOverlay();
+					},
 					destroy: () => {
 						view.dom.removeEventListener('mousedown', onMouseDown);
 						view.dom.removeEventListener('mouseover', onMouseOver);
+						host?.removeEventListener('scroll', onScroll);
+						window.removeEventListener('resize', onResize);
+						overlay?.remove();
+						overlay = null;
+						host = null;
 						hoveredPos = null;
+						hlRange = null;
 						currentView = undefined;
 					}
 				};
