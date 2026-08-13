@@ -88,3 +88,45 @@ test('hovering anywhere in a section wraps that whole section in a box', async (
 	expect(sb2).toBeTruthy();
 	expect(sb!.y).toBeCloseTo(sb2!.y, 1);
 });
+
+test('box stays glued to the section while the editor scrolls', async ({ browser }) => {
+	const dm = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	await dm.page.goto(`/c/${id}`);
+	const pm = dm.page.locator('.mdx-host .ProseMirror');
+	await expect(pm).toBeVisible({ timeout: 10000 });
+	await pm.click();
+	// enough content that the editor can actually scroll
+	let body = '';
+	for (let i = 1; i <= 12; i++) body += `# Section ${i}\nBody ${i}.\n\n`;
+	await dm.page.keyboard.type(body);
+	await dm.page.waitForTimeout(700);
+
+	// highlight a mid-section and confirm the box covers its heading
+	const h = pm.locator('h1').nth(5);
+	await h.scrollIntoViewIfNeeded();
+	await h.hover();
+	await dm.page.waitForTimeout(250);
+	const box = dm.page.locator('.mdx-host .section-box');
+	await expect(box).toBeVisible({ timeout: 3000 });
+	const before = await box.boundingBox();
+	const hb = await h.boundingBox();
+	expect(before).toBeTruthy();
+	const pad = before!.y - hb!.y; // the box's padding above the heading
+	expect(Math.abs(pad)).toBeLessThanOrEqual(12);
+
+	// scroll the editor container down, then re-hover the same heading
+	await dm.page.evaluate(() => {
+		const host = document.querySelector('.mdx-host') as HTMLElement;
+		host.scrollTop = Math.min(host.scrollHeight, host.scrollTop + 250);
+	});
+	await dm.page.waitForTimeout(120);
+	await h.scrollIntoViewIfNeeded();
+	await h.hover();
+	await dm.page.waitForTimeout(250);
+	const after = await box.boundingBox();
+	const hb2 = await h.boundingBox();
+	expect(after).toBeTruthy();
+	// the same padding must hold at the new scroll offset — the box stayed glued
+	expect(Math.abs(after!.y - hb2!.y - pad)).toBeLessThanOrEqual(3);
+});

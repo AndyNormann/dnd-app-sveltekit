@@ -380,10 +380,13 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 					}
 					const hr = host.getBoundingClientRect();
 					const pad = 10; // px of breathing room around the section content
+					// The overlay lives inside the scroll container, so it scrolls with the content
+					// automatically. Position it in *content* coordinates (add the scroll offset)
+					// to avoid double-counting the scroll.
 					const wasHidden = overlay.style.display === 'none';
 					overlay.style.display = 'block';
-					overlay.style.left = `${l - hr.left - pad}px`;
-					overlay.style.top = `${t - hr.top - pad}px`;
+					overlay.style.left = `${l - hr.left + host.scrollLeft - pad}px`;
+					overlay.style.top = `${t - hr.top + host.scrollTop - pad}px`;
 					overlay.style.width = `${r - l + pad * 2}px`;
 					overlay.style.height = `${b - t + pad * 2}px`;
 					if (wasHidden) {
