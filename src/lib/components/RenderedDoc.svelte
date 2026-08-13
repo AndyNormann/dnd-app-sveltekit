@@ -363,7 +363,7 @@
 	.rendered :global(h6) {
 		position: relative;
 		font-family: var(--font-display);
-		color: var(--accent);
+		color: var(--ink);
 		letter-spacing: 0.02em;
 		line-height: 1.2;
 	}

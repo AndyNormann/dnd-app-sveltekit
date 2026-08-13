@@ -55,7 +55,7 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	const playerCtx = await browser.newContext();
 	const player = await playerCtx.newPage();
 	await player.goto(`/p/${aria!.link_token}/combat`);
-	await expect(player.locator('.you')).toHaveText('Aria');
+	await expect(player.locator('.you')).toHaveText('Playing as Aria');
 	await expect(player.locator('.combat .board')).toBeVisible({ timeout: 10000 });
 
 	// DM adds Aria to the board and an enemy

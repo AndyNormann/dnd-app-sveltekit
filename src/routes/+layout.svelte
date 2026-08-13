@@ -32,7 +32,9 @@
 		--board-grid: rgba(236, 236, 236, 0.09);
 		--accent: #6f8ff5;
 		--accent-soft: #9db4fa;
-		--gold: #7d9cf7;
+		/* a real warm gold as the secondary hue: active/highlight/underline borders,
+		   while accent stays indigo for interactive/links — gives the palette hierarchy */
+		--gold: #c8a13d;
 		--section-hl: rgba(236, 236, 236, 0.04); /* a barely-there neutral wash, close to the bg */
 		--danger: #e25d54; /* a real warning/error red (success stays green) */
 		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
@@ -49,9 +51,10 @@
 	:global(a) {
 		color: var(--accent);
 	}
-	/* Keyboard focus must always be visible, on every custom-styled control. */
+	/* Keyboard focus must always be visible, on every custom-styled control.
+	   Gold contrasts against both the dark bg and the indigo accent fills. */
 	:global(:focus-visible) {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--gold);
 		outline-offset: 2px;
 	}
 	@media (prefers-reduced-motion: reduce) {

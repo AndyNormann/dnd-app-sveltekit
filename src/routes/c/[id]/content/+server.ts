@@ -17,13 +17,15 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const campaign = getCampaign(params.id);
 	if (!campaign) throw error(404, 'Campaign not found');
 
-	const body = (await request.json()) as { content: string; rev?: number };
+	const body = (await request.json()) as { content: string; rev?: number; force?: boolean };
 	const expectedRev = typeof body.rev === 'number' ? body.rev : null;
+	const force = body.force === true;
 	const { content } = ensureHeadingIds(body.content ?? '');
 
 	// Optimistic-concurrency guard: reject stale writes so two open editor tabs
-	// can't silently clobber each other.
-	if (expectedRev !== null) {
+	// can't silently clobber each other — unless the user explicitly chose to keep
+	// their version (force), which overwrites unconditionally.
+	if (expectedRev !== null && !force) {
 		if (!updateContentConditional(params.id, content, expectedRev)) {
 			throw error(409, 'Content changed elsewhere; refresh to avoid overwriting');
 		}

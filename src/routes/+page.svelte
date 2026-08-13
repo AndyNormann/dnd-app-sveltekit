@@ -6,6 +6,19 @@
 	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
 
 	let q = $state(data.query);
+	let importErr = $state('');
+
+	function onImport(e: Event) {
+		const f = (e.currentTarget as HTMLFormElement).querySelector(
+			'input[type=file]'
+		) as HTMLInputElement | null;
+		if (!f?.files || f.files.length === 0) {
+			e.preventDefault(); // don't POST an empty backup
+			importErr = 'Choose a backup file to import.';
+		} else {
+			importErr = '';
+		}
+	}
 
 	function relTime(ts: number) {
 		if (!ts) return 'just now';
@@ -46,13 +59,14 @@
 		<button type="submit">Create</button>
 	</form>
 
-	<form method="POST" action="?/import" use:enhance class="import" enctype="multipart/form-data">
+	<form method="POST" action="?/import" use:enhance class="import" enctype="multipart/form-data" onsubmit={onImport}>
 		<label class="import-label">Restore backup
 			<input type="file" name="file" accept=".json,application/json" />
 		</label>
 		<button type="submit">Import</button>
 	</form>
 	{#if form?.error}<p class="import-error">{form.error}</p>{/if}
+	{#if importErr}<p class="import-error">{importErr}</p>{/if}
 
 	<form method="GET" action="/" class="search">
 		<input name="q" placeholder="Search campaigns &amp; notes…" bind:value={q} />
@@ -294,13 +308,13 @@
 	.delete {
 		border: 0;
 		background: none;
-		color: var(--rule);
+		color: var(--ink-soft);
 		cursor: pointer;
 		font-size: 0.9rem;
 		padding: 0.2rem;
 	}
 	.delete:hover {
-		color: var(--accent);
+		color: var(--danger);
 	}
 	.empty {
 		color: var(--ink-soft);

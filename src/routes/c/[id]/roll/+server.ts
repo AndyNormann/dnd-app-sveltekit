@@ -6,7 +6,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { RollData } from '$lib/types';
 
-const UNDO_TTL = 15_000;
+const UNDO_TTL = 30_000;
 // in-memory undo snapshots for a recent clear, so the DM can restore within the toast window
 const undoMap = new Map<string, { campaignId: string; rows: RollRow[]; expires: number }>();
 

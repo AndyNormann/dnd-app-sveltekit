@@ -77,16 +77,16 @@
 		saveTimer = setTimeout(save, 600);
 	}
 
-	async function save() {
+	async function save(force = false) {
 		saveState = 'saving';
 		try {
 			const res = await fetch(`/c/${data.campaignId}/content`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ content, rev })
+				body: JSON.stringify({ content, rev, force })
 			});
 			if (res.status === 409) {
-				// Another tab/editor saved newer content; refuse to clobber it.
+				// Another tab/editor saved newer content; refuse to clobber it (unless forced).
 				saveState = 'conflict';
 				showToast('Out of sync — reload to avoid overwriting', 'err');
 				return;
@@ -286,6 +286,7 @@
 		{:else if saveState === 'saved'}Saved ✓
 		{:else if saveState === 'conflict'}Out of sync ·
 			<button type="button" class="reload" onclick={() => location.reload()}>Reload</button>
+			<button type="button" class="reload keep" onclick={() => save(true)}>Keep mine</button>
 		{/if}
 	</span>
 	<div class="spacer"></div>
@@ -349,7 +350,9 @@
 			{#if content.trim() === '' && !sourceMode}
 				<div class="empty-hint" aria-hidden="true">
 					<h2>Start writing…</h2>
-					<p>Type <code># Heading</code>, roll like <code>2d6+3</code>, link a section with <code>[[Name]]</code>, or press <code>/</code> for a command menu (incl. adding a map).</p>
+					<p>Type <code># Heading</code>, roll like <code>2d6+3</code>, link a section with <code>[[Name]]</code>, or press <code>/</code> for a command menu (incl. adding a map).
+						<span class="khint">Shortcuts: <code>Ctrl+\</code> source · <code>Ctrl+.</code> outline</span>
+					</p>
 				</div>
 			{/if}
 			{#if sourceMode}
@@ -430,6 +433,10 @@
 		color: var(--accent);
 		cursor: pointer;
 		font-size: 0.78rem;
+	}
+	.reload.keep {
+		border-color: var(--gold);
+		color: var(--gold);
 	}
 	.back {
 		text-decoration: none;
@@ -633,5 +640,16 @@
 		color: var(--accent);
 		border-color: var(--gold);
 		background: var(--parchment-deep);
+	}
+	/* Narrow windows: drop redundant feedback so the header fits on one line and the
+	   fixed-height editor layout keeps working (no wrap). */
+	@media (max-width: 900px) {
+		.bar {
+			gap: 0.4rem;
+		}
+		.bar .save-state,
+		.bar .conn {
+			display: none;
+		}
 	}
 </style>

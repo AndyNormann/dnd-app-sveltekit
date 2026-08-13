@@ -69,7 +69,7 @@
 <svelte:head><title>{title} — Combat</title></svelte:head>
 
 <nav class="tabs">
-	<span class="you">{data.character.name}</span>
+	<span class="you" title="You are connected as this character">Playing as {data.character.name}</span>
 	<a href={`/p/${data.token}`} class="tab">Notes</a>
 	<a href={`/p/${data.token}/combat`} class="tab" class:active={true}>Combat</a>
 </nav>

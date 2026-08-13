@@ -288,7 +288,8 @@ export function listCampaignSummaries(): CampaignSummary[] {
 				(SELECT COUNT(*) FROM maps m WHERE m.campaign_id = c.id) AS maps,
 				(SELECT COUNT(*) FROM rolls r WHERE r.campaign_id = c.id) AS rolls
 			FROM campaigns c
-			ORDER BY CASE WHEN c.updated_at = 0 THEN c.created_at ELSE c.updated_at END DESC`
+			ORDER BY CASE WHEN c.updated_at = 0 THEN c.created_at ELSE c.updated_at END DESC
+			LIMIT 200`
 		)
 		.all() as CampaignSummary[];
 }

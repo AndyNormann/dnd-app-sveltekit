@@ -26,7 +26,11 @@
 
 	async function scrollToEnd() {
 		await tick();
-		listEl?.scrollTo({ top: listEl.scrollHeight });
+		const el = listEl;
+		if (!el) return;
+		// don't yank the list if the user has scrolled up to read older rolls
+		if (el.scrollHeight - el.scrollTop - el.clientHeight > 60) return;
+		el.scrollTo({ top: el.scrollHeight });
 	}
 
 	/** Whether the DM's secret toggle is currently checked (always false for players). */
@@ -78,7 +82,7 @@
 		expression = '';
 		undo = { key: body.undoKey, snapshot };
 		clearTimeout(undoTo);
-		undoTo = setTimeout(() => (undo = null), 6000);
+		undoTo = setTimeout(() => (undo = null), 12000);
 	}
 
 	/** Undo a clear within the toast window: restore via the server, then set the list from the response.
@@ -107,7 +111,7 @@
 		}
 		if (failed) {
 			// keep the toast (with a fresh window) so the user can retry
-			undoTo = setTimeout(() => (undo = null), 6000);
+			undoTo = setTimeout(() => (undo = null), 12000);
 		} else {
 			undo = null;
 		}
