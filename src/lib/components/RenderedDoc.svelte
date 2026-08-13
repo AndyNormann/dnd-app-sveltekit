@@ -352,7 +352,7 @@
 		line-height: 1.55;
 		word-wrap: break-word;
 		font-family: var(--font-body);
-		font-size: 1.08rem;
+		font-size: 1.2rem;
 		color: var(--ink);
 	}
 	.rendered :global(h1),
