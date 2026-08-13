@@ -59,7 +59,7 @@
 		activeId = id;
 	}
 	const budgetCells = $derived(myUnit ? Math.floor(myUnit.speed / (config.grid_scale || 5)) : 0);
-	const usedCells = $derived(config.combat_movement_used);
+	const usedCells = $derived(myUnit ? myUnit.movement_used : 0);
 
 	export function applyUnits(next: CombatUnit[]) {
 		units = next;
@@ -428,10 +428,11 @@
 			else errorMsg = 'Move failed';
 			dragTemp = {};
 		} else {
-			// keep the local budget accurate even if the SSE config broadcast hasn't landed yet
+			// keep the local budget accurate even if the SSE units broadcast hasn't landed yet
 			const body = (await res.json().catch(() => ({}))) as { used?: number };
 			if (typeof body.used === 'number') {
-				config = { ...config, combat_movement_used: body.used };
+				const used = body.used;
+				units = units.map((u) => (u.id === id ? { ...u, movement_used: used } : u));
 			}
 			dragTemp = {};
 		}
@@ -668,9 +669,9 @@
 		top: 0;
 		left: 50%;
 		transform: translateX(-50%);
-		font-size: 0.55rem;
+		font-size: 0.6rem;
 		line-height: 1.1;
-		color: var(--ink);
+		color: var(--parchment-deep);
 		background: rgba(255, 255, 255, 0.85);
 		padding: 0 0.15rem;
 		border-radius: 3px;
@@ -685,9 +686,9 @@
 		bottom: 0;
 		left: 50%;
 		transform: translateX(-50%);
-		font-size: 0.55rem;
+		font-size: 0.6rem;
 		line-height: 1.1;
-		color: var(--accent);
+		color: var(--parchment-deep);
 		background: rgba(255, 255, 255, 0.85);
 		padding: 0 0.15rem;
 		border-radius: 3px;

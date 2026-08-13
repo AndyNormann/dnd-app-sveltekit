@@ -111,6 +111,7 @@ db.exec(`
 		hp INTEGER NOT NULL DEFAULT 0,
 		max_hp INTEGER NOT NULL DEFAULT 0,
 		alive INTEGER NOT NULL DEFAULT 1,
+		movement_used INTEGER NOT NULL DEFAULT 0,
 		x INTEGER NOT NULL DEFAULT 0,
 		y INTEGER NOT NULL DEFAULT 0,
 		created_at INTEGER NOT NULL
@@ -200,6 +201,9 @@ db.exec(`
 	);
 	if (!unitCols.includes('alive')) {
 		db.exec(`ALTER TABLE combat_units ADD COLUMN alive INTEGER NOT NULL DEFAULT 1`);
+	}
+	if (!unitCols.includes('movement_used')) {
+		db.exec(`ALTER TABLE combat_units ADD COLUMN movement_used INTEGER NOT NULL DEFAULT 0`);
 	}
 	// link initiative entries to combat units so turns gate movement
 	const initCols = (db.query('PRAGMA table_info(initiative_entries)').all() as { name: string }[]).map(
@@ -973,6 +977,7 @@ export interface CombatUnit {
 	hp: number;
 	max_hp: number;
 	alive: number;
+	movement_used: number;
 	x: number;
 	y: number;
 }
@@ -1163,23 +1168,17 @@ export function setBoardGrid(campaignId: string, cols: number, rows: number, sca
 	);
 }
 
-export function getMovementUsed(campaignId: string): number {
-	return (
-		(db.query('SELECT combat_movement_used FROM campaigns WHERE id = ?').get(campaignId) as {
-			combat_movement_used: number;
-		} | null)?.combat_movement_used ?? 0
-	);
-}
-
-export function setMovementUsed(campaignId: string, used: number): void {
-	db.query('UPDATE campaigns SET combat_movement_used = ? WHERE id = ?').run(
+// Per-unit movement tracking so each combatant has its own speed budget for a turn
+// (a player's movement must never consume another unit's budget). Reset every turn.
+export function setUnitMovementUsed(unitId: string, used: number): void {
+	db.query('UPDATE combat_units SET movement_used = ? WHERE id = ?').run(
 		Math.max(0, Math.floor(used)),
-		campaignId
+		unitId
 	);
 }
 
-export function resetMovement(campaignId: string): void {
-	db.query('UPDATE campaigns SET combat_movement_used = 0 WHERE id = ?').run(campaignId);
+export function resetAllMovement(campaignId: string): void {
+	db.query('UPDATE combat_units SET movement_used = 0 WHERE campaign_id = ?').run(campaignId);
 }
 
 

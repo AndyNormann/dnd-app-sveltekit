@@ -8,7 +8,7 @@ import {
 	setInitiativeRound,
 	listCombatUnits,
 	addCombatLog,
-	resetMovement
+	resetAllMovement
 } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
@@ -63,7 +63,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			if (i === 0) updateInitiative(e.id, { active: 1 });
 		});
 		setInitiativeRound(params.id, 1);
-		resetMovement(params.id);
+		resetAllMovement(params.id);
 		const rollEntry = addCombatLog(params.id, '🎲 Initiative rolled — Round 1');
 		broadcast(params.id, { type: 'combat-log', entry: rollEntry });
 	} else if (body.action === 'next') {
@@ -88,7 +88,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 			for (const e of entries) updateInitiative(e.id, { active: 0 });
 			updateInitiative(entries[nextIndex].id, { active: 1 });
 			setInitiativeRound(params.id, round);
-			resetMovement(params.id);
+			resetAllMovement(params.id);
 			const entry = addCombatLog(
 				params.id,
 				roundInc === 1 ? `— Round ${round}: ${entries[nextIndex].name}'s turn —` : `${entries[nextIndex].name}'s turn`

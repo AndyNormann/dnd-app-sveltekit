@@ -5,7 +5,7 @@ import {
 	addCombatUnit,
 	clearCombatUnits,
 	getBoardConfig,
-	resetMovement,
+	resetAllMovement,
 	clearInitiative,
 	setInitiativeRound,
 	listInitiative,
@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 
 	if (body.action === 'clear') {
 		clearCombatUnits(params.id);
-		resetMovement(params.id);
+		resetAllMovement(params.id);
 		clearInitiative(params.id);
 		setInitiativeRound(params.id, 1);
 		broadcast(params.id, { type: 'combat-units-updated', units: [] });

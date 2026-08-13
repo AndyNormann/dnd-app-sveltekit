@@ -5,8 +5,7 @@ import {
 	updateCombatUnit,
 	removeCombatUnit,
 	getBoardConfig,
-	getMovementUsed,
-	setMovementUsed,
+	setUnitMovementUsed,
 	getActiveUnitId,
 	setInitiativeHpByUnit,
 	listInitiative,
@@ -97,13 +96,12 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		if (getActiveUnitId(params.id) !== unit.id) throw error(401, 'Not your turn');
 		const budget = Math.floor(unit.speed / cfg.grid_scale);
 		const cost = Math.abs(nx - unit.x) + Math.abs(ny - unit.y);
-		const used = getMovementUsed(params.id);
+		const used = unit.movement_used;
 		if (used + cost > budget) throw error(409, 'Movement limit reached');
 		updateCombatUnit(unit.id, { x: nx, y: ny });
 		const newUsed = used + cost;
-		setMovementUsed(params.id, newUsed);
+		setUnitMovementUsed(unit.id, newUsed);
 		broadcastUnits(params.id);
-		broadcast(params.id, { type: 'board-config-updated', config: getBoardConfig(params.id) });
 		return json({ ok: true, used: newUsed, budget });
 	}
 

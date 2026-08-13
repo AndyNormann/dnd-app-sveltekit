@@ -178,4 +178,16 @@
 		border-bottom: 3px double var(--gold);
 		padding-bottom: 0.6rem;
 	}
+	@media (max-width: 46rem) {
+		.page {
+			grid-template-columns: 1fr;
+			justify-content: stretch;
+		}
+		.rail {
+			display: none;
+		}
+		main {
+			padding: 1rem 1.25rem 3rem;
+		}
+	}
 </style>
