@@ -4,28 +4,14 @@ import {
 	getMonster,
 	listCombatUnits,
 	addCombatUnit,
-	clearCombatUnits,
-	getBoardConfig,
-	resetAllMovement,
-	clearInitiative,
-	setInitiativeRound,
-	listInitiative,
-	getInitiativeRound,
-	addCombatLog
+	getBoardConfig
 } from '$lib/server/db';
 import type { CombatUnit } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
+import { clearBoard, broadcastInitiativePayload } from '$lib/server/combat';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-
-function broadcastInitiative(campaignId: string) {
-	broadcast(campaignId, {
-		type: 'initiative-updated',
-		entries: listInitiative(campaignId),
-		round: getInitiativeRound(campaignId)
-	});
-}
 
 export const GET: RequestHandler = ({ params, cookies }) => {
 	if (!isDM(cookies)) throw error(401, 'DM login required');
@@ -41,14 +27,10 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const body = (await request.json()) as Record<string, unknown>;
 
 	if (body.action === 'clear') {
-		clearCombatUnits(params.id);
-		resetAllMovement(params.id);
-		clearInitiative(params.id);
-		setInitiativeRound(params.id, 1);
+		const r = clearBoard(params.id);
 		broadcast(params.id, { type: 'combat-units-updated', units: [] });
-		broadcastInitiative(params.id);
-		const entry = addCombatLog(params.id, '🗑 Board cleared');
-		broadcast(params.id, { type: 'combat-log', entry });
+		broadcast(params.id, { type: 'initiative-updated', ...broadcastInitiativePayload(params.id) });
+		broadcast(params.id, { type: 'combat-log', entry: r.data.log });
 		return json({ ok: true });
 	}
 
