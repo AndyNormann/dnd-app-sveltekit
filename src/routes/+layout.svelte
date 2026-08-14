@@ -38,8 +38,10 @@
 	:global(:root) {
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: 'Literata', 'Georgia', serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: 'Literata', 'Georgia', serif;
 		--text-base: 1.35rem;
+		--type-root: 16px;
+		font-size: var(--type-root);
 	}
 	/* Theme — Indigo on an Obsidian (neutral near-black) base. */
 	:global(:root) {
@@ -72,35 +74,30 @@
 		--radius-lg: 12px;
 		--token-ring: rgba(111, 143, 245, 0.9);
 	}
-	/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
+		/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
 	:global(:root[data-type='garamond']) {
-		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-display: 'EB Garamond', 'Georgia', serif;
 		--font-body: 'EB Garamond', 'Georgia', serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: 'EB Garamond', 'Georgia', serif;
 	}
 	:global(:root[data-type='source']) {
-		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-display: 'Source Serif 4', 'Georgia', serif;
 		--font-body: 'Source Serif 4', 'Georgia', serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: 'Source Serif 4', 'Georgia', serif;
 	}
 	:global(:root[data-type='lora']) {
-		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-display: 'Lora', 'Georgia', serif;
 		--font-body: 'Lora', 'Georgia', serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: 'Lora', 'Georgia', serif;
 	}
 	:global(:root[data-type='crimson']) {
-		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-display: 'Crimson Pro', 'Georgia', serif;
 		--font-body: 'Crimson Pro', 'Georgia', serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: 'Crimson Pro', 'Georgia', serif;
 	}
 	:global(:root[data-type='modern']) {
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-	}
-	:global(:root[data-type='classic']) {
-		--font-display: 'Georgia', 'Times New Roman', serif;
-		--font-body: 'Georgia', 'Times New Roman', serif;
 		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
 	}
 	:global(:root[data-type='plain']) {
@@ -109,13 +106,13 @@
 		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
 	}
 	:global(:root[data-size='compact']) {
-		--text-base: 1.18rem;
+		--type-root: 15px;
 	}
 	:global(:root[data-size='standard']) {
-		--text-base: 1.35rem;
+		--type-root: 16px;
 	}
 	:global(:root[data-size='large']) {
-		--text-base: 1.5rem;
+		--type-root: 17.5px;
 	}
 	:global(body) {
 		margin: 0;

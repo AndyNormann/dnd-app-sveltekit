@@ -531,7 +531,7 @@
 		padding: 0.6rem 1rem;
 		background: var(--parchment-light);
 		border-bottom: 2px solid var(--rule);
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 	}
 	.bar h1 {
 		font-size: 1.1rem;
@@ -847,7 +847,7 @@
 		}
 	}
 	.find {
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 		font-size: 0.82rem;
 		padding: 0.25rem 0.5rem;
 	}

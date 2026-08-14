@@ -33,7 +33,7 @@
 
 <style>
 	.outline {
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 		font-size: 0.82rem;
 		overflow-y: auto;
 	}

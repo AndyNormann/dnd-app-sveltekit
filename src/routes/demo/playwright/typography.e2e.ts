@@ -41,20 +41,34 @@ test('typography switcher cycles fonts and sizes', async ({ page }) => {
 	// cycle sizes: M -> L -> S
 	await sizeBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-size', 'large');
-	const largeBase = await page.evaluate(() =>
-		getComputedStyle(document.documentElement).getPropertyValue('--text-base').trim()
+	const largeRoot = await page.evaluate(() =>
+		getComputedStyle(document.documentElement).getPropertyValue('--type-root').trim()
 	);
 	await sizeBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-size', 'compact');
 	await sizeBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-size', 'standard');
 
+	// serif preset also drives headings + UI font, not just body
+	// currently on 'plain' (index 6): click twice to reach garamond (index 1)
+	await fontBtn.click();
+	await fontBtn.click();
+	const serif = await page.evaluate(() => ({
+		type: document.documentElement.dataset.type,
+		display: getComputedStyle(document.documentElement).getPropertyValue('--font-display').trim(),
+		ui: getComputedStyle(document.documentElement).getPropertyValue('--font-ui').trim()
+	}));
+	expect(serif.type).toBe('garamond');
+	expect(serif.display).toContain('EB Garamond');
+	expect(serif.ui).toContain('EB Garamond');
+	await fontBtn.click(); // -> source
+
 	// persisted to localStorage
 	const stored = await page.evaluate(() => ({
 		type: localStorage.getItem('dnd-type'),
 		size: localStorage.getItem('dnd-size')
 	}));
-	expect(stored.type).toBe('plain');
+	expect(stored.type).toBe('source');
 	expect(stored.size).toBe('standard');
-	expect(largeBase).toBe('1.5rem');
+	expect(largeRoot).toBe('17.5px');
 });

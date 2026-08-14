@@ -218,7 +218,7 @@
 		flex-direction: column;
 		background: var(--parchment-light);
 		border-top: 3px solid var(--gold);
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 		font-size: 0.85rem;
 		color: var(--ink);
 		overflow: hidden;

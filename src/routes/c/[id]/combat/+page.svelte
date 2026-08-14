@@ -257,7 +257,7 @@
 		padding: 0.6rem 1rem;
 		background: var(--parchment-light);
 		border-bottom: 2px solid var(--rule);
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 	}
 	.bar h1 {
 		font-family: var(--font-display);

@@ -762,7 +762,7 @@
 
 <style>
 	.board-wrap {
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 	}
 	.toolbar {
 		display: flex;
@@ -1005,7 +1005,7 @@
 		background: var(--pc, #f0c040);
 		padding: 0.05rem 0.35rem;
 		border-radius: 3px;
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 	}
 	@keyframes ping-fade {
 		0% {
@@ -1067,7 +1067,7 @@
 		border-radius: 8px;
 		padding: 0.5rem;
 		box-shadow: var(--shadow-lg);
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 	}
 	.hp-pop .hpn {
 		font-size: 0.85rem;

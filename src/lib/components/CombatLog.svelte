@@ -48,7 +48,7 @@
 		border-top: 3px solid var(--gold);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-md);
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 		font-size: 0.85rem;
 		color: var(--ink);
 		overflow: hidden;

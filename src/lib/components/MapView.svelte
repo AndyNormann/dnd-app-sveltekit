@@ -666,7 +666,7 @@
 		background: var(--pc, #f0c040);
 		padding: 0.05rem 0.35rem;
 		border-radius: 3px;
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
 	}
 	@keyframes ping-fade {
 		0% {
