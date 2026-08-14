@@ -8,11 +8,12 @@
 
 <svelte:head><title>DM login</title></svelte:head>
 
-<main>
-	<div class="panel filigree">
+<main class="table">
+	<div class="panel sheet dogear">
 		<div class="crest">
-			<Seal size={74} />
-			<h1>DM login</h1>
+			<Seal size={70} />
+			<h1 class="sheet-ink">The DM's Seal</h1>
+			<p class="sub sheet-ink-soft">Press your passcode to unseal the war table</p>
 		</div>
 		{#if !data.configured}
 			<p class="warn">
@@ -29,7 +30,7 @@
 				autocomplete="current-password"
 				autofocus
 			/>
-			<button type="submit" class="btn-wax">Log in</button>
+			<button type="submit" class="btn-wax">Unseal</button>
 		</form>
 		<div class="ornament" aria-hidden="true"><span>✦</span></div>
 		<a href="/" class="back">← back to the war table</a>
@@ -38,18 +39,18 @@
 
 <style>
 	main {
-		max-width: 24rem;
-		margin: 4rem auto;
-		padding: 0 1rem;
+		min-height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
 		font-family: var(--font-body);
-		text-align: center;
 	}
 	.panel {
-		background: linear-gradient(180deg, rgba(220, 178, 90, 0.06), transparent 40%), var(--parchment-light);
-		border: 1px solid var(--rule);
-		border-radius: 10px;
-		box-shadow: var(--shadow-lg);
-		padding: 2rem 1.8rem 1.6rem;
+		width: 100%;
+		max-width: 24rem;
+		padding: 2.2rem 2rem 1.8rem;
+		text-align: center;
 	}
 	.crest {
 		display: flex;
@@ -58,40 +59,62 @@
 		gap: 0.9rem;
 		margin-bottom: 0.5rem;
 	}
+	.crest .seal {
+		filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+	}
 	h1 {
 		font-family: var(--font-display);
-		color: var(--accent);
+		font-size: 1.7rem;
 		letter-spacing: 0.06em;
 		margin: 0;
 	}
+	.sub {
+		font-size: 0.85rem;
+		font-style: italic;
+		margin: 0;
+	}
 	.warn {
-		color: var(--accent-soft);
+		color: #8a6d1a;
 		margin: 1rem 0;
+		font-size: 0.85rem;
+		border: 1px dashed var(--paper-rule);
+		border-radius: 6px;
+		padding: 0.6rem;
+		background: rgba(0, 0, 0, 0.04);
 	}
 	.error {
-		color: var(--danger);
+		color: #a8362c;
 		margin: 1rem 0;
 	}
 	form {
 		display: flex;
 		gap: 0.5rem;
-		margin: 1rem 0;
+		margin: 1.2rem 0;
 	}
 	input {
 		flex: 1;
 		padding: 0.6rem 0.75rem;
-		border: 1px solid var(--rule);
-		border-radius: 6px;
+		border: 1px solid var(--paper-rule);
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.4);
+		color: var(--paper-ink);
 		font-size: 1rem;
+		font-family: var(--font-body);
+	}
+	input::placeholder {
+		color: var(--paper-ink-soft);
+	}
+	form .btn-wax {
+		padding: 0.6rem 1.4rem;
 	}
 	.ornament {
 		margin: 1.2rem 0 0.8rem;
 	}
 	.back {
-		color: var(--ink-soft);
+		color: var(--paper-ink-soft);
 		text-decoration: none;
 	}
 	.back:hover {
-		color: var(--accent);
+		color: #7a5c14;
 	}
 </style>

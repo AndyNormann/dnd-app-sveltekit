@@ -47,35 +47,45 @@
 	   lantern-lit table. Brass-gold is the D&D metal (interactive + links); a
 	   seal-red marks danger; moss-green marks success; hairline rules are warm
 	   bronze. Warm umber surfaces + a candlelight vignette replace flat brown. */
-	/* Theme — the Rulebook: midnight-navy covers, parchment-cream pages, and gold
-	   used as trim/interactive rather than the base hue. Reads as the classic D&D
-	   Player's Handbook the moment it opens; the brown is gone entirely. */
+	/* Theme — the War Table: a dark aged-oak / leather tabletop, warm chrome, and
+	   cream parchment sheets as the reading material laid out on it. Gold trim + wax
+	   seals sit ON the paper. Two token families: the table/chrome (--parchment/--ink)
+	   and the paper documents (--paper/--paper-ink). */
 	:global(:root) {
-		--parchment: #17233c;
-		--parchment-deep: #121c30;
-		--parchment-light: #1f2f4d;
-		--ink: #ecdfc4;
-		--ink-soft: #b8bfd4;
-		--rule: #33466b;
-		--board-bg: #1a2742;
-		--board-grid: rgba(220, 203, 168, 0.10);
+		/* the tabletop (dark, warm, moody) */
+		--parchment: #241c13;
+		--parchment-deep: #19120a;
+		--parchment-light: #332818;
+		--ink: #e9dcbd;
+		--ink-soft: #b3a183;
+		--rule: #443522;
+		--board-bg: #201710;
+		--board-grid: rgba(233, 220, 189, 0.10);
 		--accent: #d4a13c;
 		--accent-soft: #e2be6b;
 		--gold: #dcb25a;
-		--section-hl: rgba(212, 161, 60, 0.12);
+		--section-hl: rgba(212, 161, 60, 0.14);
 		--danger: #e8896f;
 		--success: #58b366;
 		--success-deep: #1f5d2b;
 		--ok-text: #f2e7cd;
-		/* navy-tuned elevation shadows (cool falloff so panels lift off the deep blue) */
-		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.55);
-		--shadow-glow: 0 0 18px rgba(0, 0, 0, 0.4);
+		/* parchment sheets — the documents laid on the table (light, aged, readable) */
+		--paper: #efe2c2;
+		--paper-deep: #e3d2a9;
+		--paper-edge: #d8c393;
+		--paper-ink: #3a2e1b;
+		--paper-ink-soft: #6f6043;
+		--paper-rule: #cfbd92;
+		--paper-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+		/* wood-tuned elevation shadows (deep warm falloff off the table) */
+		--shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+		--shadow-lg: 0 8px 26px rgba(0, 0, 0, 0.62);
+		--shadow-glow: 0 0 20px rgba(0, 0, 0, 0.5);
 		/* coherent radius scale + player-token ring cue */
 		--radius-sm: 5px;
-		--radius-md: 8px;
-		--radius-lg: 12px;
+		--radius-md: 9px;
+		--radius-lg: 14px;
 		--token-ring: rgba(212, 161, 60, 0.9);
 	}
 		/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
@@ -122,19 +132,20 @@
 	:global(body) {
 		margin: 0;
 		background: var(--parchment);
-		/* torchlit navy: warm candle-gold glow pooling over the midnight-blue cover,
-		   sinking to deep navy at the corners, over a faint parchment grain */
+		/* the war table: a warm candlelit oak surface with a soft leather grain,
+		   glowing from the lantern above and sinking to deep shadow at the edges */
 		background-image:
-			radial-gradient(1200px 780px at 50% -8%, rgba(220, 178, 90, 0.16), transparent 60%),
-			radial-gradient(1600px 1000px at 50% 108%, rgba(0, 0, 0, 0.45), transparent 58%),
-			var(--paper-grain);
+			radial-gradient(1100px 700px at 50% -6%, rgba(212, 178, 120, 0.12), transparent 58%),
+			radial-gradient(1400px 900px at 50% 110%, rgba(0, 0, 0, 0.55), transparent 62%),
+			var(--wood-grain);
 		background-attachment: fixed;
 		color: var(--ink);
 		font-family: var(--font-body);
 	}
-	/* aged-paper grain + wax/corner utilities for the whole app (full-drench world) */
+	/* aged-oak wood grain for the tabletop + a finer paper grain for the sheets */
 	:global(:root) {
-		--paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+		--wood-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.35' numOctaves='2' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23w)'/%3E%3C/svg%3E");
+		--paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
 		--ink-divider: '✦';
 	}
 	/* scroll-ornament divider: ✦ between hairline rules */
@@ -158,7 +169,43 @@
 		font-family: var(--font-display);
 		text-shadow: 0 0 8px rgba(220, 178, 90, 0.35);
 	}
-	/* gold filigree corner accents for cards/panels */
+	/* a parchment sheet — the reading material laid on the table. Light, aged,
+	   dog-eared corners, warm edge, deep paper-cast shadow. */
+	:global(.sheet) {
+		position: relative;
+		color: var(--paper-ink);
+		background:
+			linear-gradient(165deg, rgba(255, 255, 255, 0.18), transparent 34%),
+			radial-gradient(120% 90% at 100% 0%, rgba(120, 90, 40, 0.10), transparent 40%),
+			var(--paper);
+		background-image:
+			linear-gradient(165deg, rgba(255, 255, 255, 0.16), transparent 34%),
+			var(--paper-grain),
+			var(--paper);
+		border: 1px solid var(--paper-edge);
+		border-radius: 3px;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), inset 0 0 40px rgba(110, 80, 30, 0.10), var(--paper-shadow);
+	}
+	:global(.sheet .sheet-ink) {
+		color: var(--paper-ink);
+	}
+	:global(.sheet .sheet-ink-soft) {
+		color: var(--paper-ink-soft);
+	}
+	:global(.sheet a) {
+		color: #7a5c14;
+	}
+	/* dog-eared corner on parchment sheets */
+	:global(.sheet.dogear::after) {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 18px;
+		height: 18px;
+		background: linear-gradient(225deg, var(--paper-deep) 0 47%, transparent 50%);
+		border-bottom-left-radius: 3px;
+	}
 	:global(.filigree) {
 		position: relative;
 	}
