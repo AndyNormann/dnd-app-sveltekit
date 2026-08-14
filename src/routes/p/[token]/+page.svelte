@@ -164,11 +164,13 @@
 		padding: 0.5rem 0 0 0.75rem;
 	}
 	main {
-		--page-bg: var(--parchment-light);
-		background: var(--parchment-light);
-		border-left: 1px solid var(--rule);
-		border-right: 1px solid var(--rule);
-		box-shadow: var(--shadow-glow);
+		--page-bg: var(--paper);
+		color: var(--paper-ink);
+		background: var(--paper);
+		background-image: var(--paper-grain), var(--paper);
+		border: 1px solid var(--paper-edge);
+		border-radius: 3px;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), inset 0 0 44px rgba(110, 80, 30, 0.10), var(--paper-shadow);
 		padding: 1.5rem 2.5rem 4rem;
 		margin: 1rem 0 3rem;
 		line-height: 1.6;
@@ -191,9 +193,9 @@
 	}
 	.empty {
 		text-align: center;
-		color: var(--ink-soft);
+		color: var(--paper-ink-soft);
 		font-style: italic;
-		padding: 3rem 1rem;
+		margin: 2rem 0;
 	}
 	.doc-title {
 		margin-top: 0.5rem;

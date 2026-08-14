@@ -191,7 +191,7 @@
 		word-wrap: break-word;
 		font-family: var(--font-body);
 		font-size: var(--text-base, 1.35rem);
-		color: var(--ink);
+		color: var(--paper-ink);
 	}
 	.rendered :global(p) {
 		margin: 0.55em 0;
@@ -212,14 +212,14 @@
 	.rendered :global(h6) {
 		position: relative;
 		font-family: var(--font-display);
-		color: var(--ink);
+		color: var(--paper-ink);
 		letter-spacing: 0.02em;
 		line-height: 1.2;
 	}
 	.rendered :global(h1) {
 		font-size: 2.3rem;
 		font-weight: 600;
-		border-bottom: 1px solid var(--gold);
+		border-bottom: 1px solid #b59a5a;
 		padding-bottom: 0.25rem;
 	}
 	.rendered :global(h2) {
@@ -246,7 +246,7 @@
 	.rendered :global(h4),
 	.rendered :global(h5),
 	.rendered :global(h6) {
-		color: var(--ink);
+		color: var(--paper-ink);
 	}
 	/* drop cap on the first paragraph of each top-level section */
 	.rendered :global(h1 + p)::first-letter {
@@ -256,7 +256,7 @@
 		float: left;
 		line-height: 0.85;
 		padding: 0.05em 0.12em 0 0;
-		color: var(--accent);
+		color: #7a5c14;
 	}
 	/* ornamental divider: type --- in markdown. --page-bg is set by the host page. */
 	.rendered :global(hr) {
@@ -284,20 +284,21 @@
 		height: auto;
 	}
 	.rendered :global(pre) {
-		background: var(--parchment-deep);
-		border: 1px solid var(--rule);
+		background: rgba(0, 0, 0, 0.06);
+		border: 1px solid var(--paper-rule);
 		padding: 0.8rem;
 		border-radius: 6px;
 		overflow: auto;
 		font-size: 0.85em;
+		color: var(--paper-ink);
 	}
 	.rendered :global(code) {
 		font-family: ui-monospace, monospace;
 	}
 	.rendered :global(.dice-inline) {
-		border: 1px solid var(--gold);
-		background: var(--parchment-deep);
-		color: var(--accent);
+		border: 1px solid #b59a5a;
+		background: rgba(122, 92, 20, 0.10);
+		color: #6a4f0e;
 		border-radius: 4px;
 		padding: 0 0.35rem;
 		font: inherit;
@@ -306,31 +307,31 @@
 		cursor: pointer;
 	}
 	.rendered :global(.dice-inline:hover) {
-		background: var(--rule);
+		background: rgba(122, 92, 20, 0.18);
 	}
 	.rendered :global(a.wiki-link) {
-		color: var(--accent);
+		color: #7a5c14;
 		text-decoration: none;
-		border-bottom: 1px solid var(--gold);
+		border-bottom: 1px solid #b59a5a;
 		cursor: pointer;
 	}
 	.rendered :global(.wiki-missing) {
-		color: var(--accent-soft);
-		border-bottom: 1px dashed var(--accent-soft);
+		color: #8a6d1a;
+		border-bottom: 1px dashed #b59a5a;
 	}
 	/* stat-block: classic 5e monster panel via blockquote */
 	.rendered :global(blockquote) {
 		margin: 1.4rem 0;
 		padding: 0.7rem 1.1rem;
-		background: var(--parchment-deep);
-		border-top: 3px solid var(--accent);
-		border-bottom: 3px solid var(--accent);
+		background: rgba(122, 92, 20, 0.08);
+		border-top: 3px solid #7a5c14;
+		border-bottom: 3px solid #7a5c14;
 		box-shadow: var(--shadow);
-		color: var(--ink);
+		color: var(--paper-ink);
 	}
 	.rendered :global(blockquote p:first-child strong:first-child) {
 		font-family: var(--font-display);
-		color: var(--accent);
+		color: #7a5c14;
 		font-size: 1.15em;
 	}
 </style>
