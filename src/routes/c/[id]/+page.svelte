@@ -582,6 +582,9 @@
 		font-size: 1.2rem;
 		color: var(--ink-soft);
 	}
+	.back:hover {
+		color: var(--accent);
+	}
 	.spacer {
 		flex: 1;
 	}
@@ -600,7 +603,8 @@
 	.bar button:hover,
 	.bar .upload:hover,
 	.bar a[target]:hover {
-		border-color: var(--gold);
+		background: var(--parchment-deep);
+		border-color: var(--accent);
 		color: var(--ink);
 	}
 	.logout {
@@ -738,7 +742,6 @@
 		max-width: 30rem;
 		color: var(--ink-soft);
 		pointer-events: none;
-		opacity: 0.7;
 	}
 	.empty-hint h2 {
 		font-family: var(--font-display);

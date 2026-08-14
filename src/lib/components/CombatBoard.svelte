@@ -25,13 +25,13 @@
 	} = $props();
 
 	const CELL = 40;
-	const COLORS = ['#222', '#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#d68910', '#7f8c8d'];
+	const COLORS = ['#f0c040', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22', '#95a5a6'];
 
 	let units = $state<CombatUnit[]>(initialUnits);
 	let drawings = $state<CombatDrawing[]>(initialDrawings);
 	let config = $state<BoardConfig>(initialConfig);
 	let tool = $state<'draw' | 'erase' | 'measure' | 'dmg' | 'ping'>(dm ? 'draw' : 'measure');
-	let color = $state('#222');
+	let color = $state('#f0c040');
 	let errorMsg = $state('');
 	let selectedId = $state<string | null>(null);
 	let hpAmount = $state('');
@@ -67,10 +67,15 @@
 	let measureCanvas: HTMLCanvasElement | undefined = $state();
 	let boardEl: HTMLDivElement | undefined = $state();
 	let viewportEl: HTMLDivElement | undefined = $state();
-	let zoom = $state(1); // board zoom for small screens (layout-affecting CSS `zoom`)
+	let zoom = $state(
+		typeof localStorage !== 'undefined' ? (parseFloat(localStorage.getItem('dnd-board-zoom') || '') || 1) : 1
+	); // board zoom for small screens (layout-affecting CSS `zoom`)
 
 	function clampZoom(z: number) {
 		zoom = Math.max(0.3, Math.min(3, Math.round(z * 100) / 100));
+		try {
+			localStorage.setItem('dnd-board-zoom', String(zoom));
+		} catch {}
 	}
 	function fitZoom() {
 		if (!viewportEl) return;
@@ -268,6 +273,10 @@
 	$effect(() => {
 		scheduleRedraw();
 		scheduleRedrawMeasure();
+	});
+
+	onMount(() => {
+		if (!localStorage.getItem('dnd-board-zoom')) fitZoom();
 	});
 
 	function onKeydown(e: KeyboardEvent) {
@@ -779,9 +788,9 @@
 		transform: translateY(1px);
 	}
 	.toolbar button.on {
-		color: var(--accent);
-		border-color: var(--gold);
-		background: var(--parchment-deep);
+		color: var(--parchment-light);
+		background: var(--accent);
+		border-color: var(--accent);
 	}
 	.toolbar button.danger {
 		color: var(--danger);
@@ -925,14 +934,14 @@
 		top: 0;
 		left: 50%;
 		transform: translateX(-50%);
-		font-size: 0.6rem;
+		font-size: 0.65rem;
 		line-height: 1.1;
 		color: var(--parchment-deep);
-		background: rgba(255, 255, 255, 0.85);
+		background: rgba(255, 255, 255, 0.88);
 		padding: 0 0.15rem;
 		border-radius: 3px;
 		white-space: nowrap;
-		max-width: 44px;
+		max-width: 92px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		pointer-events: none;
@@ -942,12 +951,15 @@
 		bottom: 0;
 		left: 50%;
 		transform: translateX(-50%);
-		font-size: 0.6rem;
+		font-size: 0.65rem;
 		line-height: 1.1;
 		color: var(--parchment-deep);
-		background: rgba(255, 255, 255, 0.85);
-		padding: 0 0.15rem;
+		background: rgba(255, 255, 255, 0.88);
+		padding: 0 0.2rem;
 		border-radius: 3px;
+		white-space: nowrap;
+		min-width: 1.4rem;
+		text-align: center;
 		pointer-events: none;
 	}
 	.snap-hl {

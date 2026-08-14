@@ -115,12 +115,14 @@
 		   headings override margin/weight below to stay connected to their parent. */
 	}
 	:global(.mdx-host .ProseMirror h1) {
-		font-size: 1.6rem;
+		font-size: 1.85rem;
 		font-weight: 600;
 		margin: 1.6em 0 0.35em;
+		padding-bottom: 0.25em;
+		border-bottom: 2px solid var(--gold);
 	}
 	:global(.mdx-host .ProseMirror h2) {
-		font-size: 1.42rem;
+		font-size: 1.5rem;
 		font-weight: 560;
 		margin: 1.05em 0 0.3em;
 	}

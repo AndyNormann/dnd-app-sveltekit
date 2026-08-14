@@ -19,6 +19,7 @@
 	:global(:root) {
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: 'Literata', 'Georgia', serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
 	}
 	/* Theme — Indigo on an Obsidian (neutral near-black) base. */
 	:global(:root) {
@@ -35,7 +36,7 @@
 		/* a real warm gold as the secondary hue: active/highlight/underline borders,
 		   while accent stays indigo for interactive/links — gives the palette hierarchy */
 		--gold: #c8a13d;
-		--section-hl: rgba(236, 236, 236, 0.04); /* a barely-there neutral wash, close to the bg */
+		--section-hl: rgba(111, 143, 245, 0.08); /* indigo wash that ties to the accent */
 		--danger: #e25d54; /* a real warning/error red (success stays green) */
 		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
 		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
@@ -52,9 +53,22 @@
 		margin: 0;
 		background: var(--parchment);
 		color: var(--ink);
+		font-family: var(--font-body);
 	}
 	:global(a) {
 		color: var(--accent);
+	}
+	/* Browser-default white form controls punch out of the dark theme. */
+	:global(input),
+	:global(select),
+	:global(textarea) {
+		background: var(--parchment-deep);
+		color: var(--ink);
+		font-family: var(--font-ui);
+	}
+	/* UI controls share one face; Cinzel is reserved for titles only. */
+	:global(button) {
+		font-family: var(--font-ui);
 	}
 	/* Keyboard focus must always be visible, on every custom-styled control.
 	   Gold contrasts against both the dark bg and the indigo accent fills. */

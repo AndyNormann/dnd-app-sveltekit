@@ -93,8 +93,8 @@
 	</form>
 
 	{#if data.isDM && data.backups && data.backups.length > 0}
-		<section class="backups">
-			<h2 class="bhead">Backups</h2>
+		<details class="backups">
+			<summary class="bhead">Backups</summary>
 			{#if restoreMsg}<p class="restore-msg">{restoreMsg}</p>{/if}
 			<ul class="bgrid">
 				{#each data.backups as b (b.name)}
@@ -108,7 +108,7 @@
 					</li>
 				{/each}
 			</ul>
-		</section>
+		</details>
 	{/if}
 
 	{#if data.query}
@@ -336,6 +336,11 @@
 	.play {
 		font-size: 0.9rem;
 		color: var(--ink-soft);
+		text-decoration: none;
+	}
+	.play:hover {
+		color: var(--accent);
+		text-decoration: underline;
 	}
 	.actions {
 		display: flex;
@@ -358,8 +363,33 @@
 		color: var(--ink-soft);
 		font-style: italic;
 	}
+	.import button,
+	.search button {
+		padding: 0.6rem 1rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		background: var(--parchment-light);
+		color: var(--ink-soft);
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+	.import button:hover,
+	.search button:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
+		color: var(--ink);
+	}
+	.bhead {
+		font-family: var(--font-ui);
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--ink-soft);
+		cursor: pointer;
+		margin: 0 0 0.5rem;
+		user-select: none;
+	}
 	.backups {
-		margin-bottom: 2rem;
+		margin-bottom: 1.5rem;
 	}
 	.bhead {
 		font-family: var(--font-display);

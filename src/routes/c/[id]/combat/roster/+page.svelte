@@ -367,6 +367,12 @@
 		background: var(--parchment-light);
 		cursor: pointer;
 		color: var(--ink-soft);
+		transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+	}
+	.bar button:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
+		color: var(--ink);
 	}
 	.logout {
 		margin: 0;

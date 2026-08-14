@@ -193,17 +193,19 @@
 			{/each}
 		</div>
 		<form class="input" onsubmit={submit}>
-			{#if !dm}
-				<input class="name" placeholder="Name" bind:value={roller} maxlength="40" />
-			{/if}
-			<input class="expr" placeholder="2d6+3" bind:value={expression} maxlength="100" />
-			<input class="expr label" placeholder="optional label" bind:value={label} maxlength="80" />
-			{#if dm}
-				<label class="secret-toggle" title="Hide from players">
-					<input type="checkbox" bind:checked={secret} /> 🤫
-				</label>
-			{/if}
-			<button type="submit">Roll</button>
+			<div class="row">
+				{#if !dm}
+					<input class="name" placeholder="Name" bind:value={roller} maxlength="40" />
+				{/if}
+				<input class="expr" placeholder="2d6+3" bind:value={expression} maxlength="100" />
+				{#if dm}
+					<label class="secret-toggle" title="Hide from players">
+						<input type="checkbox" bind:checked={secret} /> 🤫
+					</label>
+				{/if}
+				<button type="submit">Roll</button>
+			</div>
+			<input class="expr optlabel" placeholder="optional label" bind:value={label} maxlength="80" />
 		</form>
 		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
 	{/if}
@@ -351,10 +353,14 @@
 		font-size: 0.78rem;
 	}
 	.input {
-		display: flex;
-		gap: 0.3rem;
+		display: block;
 		padding: 0.5rem 0.75rem;
 		border-top: 1px solid var(--rule);
+	}
+	.input .row {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
 	}
 	.input input {
 		border: 1px solid var(--rule);
@@ -370,6 +376,11 @@
 	}
 	.expr {
 		flex: 1.4;
+	}
+	.optlabel {
+		width: 100%;
+		margin-top: 0.35rem;
+		box-sizing: border-box;
 	}
 	.secret-toggle {
 		display: flex;
