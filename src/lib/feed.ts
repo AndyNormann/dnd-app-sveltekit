@@ -28,10 +28,8 @@ export interface FeedHandlers {
 	applyCombatLog?: (entry: CombatLogEntry) => void;
 	applySnapshot?: (snapshot: Extract<CampaignEvent, { type: 'snapshot' }>) => void;
 	onTitle?: (title: string) => void;
-	onDoc?: (html: string) => void;
 	onDocuments?: (documents: DocumentSummary[]) => void;
 	onDocumentUpdated?: (documentId: string, html: string) => void;
-	onHandout?: (headingId: string) => void;
 	onMapAdded?: (map: MapData) => void;
 	onCharacters?: () => void;
 	onMonsters?: () => void;
@@ -100,13 +98,6 @@ export function applyFeedEvent(ev: CampaignEvent, h: FeedHandlers): void {
 			break;
 		case 'title-changed':
 			h.onTitle?.(ev.title);
-			break;
-		case 'doc-updated':
-		case 'share-changed':
-			h.onDoc?.(ev.html);
-			break;
-		case 'handout-revealed':
-			h.onHandout?.(ev.headingId);
 			break;
 		case 'map-added':
 			h.onMapAdded?.(ev.map);

@@ -1,15 +1,11 @@
 import {
 	getCampaign,
 	listDocumentSummaries,
-	getCampaignRev,
-	getHeadingMeta,
 	listMaps,
 	listReveals,
 	listRolls,
 	listTokens
 } from '$lib/server/db';
-import { toMetaMap } from '$lib/markdown';
-import { renderSharedForPlayer } from '$lib/server/markdown.server';
 import { subscribe, type CampaignEvent } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
 import { error } from '@sveltejs/kit';
@@ -42,9 +38,6 @@ export const GET: RequestHandler = ({ params, cookies }) => {
 			// Snapshot of current state so a (re)connecting client self-heals.
 			const campaign = getCampaign(params.id);
 			if (campaign) {
-				const meta = toMetaMap(getHeadingMeta(params.id));
-				const html = renderSharedForPlayer(campaign.content, meta);
-				const rev = getCampaignRev(params.id);
 				const documents = listDocumentSummaries(params.id);
 
 				const maps: MapData[] = listMaps(params.id).map((m) => ({
@@ -73,7 +66,7 @@ export const GET: RequestHandler = ({ params, cookies }) => {
 					created_at: r.created_at
 				}));
 
-				send({ type: 'snapshot', title: campaign.title, html, rev, documents, maps, tokens, rolls });
+				send({ type: 'snapshot', title: campaign.title, documents, maps, tokens, rolls });
 			}
 
 			// Heartbeat so proxies don't reap an idle SSE connection mid-session.

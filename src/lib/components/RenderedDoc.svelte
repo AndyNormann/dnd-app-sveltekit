@@ -9,7 +9,6 @@
 		dm = false,
 		campaignId,
 		maps = [],
-		meta = {},
 		onrender,
 		onroll,
 		getSecret,
@@ -19,7 +18,6 @@
 		dm?: boolean;
 		campaignId: string;
 		maps?: MapData[];
-		meta?: Record<string, { shared: number; collapsed: number }>;
 		onrender?: (container: HTMLElement) => void;
 		onroll?: (roll: RollData) => void;
 		getSecret?: () => boolean;
@@ -27,13 +25,6 @@
 	} = $props();
 
 	let container: HTMLDivElement;
-
-	// local mutable copy of heading meta (DM only)
-	let localMeta: Record<string, { shared: number; collapsed: number }> = {};
-	$effect(() => {
-		localMeta = {};
-		for (const [k, v] of Object.entries(meta)) localMeta[k] = { ...v };
-	});
 
 	const mapInstances = new Map<string, ReturnType<typeof mount>>();
 
@@ -88,147 +79,6 @@
 		}
 	}
 
-	interface HeadingEl {
-		el: HTMLElement;
-		id: string;
-		level: number;
-		parent: number;
-	}
-
-	function collectHeadings(): HeadingEl[] {
-		// scope to heading tags: wiki links also carry data-heading-id
-		const nodes = Array.from(
-			container.querySelectorAll('h1,h2,h3,h4,h5,h6')
-		).filter((el) => el.hasAttribute('data-heading-id')) as HTMLElement[];
-		const list: HeadingEl[] = [];
-		const stack: number[] = [];
-		for (const el of nodes) {
-			const id = el.getAttribute('data-heading-id') || '';
-			const level = Number(el.getAttribute('data-level')) || 1;
-			while (stack.length && list[stack[stack.length - 1]].level >= level) stack.pop();
-			const parent = stack.length ? stack[stack.length - 1] : -1;
-			list.push({ el, id, level, parent });
-			stack.push(list.length - 1);
-		}
-		return list;
-	}
-
-	function effectiveShared(idx: number, list: HeadingEl[]): boolean {
-		let cur = idx;
-		while (cur !== -1) {
-			const state = localMeta[list[cur].id]?.shared ?? 0;
-			if (state === 1) return true;
-			if (state === 2) return false;
-			cur = list[cur].parent;
-		}
-		return false;
-	}
-
-	async function postShare(headingId: string, state: number) {
-		await fetch(`/c/${campaignId}/share`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ headingId, state })
-		});
-	}
-
-	async function postHandout(headingId: string) {
-		await fetch(`/c/${campaignId}/handout`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ headingId })
-		});
-	}
-
-	async function postCollapse(headingId: string, collapsed: boolean) {
-		await fetch(`/c/${campaignId}/collapse`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ headingId, collapsed })
-		});
-	}
-
-	/** Hide DOM nodes following a collapsed heading up to the next sibling-or-higher heading. */
-	function applyCollapse(list: HeadingEl[]) {
-		for (let i = 0; i < list.length; i++) {
-			const h = list[i];
-			const collapsed = !!localMeta[h.id]?.collapsed;
-			let node = h.el.nextElementSibling as HTMLElement | null;
-			while (node && !isHigherOrEqualHeading(node, h.level)) {
-				node.style.display = collapsed ? 'none' : '';
-				node = node.nextElementSibling as HTMLElement | null;
-			}
-		}
-	}
-
-	function isHigherOrEqualHeading(node: HTMLElement, level: number): boolean {
-		const l = node.getAttribute('data-level');
-		return l !== null && Number(l) <= level;
-	}
-
-	function decorateHeadings() {
-		if (!dm) return;
-		const list = collectHeadings();
-		for (let i = 0; i < list.length; i++) {
-			const h = list[i];
-			if (h.el.querySelector('.heading-controls')) continue;
-			const controls = document.createElement('span');
-			controls.className = 'heading-controls';
-			controls.contentEditable = 'false';
-
-			const collapseBtn = document.createElement('button');
-			collapseBtn.className = 'collapse-btn';
-			collapseBtn.type = 'button';
-			collapseBtn.title = 'Collapse / expand';
-			collapseBtn.textContent = localMeta[h.id]?.collapsed ? '▸' : '▾';
-			collapseBtn.onclick = () => {
-				const next = !localMeta[h.id]?.collapsed;
-				localMeta[h.id] = {
-					...(localMeta[h.id] ?? { shared: 0, collapsed: 0 }),
-					collapsed: next ? 1 : 0
-				};
-				collapseBtn.textContent = next ? '▸' : '▾';
-				applyCollapse(collectHeadings());
-				postCollapse(h.id, next);
-			};
-
-			const share = document.createElement('input');
-			share.type = 'checkbox';
-			share.className = 'share-box';
-			share.title = 'Share with players';
-			share.checked = effectiveShared(i, list);
-			share.onclick = (e) => {
-				e.preventDefault();
-				const currently = effectiveShared(i, collectHeadings());
-				const next = currently ? 2 : 1; // hidden vs shared
-				localMeta[h.id] = { ...(localMeta[h.id] ?? { shared: 0, collapsed: 0 }), shared: next };
-				refreshShareBoxes();
-				postShare(h.id, next);
-			};
-
-			controls.appendChild(collapseBtn);
-			controls.appendChild(share);
-			const handout = document.createElement('button');
-			handout.type = 'button';
-			handout.className = 'handout-btn';
-			handout.title = 'Reveal handout to players now';
-			handout.textContent = '📢';
-			handout.onclick = () => postHandout(h.id);
-			controls.appendChild(handout);
-			h.el.prepend(controls);
-		}
-		applyCollapse(list);
-		refreshShareBoxes();
-	}
-
-	function refreshShareBoxes() {
-		const list = collectHeadings();
-		for (let i = 0; i < list.length; i++) {
-			const box = list[i].el.querySelector('.share-box') as HTMLInputElement | null;
-			if (box) box.checked = effectiveShared(i, list);
-		}
-	}
-
 	function hydrateMaps() {
 		const placeholders = Array.from(
 			container.querySelectorAll('.map-embed[data-map-id]')
@@ -264,7 +114,7 @@
 		const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
 			acceptNode(node) {
 				const p = node.parentElement;
-				if (!p || p.closest('pre, code, a, button, .heading-controls, .map-embed')) {
+				if (!p || p.closest('pre, code, a, button, .map-embed')) {
 					return NodeFilter.FILTER_REJECT;
 				}
 				return NodeFilter.FILTER_ACCEPT;
@@ -306,35 +156,16 @@
 		if (res.ok) onroll?.((await res.json()) as RollData);
 	}
 
-	/** Handle clicks on wiki links: expand collapsed ancestors and scroll. */
+	/** Handle clicks on wiki links: scroll to the linked heading. */
 	function onContainerClick(e: MouseEvent) {
 		const link = (e.target as HTMLElement).closest('a.wiki-link') as HTMLAnchorElement | null;
 		if (!link) return;
 		e.preventDefault();
 		const targetId = link.getAttribute('data-heading-id');
 		if (!targetId) return;
-		if (dm) expandAncestors(targetId);
 		container
 			.querySelector(`[data-heading-id="${CSS.escape(targetId)}"]`)
 			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	}
-
-	function expandAncestors(headingId: string) {
-		const list = collectHeadings();
-		let idx = list.findIndex((h) => h.id === headingId);
-		if (idx === -1) return;
-		// expand the chain of ancestors (and the target itself) so it's visible
-		while (idx !== -1) {
-			const h = list[idx];
-			if (localMeta[h.id]?.collapsed) {
-				localMeta[h.id] = { ...localMeta[h.id], collapsed: 0 };
-				const btn = h.el.querySelector('.collapse-btn');
-				if (btn) btn.textContent = '▾';
-				postCollapse(h.id, false);
-			}
-			idx = h.parent;
-		}
-		applyCollapse(list);
 	}
 
 	$effect(() => {
@@ -345,7 +176,6 @@
 		for (const [, inst] of mapInstances) unmount(inst);
 		mapInstances.clear();
 		container.innerHTML = html;
-		decorateHeadings();
 		decorateDice();
 		hydrateMaps();
 		onrender?.(container);
@@ -448,49 +278,6 @@
 		color: var(--gold);
 		font-size: 0.95rem;
 		line-height: 1;
-	}
-	.rendered :global(.heading-controls) {
-		display: inline-flex;
-		gap: 0.3rem;
-		align-items: center;
-		margin-right: 0.5rem;
-		vertical-align: middle;
-	}
-	.rendered :global(.collapse-btn) {
-		border: 0;
-		background: none;
-		cursor: pointer;
-		font-size: 0.8em;
-		color: #6b7280;
-		padding: 0;
-		width: 1em;
-	}
-	.rendered :global(.share-box) {
-		cursor: pointer;
-	}
-	.rendered :global(.handout-btn) {
-		border: 1px solid var(--gold);
-		background: var(--parchment-deep);
-		cursor: pointer;
-		border-radius: 4px;
-		font-size: 0.8em;
-		padding: 0 0.25rem;
-		line-height: 1.2;
-	}
-	.rendered :global(.handout-btn:hover) {
-		background: var(--rule);
-	}
-	.rendered :global(.handout-flash) {
-		animation: handout-pulse 2s ease-out;
-	}
-
-	@keyframes handout-pulse {
-		0% {
-			background: var(--gold);
-		}
-		100% {
-			background: transparent;
-		}
 	}
 	.rendered :global(img) {
 		max-width: 100%;

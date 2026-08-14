@@ -1,12 +1,9 @@
 import sanitizeHtml from 'sanitize-html';
 import {
-	computeSharedMarkdown,
-	effectiveShared,
 	expandWikiLinks,
 	makeWikiResolver,
 	parseHeadings,
-	renderWithAnchors,
-	type MetaMap
+	renderWithAnchors
 } from '$lib/markdown';
 
 const SANITIZE_OPTS: sanitizeHtml.IOptions = {
@@ -26,20 +23,7 @@ const SANITIZE_OPTS: sanitizeHtml.IOptions = {
 	allowedClasses: { div: ['map-embed'], a: ['wiki-link'] }
 };
 
-/** Compute the shared subset and render it for players (sanitized). */
-export function renderSharedForPlayer(markdown: string, meta: MetaMap): string {
-	// Wiki links resolve only against effectively-shared headings so player
-	// output never leaks hidden section names as links.
-	const headings = parseHeadings(markdown);
-	const sharedHeadings = headings.filter((_, idx) => effectiveShared(idx, headings, meta));
-	const resolver = makeWikiResolver(sharedHeadings);
-
-	const shared = computeSharedMarkdown(markdown, meta);
-	const html = renderWithAnchors(expandWikiLinks(shared, resolver, 'plain'));
-	return sanitizeHtml(html, SANITIZE_OPTS);
-}
-
-/** Render a whole document for players (document-level sharing; no per-heading filter). */
+/** Render a whole document for players (document-level sharing; sanitized). */
 export function renderDocument(markdown: string): string {
 	const headings = parseHeadings(markdown);
 	const resolver = makeWikiResolver(headings);

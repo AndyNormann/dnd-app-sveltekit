@@ -4,8 +4,6 @@ import type { TokenRow } from './db';
 import type { MapData, RollData } from '$lib/types';
 
 export type CampaignEvent =
-	| { type: 'doc-updated'; html: string }
-	| { type: 'share-changed'; html: string }
 	| { type: 'documents-updated'; documents: import('./documents').DocumentSummary[] }
 	| { type: 'document-updated'; documentId: string; html: string }
 	| { type: 'map-added'; map: MapData }
@@ -15,7 +13,6 @@ export type CampaignEvent =
 	| { type: 'rolls-cleared' }
 	| { type: 'rolls-restored'; rolls: RollData[] }
 	| { type: 'title-changed'; title: string }
-	| { type: 'handout-revealed'; headingId: string }
 	| { type: 'initiative-updated'; entries: InitEntry[]; round: number }
 	| { type: 'tokens-updated'; mapId: string; tokens: TokenRow[] }
 	| { type: 'grid-updated'; mapId: string; grid_size: number }
@@ -34,8 +31,6 @@ export type CampaignEvent =
 	| {
 			type: 'snapshot';
 			title: string;
-			html: string;
-			rev: number;
 			documents: import('./documents').DocumentSummary[];
 			maps: MapData[];
 			tokens: { mapId: string; tokens: TokenRow[] }[];

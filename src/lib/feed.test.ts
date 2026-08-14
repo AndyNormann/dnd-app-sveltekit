@@ -8,7 +8,10 @@ const roll = {
 const snapshot = {
 	type: 'snapshot' as const,
 	documents: [],
-	title: 'T', html: '<p>x</p>', rev: 3, maps: [], tokens: [], rolls: [roll.roll]
+	title: 'T',
+	maps: [],
+	tokens: [],
+	rolls: [roll.roll]
 };
 const initiative = { type: 'initiative-updated' as const, entries: [], round: 2 };
 
@@ -18,19 +21,18 @@ describe('feed reducer', () => {
 		const h: FeedHandlers = {
 			addRoll: () => calls.push('addRoll'),
 			setRolls: () => calls.push('setRolls'),
-			onDoc: () => calls.push('onDoc'),
 			onTitle: () => calls.push('onTitle'),
 			applyCombatUnits: () => calls.push('units'),
 			applyInitiative: () => calls.push('initiative'),
 			applySnapshot: () => calls.push('snapshot'),
-			onHandout: () => calls.push('handout')
+			onDocuments: () => calls.push('documents')
 		};
 		applyFeedEvent(roll, h);
 		applyFeedEvent(snapshot, h);
 		applyFeedEvent(initiative, h);
 		applyFeedEvent({ type: 'title-changed', title: 'x' }, h);
-		applyFeedEvent({ type: 'handout-revealed', headingId: 'h1' }, h);
-		expect(calls).toEqual(['addRoll', 'snapshot', 'initiative', 'onTitle', 'handout']);
+		applyFeedEvent({ type: 'documents-updated', documents: [] }, h);
+		expect(calls).toEqual(['addRoll', 'snapshot', 'initiative', 'onTitle', 'documents']);
 	});
 
 	test('rolls-cleared and rolls-restored both go to setRolls', () => {

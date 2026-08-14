@@ -143,7 +143,6 @@ export function deleteCampaign(id: string): string[] {
 		'DELETE FROM map_reveals WHERE map_id IN (SELECT id FROM maps WHERE campaign_id = ?)'
 	).run(id);
 	db.query('DELETE FROM maps WHERE campaign_id = ?').run(id);
-	db.query('DELETE FROM heading_meta WHERE campaign_id = ?').run(id);
 	db.query('DELETE FROM rolls WHERE campaign_id = ?').run(id);
 	db.query('DELETE FROM campaigns WHERE id = ?').run(id);
 	return files;
@@ -161,7 +160,6 @@ export function restoreCampaign(
 			shared?: boolean | number;
 		}[];
 		content?: string;
-		heading_meta?: { heading_id: string; shared?: number; collapsed?: number }[];
 		maps?: { id: string; filename: string; width: number; height: number; grid_size?: number; active_layer?: number }[];
 		tokens?: {
 			map_id: string;

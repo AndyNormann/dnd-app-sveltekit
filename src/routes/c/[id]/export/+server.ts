@@ -1,6 +1,5 @@
 import {
 	getCampaign,
-	getHeadingMeta,
 	listDocuments,
 	listMaps,
 	listReveals,
@@ -49,7 +48,6 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 			position: d.position,
 			shared: d.shared
 		})),
-		heading_meta: getHeadingMeta(params.id),
 		maps,
 		reveals: listMaps(params.id).flatMap((m) =>
 			listReveals(m.id).map((r) => ({

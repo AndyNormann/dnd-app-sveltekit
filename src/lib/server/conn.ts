@@ -39,13 +39,6 @@ db.exec(`
 		initiative_round INTEGER NOT NULL DEFAULT 1
 	);
 
-	CREATE TABLE IF NOT EXISTS heading_meta (
-		campaign_id TEXT NOT NULL,
-		heading_id TEXT NOT NULL,
-		shared INTEGER NOT NULL DEFAULT 0,
-		collapsed INTEGER NOT NULL DEFAULT 0,
-		PRIMARY KEY (campaign_id, heading_id)
-	);
 
 	CREATE TABLE IF NOT EXISTS maps (
 		id TEXT PRIMARY KEY,
