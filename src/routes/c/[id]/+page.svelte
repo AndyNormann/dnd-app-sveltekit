@@ -562,8 +562,9 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.6rem 1rem;
-		background: var(--parchment-light);
-		border-bottom: 2px solid var(--rule);
+		background: linear-gradient(180deg, #2b2216, var(--parchment));
+		border-bottom: 1px solid var(--rule);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 		font-family: var(--font-ui);
 	}
 	.bar h1 {
@@ -582,7 +583,7 @@
 		font-family: var(--font-display);
 		font-size: 1.05rem;
 		font-weight: 700;
-		color: var(--accent);
+		color: var(--gold);
 		border: 0;
 		background: none;
 		cursor: pointer;
@@ -746,6 +747,12 @@
 		grid-template-rows: 1fr;
 		height: calc(100vh - 3.3rem);
 		position: relative;
+		/* the tome lies on the table: a hairline gold frame + a soft cast shadow */
+		margin: 0.9rem 1rem 1rem;
+		border: 1px solid var(--rule);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-lg);
+		overflow: hidden;
 	}
 	.layout.no-rail {
 		grid-template-columns: 1fr var(--rolls-w, 19rem);
@@ -784,7 +791,7 @@
 		overflow: hidden;
 		min-height: 0;
 		/* the rolls rail reads as the table's edge: a warm gold-tinted crown
-		   fading into parchment */
+		   fading into the wood */
 		background: linear-gradient(180deg, rgba(200, 161, 61, 0.08), transparent 34%), var(--parchment);
 	}
 	.split {
@@ -800,9 +807,18 @@
 		min-height: 0;
 		box-sizing: border-box;
 	}
+	/* the editor pane is the parchment page the DM writes on */
 	.source {
-		background: var(--parchment-light);
 		position: relative;
+		color: var(--paper-ink);
+		background:
+			linear-gradient(165deg, rgba(255, 255, 255, 0.18), transparent 34%),
+			radial-gradient(120% 90% at 100% 0%, rgba(120, 90, 40, 0.10), transparent 40%),
+			var(--paper);
+		background-image:
+			linear-gradient(165deg, rgba(255, 255, 255, 0.16), transparent 34%),
+			var(--paper-grain),
+			var(--paper);
 	}
 	.conn {
 		width: 0.6rem;
@@ -820,12 +836,12 @@
 		position: absolute;
 		inset: 1.5rem auto auto 2rem;
 		max-width: 30rem;
-		color: var(--ink-soft);
+		color: var(--paper-ink-soft);
 		pointer-events: none;
 	}
 	.empty-hint h2 {
 		font-family: var(--font-display);
-		color: var(--accent-soft);
+		color: #7a5c14;
 		margin: 0 0 0.4rem;
 	}
 	.empty-hint p {
@@ -833,9 +849,10 @@
 		font-size: 0.95rem;
 	}
 	.empty-hint code {
-		background: var(--parchment-deep);
+		background: rgba(0, 0, 0, 0.06);
 		padding: 0 0.25rem;
 		border-radius: 4px;
+		color: var(--paper-ink);
 	}
 	.toast {
 		position: fixed;

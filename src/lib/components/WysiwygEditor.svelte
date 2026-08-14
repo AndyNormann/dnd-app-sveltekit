@@ -95,14 +95,15 @@
 	.mdx-host {
 		height: 100%;
 		overflow: auto;
-		/* the editor is the writing surface: a lit parchment panel with a soft top glow */
-		background: radial-gradient(90% 65% at 50% 0%, rgba(236, 217, 180, 0.06), transparent 65%), var(--parchment-light);
+		/* the editor is the page the DM writes on: cream paper with a soft lit glow */
+		background: radial-gradient(90% 65% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 60%), var(--paper);
+		color: var(--paper-ink);
 	}
 	.loading {
 		position: sticky;
 		top: 40%;
 		text-align: center;
-		color: var(--ink-soft);
+		color: var(--paper-ink-soft);
 		font-family: var(--font-ui);
 		font-size: 0.9rem;
 	}
@@ -113,7 +114,7 @@
 		font-family: var(--font-body);
 		font-size: var(--text-base, 1.35rem);
 		line-height: 1.45;
-		color: var(--ink);
+		color: var(--paper-ink);
 	}
 	:global(.mdx-host .ProseMirror p) {
 		margin: 0.55em 0;
@@ -121,28 +122,29 @@
 	:global(.mdx-host .ProseMirror blockquote) {
 		margin: 0.8rem 0;
 		padding: 0.6rem 1rem;
-		background: var(--parchment-deep);
+		background: rgba(122, 92, 20, 0.08);
 		border: 0;
-		border-top: 3px solid var(--accent);
-		border-bottom: 3px solid var(--accent);
-		color: var(--ink);
+		border-top: 3px solid #7a5c14;
+		border-bottom: 3px solid #7a5c14;
+		color: var(--paper-ink);
 	}
 	:global(.mdx-host .ProseMirror blockquote p:first-child strong:first-child) {
 		font-family: var(--font-display);
-		color: var(--accent);
+		color: #7a5c14;
 		font-size: 1.15em;
 	}
 	:global(.mdx-host .ProseMirror pre) {
-		background: var(--parchment-deep);
-		border: 1px solid var(--rule);
+		background: rgba(0, 0, 0, 0.06);
+		border: 1px solid var(--paper-rule);
 		padding: 0.8rem;
 		border-radius: 6px;
 		overflow: auto;
+		color: var(--paper-ink);
 	}
 	:global(.mdx-host .ProseMirror code) {
 		font-family: ui-monospace, monospace;
-		background: var(--parchment-deep);
-		color: var(--accent-soft);
+		background: rgba(0, 0, 0, 0.06);
+		color: #7a5c14;
 		padding: 0.1em 0.3em;
 		border-radius: 4px;
 	}
@@ -157,11 +159,11 @@
 	}
 	:global(.mdx-host .ProseMirror th),
 	:global(.mdx-host .ProseMirror td) {
-		border: 1px solid var(--rule);
+		border: 1px solid var(--paper-rule);
 		padding: 0.35rem 0.6rem;
 	}
 	:global(.mdx-host .ProseMirror th) {
-		background: var(--parchment-deep);
+		background: rgba(122, 92, 20, 0.08);
 	}
 	:global(.mdx-host .ProseMirror h1),
 	:global(.mdx-host .ProseMirror h2),
@@ -172,7 +174,7 @@
 		position: relative;
 		/* headings read as plain text; sections are marked by the controls in the gutter */
 		font-family: var(--font-display);
-		color: var(--ink);
+		color: var(--paper-ink);
 		letter-spacing: normal;
 		font-weight: 600;
 		line-height: 1.45;
@@ -211,10 +213,10 @@
 		margin: 0.6em 0 0.2em;
 	}
 	:global(.dice-dec) {
-		border: 1px solid var(--gold);
-		background: var(--parchment-deep);
-		box-shadow: inset 0 1px 0 rgba(236, 217, 180, 0.08), 0 1px 2px rgba(0, 0, 0, 0.35);
-		color: var(--accent-soft);
+		border: 1px solid #b59a5a;
+		background: rgba(122, 92, 20, 0.10);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.12);
+		color: #6a4f0e;
 		border-radius: 5px;
 		padding: 0 0.4rem;
 		font-weight: 600;
@@ -222,13 +224,13 @@
 		white-space: nowrap;
 	}
 	:global(.dice-dec:hover) {
-		background: var(--parchment-light);
+		background: rgba(122, 92, 20, 0.18);
 		border-color: var(--gold);
-		color: var(--accent);
+		color: #5a4107;
 	}
 	:global(.wiki-dec) {
-		color: var(--accent);
-		border-bottom: 1px solid var(--gold);
+		color: #7a5c14;
+		border-bottom: 1px solid #b59a5a;
 		cursor: pointer;
 	}
 	:global(.map-widget) {
