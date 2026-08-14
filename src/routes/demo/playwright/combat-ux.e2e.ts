@@ -58,7 +58,7 @@ test('monster collections: build on the roster, drop onto the combat board, draw
 	// drop the collection onto the combat board in one step
 	await page.goto(`/c/${id}/combat`);
 	await page.locator('.enc-select').selectOption({ label: 'Goblin patrol' });
-	await page.click('button:has-text("Add encounter")');
+	await page.click('.init-actions .add-encounter .plus');
 	await expect(page.locator('.board .token').filter({ hasText: /Goblin \d/ })).toHaveCount(3, {
 		timeout: 10000
 	});
@@ -137,7 +137,7 @@ test('clear board wipes everything; Add encounter + Add players buttons re-add t
 	// clear board lives in the toolbar; Add encounter + Add players sit under Initiative
 	await page.goto(`/c/${id}/combat`);
 	await expect(page.locator('.toolbar button.danger')).toBeVisible({ timeout: 10000 });
-	await expect(page.locator('.init-actions button', { hasText: 'Add encounter' })).toBeVisible();
+	await expect(page.locator('.init-actions .add-encounter .plus')).toBeVisible();
 	await expect(page.locator('.init-actions button', { hasText: 'Add players' })).toBeVisible();
 
 	// clear wipes everything: players, enemies, drawings, initiative

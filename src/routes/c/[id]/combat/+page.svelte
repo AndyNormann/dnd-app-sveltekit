@@ -187,14 +187,6 @@
 
 <main class="combat">
 	<section class="panel rail left">
-		<Initiative
-			bind:this={initiative}
-			campaignId={data.campaignId}
-			dm
-			initial={data.initiative}
-			initialRound={data.initiativeRound}
-			units={units}
-		/>
 		<div class="init-actions">
 			<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
 			<form class="add-encounter" onsubmit={(e) => { e.preventDefault(); spawnCollection(); }}>
@@ -204,11 +196,19 @@
 						<option value={coll.id}>{coll.name}</option>
 					{/each}
 				</select>
-				<button type="submit">Add encounter</button>
+				<button type="submit" class="plus" title="Add encounter" aria-label="Add encounter">+</button>
 			</form>
 			<button type="button" class="big" onclick={addPlayers}>👥 Add players</button>
 			{#if collErr}<p class="error">{collErr}</p>{/if}
 		</div>
+		<Initiative
+			bind:this={initiative}
+			campaignId={data.campaignId}
+			dm
+			initial={data.initiative}
+			initialRound={data.initiativeRound}
+			units={units}
+		/>
 	</section>
 
 	<section class="col">
@@ -385,9 +385,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.6rem;
-		margin-top: 0.8rem;
-		padding-top: 0.8rem;
-		border-top: 1px solid var(--rule);
+		margin-bottom: 0.8rem;
+		padding-bottom: 0.8rem;
+		border-bottom: 1px solid var(--rule);
 	}
 	.add-encounter {
 		display: flex;
@@ -420,6 +420,12 @@
 		border-radius: 5px;
 		padding: 0.3rem 0.7rem;
 		cursor: pointer;
+	}
+	.add-encounter .plus {
+		width: 2.1rem;
+		flex: 0 0 auto;
+		font-size: 1.15rem;
+		font-weight: 700;
 	}
 	.big {
 		border: 0;
