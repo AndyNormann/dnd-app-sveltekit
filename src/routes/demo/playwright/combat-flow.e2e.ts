@@ -57,11 +57,9 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	await expect(player.locator('.you')).toHaveText('Playing as Aria');
 	await expect(player.locator('.combat .board')).toBeVisible({ timeout: 10000 });
 
-	// DM adds Aria to the board and an enemy (on the Combat page)
+	// Aria is always on the board (characters auto-add); just add an enemy
 	await dm.page.goto(`/c/${id}/combat`);
-	await dm.page.selectOption('.add-player select', { label: 'Aria' });
-	await dm.page.click('.add-player button[type=submit]');
-	await expect(dm.page.locator('.board .token').filter({ hasText: 'Aria' })).toBeVisible();
+	await expect(dm.page.locator('.board .token').filter({ hasText: 'Aria' })).toBeVisible({ timeout: 10000 });
 	await dm.page.fill('.add-enemy input[placeholder="Enemy name"]', 'Goblin');
 	await dm.page.fill('.add-enemy input[placeholder="Init+"]', '1');
 	await dm.page.fill('.add-enemy input[placeholder="HP"]', '7');

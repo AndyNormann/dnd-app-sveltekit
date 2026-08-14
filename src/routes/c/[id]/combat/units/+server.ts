@@ -1,6 +1,5 @@
 import {
 	getCampaign,
-	getCharacter,
 	getMonster,
 	getCollection,
 	listCombatUnits,
@@ -34,29 +33,6 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		emitInitiative(params.id);
 		broadcast(params.id, { type: 'combat-log', entry: r.data.log });
 		return json({ ok: true });
-	}
-
-	if (body.action === 'add-player') {
-		const ch = getCharacter(String(body.character_id ?? ''));
-		if (!ch || ch.campaign_id !== params.id) throw error(404, 'Character not found');
-		const units = listCombatUnits(params.id);
-		const cfg = getBoardConfig(params.id);
-		const x = ((units.length % 12) * 2) + 1;
-		const y = cfg.grid_rows - 3;
-		const unit = addCombatUnit(params.id, {
-			kind: 'player',
-			character_id: ch.id,
-			name: ch.name,
-			color: ch.color,
-			speed: ch.speed,
-			init_bonus: ch.init_bonus,
-			hp: ch.hp,
-			max_hp: ch.max_hp,
-			x,
-			y
-		});
-		emitUnits(params.id);
-		return json(unit);
 	}
 
 	if (body.action === 'add-enemy') {

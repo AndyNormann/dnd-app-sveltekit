@@ -91,11 +91,6 @@ test('player ready signals the DM; board zoom controls work', async ({ browser }
 	});
 	expect(cre.ok()).toBeTruthy();
 	const ch = (await cre.json()) as { id: string; link_token: string };
-	const ad = await dm.request.post(`/c/${id}/combat/units`, {
-		data: { action: 'add-player', character_id: ch.id }
-	});
-	expect(ad.ok()).toBeTruthy();
-
 	const player = await browser.newPage();
 	await player.goto(`/p/${ch.link_token}/combat`);
 	await expect(player.locator('.board .token')).toHaveCount(1, { timeout: 10000 });

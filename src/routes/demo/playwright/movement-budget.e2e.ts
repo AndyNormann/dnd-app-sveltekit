@@ -47,10 +47,6 @@ test('player movement budget is enforced even when a DM session is present (play
 	const units0 = await (await request.get(`/c/${id}/characters`, { headers: dm })).json();
 	const ch = units0.find((x: any) => x.name === 'Aria');
 	expect(ch).toBeTruthy();
-	await request.post(`/c/${id}/combat/units`, {
-		headers: dm,
-		data: { action: 'add-player', character_id: ch.id }
-	});
 	const units = await (await request.get(`/c/${id}/combat/units`, { headers: dm })).json();
 	const playerUnit = units.find((u: any) => u.character_id === ch.id);
 	expect(playerUnit).toBeTruthy();
@@ -78,10 +74,6 @@ test('DM can move any token freely (override) without a player cookie', async ({
 	await request.post(`/c/${id}/characters`, { headers: dm, data: { name: 'Brutus', speed: 30 } });
 	const chars = await (await request.get(`/c/${id}/characters`, { headers: dm })).json();
 	const ch = chars.find((x: any) => x.name === 'Brutus');
-	await request.post(`/c/${id}/combat/units`, {
-		headers: dm,
-		data: { action: 'add-player', character_id: ch.id }
-	});
 	const units = await (await request.get(`/c/${id}/combat/units`, { headers: dm })).json();
 	const u = units.find((x: any) => x.character_id === ch.id);
 	// DM-only cookie (no player cookie): a big leap across the whole board is allowed

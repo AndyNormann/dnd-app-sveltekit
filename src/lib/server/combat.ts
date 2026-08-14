@@ -6,6 +6,8 @@ import {
 	setInitiativeHpByUnit,
 	listCombatUnits,
 	clearCombatUnits,
+	listCharacters,
+	addCombatUnit,
 	listInitiative,
 	updateInitiative,
 	addInitiative,
@@ -53,6 +55,50 @@ function deny(status: number, msg: string): Outcome<never> {
 
 export function broadcastInitiativePayload(campaignId: string) {
 	return { entries: listInitiative(campaignId), round: getInitiativeRound(campaignId) };
+}
+
+/**
+ * Ensure every character has a player token on the board. Called on character
+ * creation and before rolling initiative so players are always present (the
+ * DM no longer adds them manually). Returns the newly added units.
+ */
+export function syncCharactersToBoard(campaignId: string): CombatUnit[] {
+	const chars = listCharacters(campaignId);
+	const units = listCombatUnits(campaignId);
+	const present = new Set(
+		units.filter((u) => u.kind === 'player' && u.character_id).map((u) => u.character_id)
+	);
+	const cfg = getBoardConfig(campaignId);
+	let idx = units.length;
+	const added: CombatUnit[] = [];
+	for (const ch of chars) {
+		if (present.has(ch.id)) continue;
+		const x = ((idx % 12) * 2) + 1;
+		const y = cfg.grid_rows - 3;
+		added.push(
+			addCombatUnit(campaignId, {
+				kind: 'player',
+				character_id: ch.id,
+				name: ch.name,
+				color: ch.color,
+				speed: ch.speed,
+				init_bonus: ch.init_bonus,
+				hp: ch.hp,
+				max_hp: ch.max_hp,
+				x,
+				y
+			})
+		);
+		idx++;
+	}
+	return added;
+}
+
+/** Remove a character's player token(s) from the board (e.g. when deleted). */
+export function removeCharacterFromBoard(campaignId: string, characterId: string): number {
+	const units = listCombatUnits(campaignId).filter((u) => u.character_id === characterId);
+	for (const u of units) removeCombatUnit(u.id);
+	return units.length;
 }
 
 /** Roll d20 + init bonus for every combat unit, order the turn list, start round 1. */

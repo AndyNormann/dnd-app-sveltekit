@@ -26,7 +26,6 @@ test('combat: HP apply marks a unit down, combat log is live, next skips the dea
 	await request.post(`/c/${id}/characters`, { headers: dm, data: { name: 'Aria', speed: 30, max_hp: 20 } });
 	const chars = await (await request.get(`/c/${id}/characters`, { headers: dm })).json();
 	const ch = chars.find((x: any) => x.name === 'Aria');
-	await request.post(`/c/${id}/combat/units`, { headers: dm, data: { action: 'add-player', character_id: ch.id } });
 	await request.post(`/c/${id}/combat/units`, { headers: dm, data: { action: 'add-enemy', name: 'Goblin', max_hp: 7 } });
 
 	await request.post(`/c/${id}/initiative`, { headers: dm, data: { action: 'roll' } });

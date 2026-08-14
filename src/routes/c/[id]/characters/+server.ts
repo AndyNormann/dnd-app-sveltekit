@@ -1,5 +1,7 @@
 import { getCampaign, listCharacters, createCharacter } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
+import { syncCharactersToBoard } from '$lib/server/combat';
+import { emitUnits } from '$lib/server/feed';
 import { isDM } from '$lib/server/auth';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -29,5 +31,8 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		hp: Math.floor(Number(body.hp) || max_hp)
 	});
 	broadcast(params.id, { type: 'characters-updated' });
+	// players are always on the board: auto-add the new character's token
+	syncCharactersToBoard(params.id);
+	emitUnits(params.id);
 	return json(ch);
 };

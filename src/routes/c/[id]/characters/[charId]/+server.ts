@@ -1,5 +1,7 @@
 import { getCharacter, updateCharacter, deleteCharacter } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
+import { removeCharacterFromBoard } from '$lib/server/combat';
+import { emitUnits } from '$lib/server/feed';
 import { isDM } from '$lib/server/auth';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -11,7 +13,9 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const body = (await request.json()) as Record<string, unknown>;
 	if (body.action === 'delete') {
 		deleteCharacter(ch.id);
-		broadcast(params.id, { type: 'characters-updated' });
+		removeCharacterFromBoard(ch.campaign_id, ch.id);
+		emitUnits(ch.campaign_id);
+		broadcast(ch.campaign_id, { type: 'characters-updated' });
 		return json({ ok: true });
 	}
 	if (body.action === 'update') {

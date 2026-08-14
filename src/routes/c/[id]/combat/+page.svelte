@@ -7,7 +7,6 @@
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type {
-		CharacterRow,
 		Monster,
 		CombatUnit,
 		CombatDrawing,
@@ -22,7 +21,6 @@
 	let units = $state<CombatUnit[]>(data.units);
 	let drawings = $state<CombatDrawing[]>(data.drawings);
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
-	let characters = $state<CharacterRow[]>(data.characters);
 	let monsters = $state<Monster[]>(data.monsters);
 	let combatLog: CombatLog;
 	let initiative: Initiative;
@@ -30,7 +28,6 @@
 	let activeName = $state('');
 	let round = $state(data.initiativeRound);
 
-	let playerSel = $state('');
 	let enemyName = $state('');
 	let enemyInit = $state('0');
 	let enemyHp = $state('');
@@ -48,19 +45,6 @@
 		toast = msg;
 		clearTimeout(toastTimer);
 		toastTimer = setTimeout(() => (toast = null), 2000);
-	}
-
-	async function addPlayerToBoard(e: Event) {
-		e.preventDefault();
-		errorMsg = '';
-		if (!playerSel) return;
-		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'add-player', character_id: playerSel })
-		});
-		if (!res.ok) errorMsg = 'Could not add to board';
-		else showToast('Added to board');
 	}
 
 	async function addEnemy(e: Event) {
@@ -176,7 +160,6 @@
 				board?.applyConfig(config);
 			},
 			applyCombatPing: (ping) => board?.applyPing(ping),
-			onCharacters: () => refreshCharacters(),
 			onMonsters: () => refreshMonsters(),
 			onTitle: (t) => (title = t)
 		};
@@ -192,11 +175,6 @@
 			e.preventDefault();
 			initiative?.advance();
 		}
-	}
-
-	async function refreshCharacters() {
-		const res = await fetch(`/c/${data.campaignId}/characters`);
-		if (res.ok) characters = await res.json();
 	}
 
 	async function refreshMonsters() {
@@ -263,15 +241,6 @@
 
 		<section class="panel setup">
 			<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
-			<form class="add-player" onsubmit={addPlayerToBoard}>
-				<select class="nm player-select" bind:value={playerSel} aria-label="Player character to add">
-					<option value="">Pick character…</option>
-					{#each characters as c (c.id)}
-						<option value={c.id}>{c.name}</option>
-					{/each}
-				</select>
-				<button type="submit">Add player</button>
-			</form>
 			<form class="add-encounter" onsubmit={(e) => { e.preventDefault(); spawnCollection(); }}>
 				<select class="nm enc-select" bind:value={collSel} aria-label="Collection to add">
 					<option value="">Pick collection…</option>
@@ -441,8 +410,7 @@
 		background: var(--parchment-light);
 	}
 	.add-enemy,
-	.add-encounter,
-	.add-player {
+	.add-encounter {
 		display: flex;
 		gap: 0.35rem;
 		flex-wrap: wrap;
@@ -450,8 +418,7 @@
 	}
 	.add-enemy input,
 	.add-encounter input,
-	.add-encounter select,
-	.add-player select {
+	.add-encounter select {
 		border: 1px solid var(--rule);
 		border-radius: 5px;
 		padding: 0.3rem 0.4rem;
@@ -461,16 +428,14 @@
 		color: var(--ink);
 	}
 	.add-enemy .nm,
-	.add-encounter .nm,
-	.add-player .nm {
+	.add-encounter .nm {
 		flex: 1 1 10rem;
 	}
 	.add-enemy .num,
 	.add-encounter .num {
 		width: 3.4rem;
 	}
-	.add-encounter .enc-select,
-	.add-player .player-select {
+	.add-encounter .enc-select {
 		flex: 1 1 10rem;
 	}
 	.add-enemy input.color {
@@ -478,8 +443,7 @@
 		padding: 0.1rem;
 	}
 	.add-enemy button,
-	.add-encounter button,
-	.add-player button {
+	.add-encounter button {
 		border: 0;
 		background: var(--accent);
 		color: var(--parchment-light);

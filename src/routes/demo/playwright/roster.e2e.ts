@@ -58,8 +58,7 @@ test('roster: characters and monsters are managed on the Roster page, reached vi
 	await charPanel.locator('button[type=submit]').click();
 	await expect(charPanel.locator('.char-list li').first()).toContainText('Lena');
 
-	// the new character shows up in the Combat page player picker
+	// the new character is always on the board (auto-added on creation)
 	await dm.page.goto(`/c/${id}/combat`);
-	const options = dm.page.locator('.add-player select option');
-	await expect(options).toContainText(['Lena']);
+	await expect(dm.page.locator('.board .token').filter({ hasText: 'Lena' })).toBeVisible({ timeout: 10000 });
 });
