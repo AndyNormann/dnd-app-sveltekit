@@ -179,22 +179,17 @@
 		position: relative;
 		max-width: 58rem;
 		margin: 1.5rem auto;
-		background:
-			linear-gradient(180deg, rgba(212, 178, 120, 0.10), transparent 30%),
-			rgba(34, 26, 15, 0.55);
-		border: 1px solid var(--rule);
-		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-lg);
-		padding: 2rem 2rem 2.5rem;
+		padding: 0 1rem;
 	}
 	/* heraldic crest band across the top of the tablecloth */
 	.crest-band {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		padding-bottom: 1.2rem;
+		padding: 1.2rem 1rem 1.2rem;
 		border-bottom: 1px solid var(--rule);
 		position: relative;
+		background: linear-gradient(180deg, rgba(212, 161, 60, 0.06), transparent);
 	}
 	.crest {
 		flex: 1;
