@@ -20,17 +20,18 @@ async function loginDM(browser: Browser) {
 	await expect(page).toHaveURL('/');
 	return { page, request: ctx.request, ctx };
 }
-test('roll input stays docked at the visible bottom on both notes pages', async ({ browser }) => {
+test('roll input stays docked at the visible bottom on the DM notes page', async ({ browser }) => {
 	const dm = await loginDM(browser);
 	const id = await createCampaign(dm.request);
+	// write to the campaign's first document
+	const list = await dm.request.get(`/c/${id}/documents`, { headers: { Origin: ORIGIN } });
+	const { documents } = (await list.json()) as { documents: { id: string }[] };
+	const docId = documents[0].id;
 	const body = Array.from({ length: 30 }, (_, i) => `# Heading ${i}\n\nParagraph text.\n\n`).join('');
-	const saved = (await (
-		await dm.request.post(`/c/${id}/content`, { headers: { Origin: ORIGIN }, data: { content: body } })
-	).json()) as { content: string };
-	const ids = [...saved.content.matchAll(/<!--id:([A-Za-z0-9_-]+)-->/g)].map((m) => m[1]);
-	for (const hid of ids) {
-		await dm.request.post(`/c/${id}/share`, { headers: { Origin: ORIGIN }, data: { headingId: hid, state: 1 } });
-	}
+	await dm.request.post(`/c/${id}/documents/${docId}/content`, {
+		headers: { Origin: ORIGIN },
+		data: { content: body }
+	});
 
 	// DM page: scroll body down, input should still be at the visible bottom
 	await dm.page.goto(`/c/${id}`);
@@ -44,18 +45,4 @@ test('roll input stays docked at the visible bottom on both notes pages', async 
 	expect(dmBottom.bottom).toBeGreaterThan(dmBottom.vh - 10);
 	expect(dmBottom.bottom).toBeLessThanOrEqual(dmBottom.vh + 1);
 	await dm.ctx.close();
-
-	// Player page: same check
-	const player = await browser.newPage();
-	await player.goto(`/c/${id}/play`);
-	await player.waitForSelector('.rail.rolls .input');
-	await player.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
-	await player.waitForTimeout(150);
-	const plBottom = await player.locator('.rail.rolls .input').evaluate((el) => {
-		const r = el.getBoundingClientRect();
-		return { bottom: r.bottom, vh: window.innerHeight };
-	});
-	expect(plBottom.bottom).toBeGreaterThan(plBottom.vh - 10);
-	expect(plBottom.bottom).toBeLessThanOrEqual(plBottom.vh + 1);
-	await player.close();
 });

@@ -21,22 +21,33 @@ async function loginDM(browser: Browser) {
 	await page.fill('input[name=passcode]', PASSCODE);
 	await page.click('button[type=submit]');
 	await expect(page).toHaveURL('/');
-	return { dm, page };
+	const cookieHeader = (await dm.cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
+	return { dm, page, cookieHeader };
 }
 
-test('rolls live in a right sidebar; initiative lives on its own combat page (live to players)', async ({
+async function createCharacter(dm: import('@playwright/test').BrowserContext, id: string, name: string, cookieHeader: string) {
+	const res = await dm.request.post(`/c/${id}/characters`, {
+		data: { name },
+		headers: { cookie: cookieHeader }
+	});
+	expect(res.status()).toBe(200);
+	const { link_token } = (await res.json()) as { link_token: string };
+	return link_token;
+}
+
+test('rolls live in a right sidebar; initiative lives on its own combat page (live to a player portal)', async ({
 	browser
 }) => {
 	const anon = await browser.newContext();
 	const id = await createCampaign(anon.request);
-	const { dm, page } = await loginDM(browser);
+	const { dm, page, cookieHeader } = await loginDM(browser);
 
-	// DM notes page: rolls are a right sidebar, no floating initiative panel
+	// DM notes page: rolls are a right sidebar, document list on the left, no initiative
 	await page.goto(`/c/${id}`);
 	await expect(page.locator('.mdx-host .ProseMirror')).toBeVisible({ timeout: 10000 });
 	await expect(page.locator('.rail.rolls .roll-log')).toBeVisible();
+	await expect(page.locator('.rail .doc-list')).toBeVisible();
 	await expect(page.locator('.initiative')).toHaveCount(0);
-	// notes<->combat tabs
 	await expect(page.locator('.tabs .tab').first()).toHaveText('Notes');
 
 	// DM combat page: initiative is the page content with DM controls
@@ -53,9 +64,10 @@ test('rolls live in a right sidebar; initiative lives on its own combat page (li
 	await page.click('button:has-text("Roll initiative")');
 	await expect(page.locator('.rail.left .initiative').getByText('Goblin')).toBeVisible({ timeout: 10000 });
 
-	// player combat page sees it live
+	// player portal combat page sees it live
+	const token = await createCharacter(dm, id, 'Aria', cookieHeader);
 	const player = await browser.newPage();
-	await player.goto(`/c/${id}/play/combat`);
+	await player.goto(`/p/${token}/combat`);
 	await player.waitForTimeout(900);
 	await expect(player.locator('.initiative')).toBeVisible({ timeout: 10000 });
 	await expect(player.locator('.initiative').getByText('Goblin')).toBeVisible({ timeout: 10000 });

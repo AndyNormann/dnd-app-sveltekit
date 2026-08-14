@@ -1,5 +1,5 @@
 import type { CampaignEvent } from './server/sse';
-import type { CombatUnit, CombatDrawing, BoardConfig, CombatLogEntry, TokenRow, RevealOp, InitEntry } from './server/db';
+import type { CombatUnit, CombatDrawing, BoardConfig, CombatLogEntry, TokenRow, RevealOp, InitEntry, DocumentSummary } from './server/db';
 import type { MapData, RollData, PingData } from './types';
 
 /**
@@ -29,6 +29,8 @@ export interface FeedHandlers {
 	applySnapshot?: (snapshot: Extract<CampaignEvent, { type: 'snapshot' }>) => void;
 	onTitle?: (title: string) => void;
 	onDoc?: (html: string) => void;
+	onDocuments?: (documents: DocumentSummary[]) => void;
+	onDocumentUpdated?: (documentId: string, html: string) => void;
 	onHandout?: (headingId: string) => void;
 	onMapAdded?: (map: MapData) => void;
 	onCharacters?: () => void;
@@ -38,6 +40,12 @@ export interface FeedHandlers {
 /** Dispatch a realtime event to a page's handlers. */
 export function applyFeedEvent(ev: CampaignEvent, h: FeedHandlers): void {
 	switch (ev.type) {
+		case 'documents-updated':
+			h.onDocuments?.(ev.documents);
+			break;
+		case 'document-updated':
+			h.onDocumentUpdated?.(ev.documentId, ev.html);
+			break;
 		case 'roll':
 			h.addRoll?.(ev.roll);
 			break;

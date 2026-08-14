@@ -65,8 +65,9 @@ test('hash is real editable text, caret works at start of first word, clean roun
 	// 3. round-trip is clean: a single `#` prefix, not doubled
 	const res = await dm.request.get(`/c/${id}/export`, { headers: { Origin: ORIGIN } });
 	const json = JSON.parse(await res.text());
-	console.log('CONTENT', JSON.stringify(json.content));
-	const headingLine = json.content.split('\n').find((l: string) => /^#+ /.test(l));
+	console.log('CONTENT', JSON.stringify(json.documents?.[0]?.content));
+	const docContent = (json.documents?.[0]?.content as string) ?? (json.content as string) ?? '';
+	const headingLine = docContent.split('\n').find((l: string) => /^#+ /.test(l));
 	expect(headingLine).toMatch(/^# Hello Main/);
 	expect(headingLine).not.toMatch(/^# # /);
 	expect(headingLine).toContain('Hello Main');

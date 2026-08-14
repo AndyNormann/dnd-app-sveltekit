@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { MilkdownHandle } from './milkdown/editor';
-	import type { HeadingMeta } from './milkdown/interactive';
 	import type { MapData, TokenData, PingData } from '$lib/types';
 
 	let {
@@ -9,7 +8,6 @@
 		onchange,
 		campaignId,
 		isSecret,
-		meta,
 		getMaps,
 		addMap
 	}: {
@@ -17,7 +15,6 @@
 		onchange?: (v: string) => void;
 		campaignId: string;
 		isSecret?: () => boolean;
-		meta?: Map<string, HeadingMeta>;
 		getMaps?: () => MapData[];
 		addMap?: (map: MapData) => void;
 	} = $props();
@@ -34,7 +31,6 @@
 				value,
 				campaignId,
 				isSecret,
-				meta,
 				getMaps,
 				addMap,
 				onChange: (md) => {
@@ -201,51 +197,6 @@
 		font-weight: 400;
 		margin: 0.6em 0 0.2em;
 	}
-	:global(.dm-heading-controls) {
-		position: absolute;
-		z-index: 5; /* above the section box when it pads into the gutter */
-		/* left is set inline per heading (depth compensation); this centers vertically */
-		top: 50%;
-		transform: translateY(-50%);
-		display: inline-flex;
-		align-items: center;
-		white-space: nowrap;
-	}
-	:global(.dm-heading-controls .dhc-btns) {
-		display: inline-flex;
-		gap: 0.25rem;
-		align-items: center;
-	}
-	:global(.dm-heading-controls button) {
-		border: 0;
-		background: none;
-		cursor: pointer;
-		padding: 0;
-		/* fixed control size, independent of the heading font size */
-		width: 1.38rem;
-		height: 1.38rem;
-		font-size: 1.02rem;
-		line-height: 1;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-		vertical-align: middle;
-	}
-	:global(.dm-heading-controls .dhc-collapse) {
-		color: #94845f;
-	}
-	:global(.dm-heading-controls .dhc-vis) {
-		color: var(--ink-soft);
-		border: 1px solid var(--rule);
-		background: var(--parchment-deep);
-		border-radius: 4px;
-	}
-	:global(.dm-heading-controls .dhc-vis.on) {
-		color: var(--gold);
-		border-color: var(--gold);
-		background: var(--section-hl, rgba(111, 143, 245, 0.08));
-	}
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);
 		background: var(--parchment-deep);
@@ -282,26 +233,7 @@
 		border-radius: var(--radius-md);
 		padding: 0.4rem;
 	}
-	:global(.mdx-host .ProseMirror .section-hl) {
-		/* marker only — the actual box is the measured .section-box overlay, so
-		   highlighting never adds padding/border and never shifts content */
-	}
-	:global(.mdx-host .section-box) {
-		position: absolute;
-		pointer-events: none;
-		z-index: 1; /* above the editor text; heading controls sit higher so they stay on top */
-		background: var(--section-hl, rgba(111, 143, 245, 0.08));
-		border: none;
-		border-radius: 6px;
-		/* a gentle shade: no border, no hard shadow — just a faint wash so it
-		   reads as a soft highlight rather than a drawn box */
-		/* glide smoothly when the highlight moves between sections, and fade in/out */
-		transition: left 0.15s ease, top 0.15s ease, width 0.15s ease, height 0.15s ease,
-			opacity 0.17s ease;
-	}
-	:global(.collapsed-child) {
-		display: none !important;
-	}
+
 	/* Heading id markers (`<!--id:...-->`) are implementation detail: hide and
 	   make them non-selectable so they never bother the user. The interactive
 	   plugin reads the id from the ProseMirror node model, not the DOM, so this

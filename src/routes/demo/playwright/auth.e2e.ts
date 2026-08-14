@@ -31,8 +31,8 @@ test('unauthenticated client is blocked from DM actions but can roll', async ({ 
 	const editor = await request.get(`/c/${id}`, { maxRedirects: 0 });
 	expect(editor.status()).toBe(303);
 
-	// content write blocked
-	const content = await request.post(`/c/${id}/content`, { data: { content: '# x' } });
+	// creating a document blocked
+	const content = await request.post(`/c/${id}/documents`, { data: {} });
 	expect(content.status()).toBe(401);
 
 	// map upload blocked (multipart is CSRF-checked, so send same-origin Origin)
@@ -68,7 +68,10 @@ test('authenticated DM can write content and roll secretly', async ({ page, requ
 	// DM content write works (attach the login cookie explicitly)
 	const cookies = await page.context().cookies();
 	const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
-	const content = await request.post(`/c/${id}/content`, {
+	const docs = await request.get(`/c/${id}/documents`, { headers: { cookie: cookieHeader } });
+	const { documents } = (await docs.json()) as { documents: { id: string }[] };
+	const docId = documents[0].id;
+	const content = await request.post(`/c/${id}/documents/${docId}/content`, {
 		data: { content: '# Hello\n\nWorld' },
 		headers: { cookie: cookieHeader }
 	});

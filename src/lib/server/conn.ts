@@ -175,6 +175,19 @@ db.exec(`
 	CREATE INDEX IF NOT EXISTS idx_collections_campaign ON collections(campaign_id, created_at);
 
 	CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_link ON characters(link_token);
+
+	CREATE TABLE IF NOT EXISTS documents (
+		id TEXT PRIMARY KEY,
+		campaign_id TEXT NOT NULL,
+		title TEXT NOT NULL,
+		content TEXT NOT NULL DEFAULT '',
+		position INTEGER NOT NULL DEFAULT 0,
+		shared INTEGER NOT NULL DEFAULT 0,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL DEFAULT 0,
+		rev INTEGER NOT NULL DEFAULT 0
+	);
+	CREATE INDEX IF NOT EXISTS idx_documents_campaign ON documents(campaign_id, position);
 `);
 
 // migrate pre-brush databases: add shape/path/radius to map_reveals

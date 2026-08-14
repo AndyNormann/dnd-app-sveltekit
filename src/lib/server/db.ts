@@ -1,5 +1,6 @@
 export { db, default } from './conn';
 export * from './campaigns';
+export * from './documents';
 export * from './notes';
 export * from './maps';
 export * from './rolls';

@@ -1,60 +1,61 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
-	import Outline from '$lib/components/Outline.svelte';
+	import DocumentList from '$lib/components/DocumentList.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
+	import type { DocumentSummary } from '$lib/server/db';
 	import type { PageData } from './$types';
 	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
-	import type { MapData, RevealOp } from '$lib/types';
+	import type { MapData } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
+	let documents = $state<DocumentSummary[]>(data.documents);
+	let currentDocId = $state(data.document?.id ?? '');
 	let html = $state(data.html);
-	let title = $state(data.title);
+	let campaignTitle = $state(data.campaignTitle);
 	let maps = $state<MapData[]>(data.maps);
 	let connected = $state(false);
-	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
 	let a11y: A11yLive;
 
-	function refreshOutline(container: HTMLElement) {
-		const sel = 'h1,h2,h3,h4,h5,h6';
-		outlineItems = (
-			Array.from(container.querySelectorAll(sel)).filter((el) =>
-				el.hasAttribute('data-heading-id')
-			) as HTMLElement[]
-		).map((el) => ({
-			id: el.getAttribute('data-heading-id') || '',
-			level: Number(el.getAttribute('data-level')) || 1,
-			text: el.textContent?.trim() || ''
-		}));
-	}
+	$effect(() => {
+		const d = data.document;
+		if (d?.id === currentDocId) return; // same doc; keep live updates
+		currentDocId = d?.id ?? '';
+		html = data.html;
+	});
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
 		const feed: FeedHandlers = {
-			onDoc: (h) => (html = h),
+			onDocuments: (ds) => {
+				documents = ds.filter((d) => d.shared === 1);
+				if (!currentDocId && documents.length > 0) {
+					location.href = `/p/${data.token}?doc=${documents[0].id}`;
+				}
+			},
+			onDocumentUpdated: (documentId, h) => {
+				if (documentId === currentDocId) html = h;
+			},
 			applyMapOp: (mapId, op) => doc?.applyMapOp(mapId, op),
 			applyTokens: (mapId, tokens) => doc?.applyTokens(mapId, tokens),
 			applyGrid: (mapId, size) => doc?.applyGrid(mapId, size),
 			applyLayer: (mapId, layer) => doc?.applyLayer(mapId, layer),
 			applyMapPing: (mapId, ping) => doc?.applyMapPing(mapId, ping),
 			applySnapshot: (s) => {
-				title = s.title;
-				html = s.html;
+				campaignTitle = s.title;
+				documents = s.documents.filter((d) => d.shared === 1);
 				maps = s.maps;
 				doc?.applySnapshot(s.maps, s.tokens);
 			},
 			onMapAdded: (m) => {
 				if (!maps.some((x) => x.id === m.id)) maps = [...maps, m];
 			},
-			onTitle: (t) => (title = t),
-			onHandout: (id) => {
-				a11y?.announce('The DM shared something new');
-			}
+			onTitle: (t) => (campaignTitle = t)
 		};
 		es.onmessage = (e) => {
 			applyFeedEvent(JSON.parse(e.data), feed);
@@ -63,7 +64,7 @@
 	});
 </script>
 
-<svelte:head><title>{title}</title></svelte:head>
+<svelte:head><title>{data.document?.title ?? 'Notes'} — {campaignTitle}</title></svelte:head>
 
 <A11yLive bind:this={a11y} />
 
@@ -76,15 +77,23 @@
 
 <div class="page">
 	<aside class="rail">
-		<Outline items={outlineItems} />
+		<DocumentList
+			campaignId={data.campaignId}
+			documents={documents}
+			activeId={data.document?.id ?? ''}
+			dm={false}
+			base={`/p/${data.token}`}
+		/>
 	</aside>
 	<main>
-		<h1 class="campaign-title">{title}</h1>
+		<h1 class="doc-title">{data.document?.title ?? ''}</h1>
 		<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
-		{#if html.trim() === ''}
-			<p class="empty">The DM hasn't shared anything yet. Hang tight!</p>
+		{#if documents.length === 0}
+			<p class="empty">The DM hasn't shared any documents yet. Hang tight!</p>
+		{:else if html.trim() === ''}
+			<p class="empty">This document is empty for now.</p>
 		{:else}
-			<RenderedDoc bind:this={doc} {html} campaignId={data.campaignId} {maps} roller={data.character.name} onrender={refreshOutline} />
+			<RenderedDoc bind:this={doc} {html} campaignId={data.campaignId} {maps} roller={data.character.name} />
 		{/if}
 	</main>
 </div>
@@ -96,8 +105,6 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.75rem 0 0;
-	}
-	.tabs {
 		position: relative;
 	}
 	.you {
@@ -122,7 +129,7 @@
 	}
 	.page {
 		display: grid;
-		grid-template-columns: 12rem minmax(0, 50rem);
+		grid-template-columns: 13rem minmax(0, 50rem);
 		justify-content: center;
 		gap: 1.25rem;
 		font-family: var(--font-body);
@@ -168,7 +175,7 @@
 		font-style: italic;
 		padding: 3rem 1rem;
 	}
-	.campaign-title {
+	.doc-title {
 		margin-top: 0.5rem;
 		font-family: var(--font-display);
 		font-weight: 700;

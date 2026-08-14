@@ -3,24 +3,26 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import WysiwygEditor from '$lib/components/WysiwygEditor.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
-	import Outline from '$lib/components/Outline.svelte';
+	import DocumentList from '$lib/components/DocumentList.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
 	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import { parseHeadings } from '$lib/markdown';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
-	import type { RollData } from '$lib/types';
+	import type { DocumentSummary } from '$lib/server/db';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	let content = $state(data.content);
-	let title = $state(data.title);
-	let rev = $state(data.rev);
+	let documents = $state<DocumentSummary[]>(data.documents);
+	let doc = $state(data.document);
+	let content = $state(doc?.content ?? '');
+	let docTitle = $state(doc?.title ?? '');
+	let rev = $state(doc?.rev ?? 0);
 	let editingTitle = $state(false);
 	let saveState = $state<'idle' | 'saving' | 'saved' | 'error' | 'conflict'>('idle');
 	let connected = $state(false);
 	let offline = $state(false);
-	let queued = $state(false); // a save is waiting until we're back online
+	let queued = $state(false);
 	let toast = $state<{ msg: string; type: 'ok' | 'err' } | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout>;
 	function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
@@ -31,8 +33,8 @@
 	let showOutline = $state(true);
 	let outlineW = $state(13); // rem, outline rail width
 	let rollsW = $state(19); // rem, rolls rail width
-	let sourceMode = $state(false); // false = WYSIWYG, true = raw CodeMirror
-	let more = $state(false); // ⋮ overflow menu
+	let sourceMode = $state(false);
+	let more = $state(false);
 	let editor: Editor | undefined = $state();
 	let wysiwyg: WysiwygEditor | undefined = $state();
 	let rollLog: RollLog;
@@ -65,25 +67,30 @@
 		(els[i] as HTMLElement | undefined)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
-	// shared heading meta for the WYSIWYG heading controls (mutated in place)
-	const metaMap = new Map(
-		data.meta.map((m) => [m.heading_id, { shared: m.shared, collapsed: !!m.collapsed }])
+	const outlineItems = $derived(
+		parseHeadings(content).map((h) => ({ id: h.id, level: h.level, text: h.text }))
 	);
+
+	// Re-sync state when navigating to a different document (same route, new ?doc=).
+	$effect(() => {
+		const d = data.document;
+		doc = d;
+		content = d?.content ?? '';
+		docTitle = d?.title ?? '';
+		rev = d?.rev ?? 0;
+	});
 
 	function persistUi() {
 		localStorage.setItem(uiKey, JSON.stringify({ showOutline, outlineW, rollsW }));
 	}
-
 	function toggleOutline() {
 		showOutline = !showOutline;
 		persistUi();
 	}
-
 	function toggleSource() {
 		sourceMode = !sourceMode;
 	}
 
-	// drag-to-resize the two sidebars (outline left, rolls right)
 	function startResize(side: 'outline' | 'rolls') {
 		return (e: MouseEvent) => {
 			e.preventDefault();
@@ -122,12 +129,7 @@
 		}
 	}
 
-	// debounced save
 	let saveTimer: ReturnType<typeof setTimeout> | undefined;
-
-	const outlineItems = $derived(
-		parseHeadings(content).map((h) => ({ id: h.id, level: h.level, text: h.text }))
-	);
 
 	function onEdit(v: string) {
 		content = v;
@@ -136,22 +138,21 @@
 	}
 
 	async function save(force = false) {
+		if (!doc) return;
 		saveState = 'saving';
 		try {
-			const res = await fetch(`/c/${data.campaignId}/content`, {
+			const res = await fetch(`/c/${data.campaignId}/documents/${doc.id}/content`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ content, rev, force })
 			});
 			if (res.status === 409) {
-				// Another tab/editor saved newer content; refuse to clobber it (unless forced).
 				saveState = 'conflict';
 				showToast('Out of sync — reload to avoid overwriting', 'err');
 				return;
 			}
 			if (!res.ok) {
 				if (!navigator.onLine) {
-					// client is offline — keep the edit and retry once the connection returns
 					queued = true;
 					saveState = 'idle';
 					return;
@@ -160,21 +161,12 @@
 				showToast('Save failed', 'err');
 				return;
 			}
-			const { content: canonical, rev: nextRev } = (await res.json()) as {
-				content: string;
-				rev: number;
-			};
+			const { rev: nextRev } = (await res.json()) as { rev: number };
 			rev = nextRev;
 			queued = false;
-			// resync editor if the server injected heading ids
-			if (canonical !== content) {
-				content = canonical;
-				(sourceMode ? editor : wysiwyg)?.setValue(canonical);
-			}
 			saveState = 'saved';
 			clearTimeout(savedTimer);
 			savedTimer = setTimeout(() => (saveState = 'idle'), 1800);
-			// routine saves are shown by the inline save-state; the toast is reserved for errors/conflicts
 		} catch {
 			if (!navigator.onLine) {
 				queued = true;
@@ -186,7 +178,6 @@
 		}
 	}
 
-	/** Retry a save that was queued while the client was offline. */
 	function flushQueuedSave() {
 		if (queued) {
 			queued = false;
@@ -196,44 +187,36 @@
 
 	let savedTimer: ReturnType<typeof setTimeout>;
 
-	// Flush a pending debounced save if the tab is closed mid-debounce, so edits
-	// made in the last ~600ms aren't lost. sendBeacon survives tab close.
 	function flushPendingSave() {
 		if (!saveTimer) return;
+		if (!doc) return;
 		clearTimeout(saveTimer);
 		saveTimer = undefined;
 		navigator.sendBeacon(
-			`/c/${data.campaignId}/content`,
+			`/c/${data.campaignId}/documents/${doc.id}/content`,
 			new Blob([JSON.stringify({ content, rev })], { type: 'application/json' })
 		);
 	}
 
 	async function saveTitle() {
+		const d = doc;
+		if (!d) return;
 		editingTitle = false;
-		const next = title.trim();
-		if (!next || next === data.title) {
-			title = data.title;
+		const next = docTitle.trim();
+		if (!next || next === d.title) {
+			docTitle = d.title;
 			return;
 		}
-		const res = await fetch(`/c/${data.campaignId}/title`, {
+		const res = await fetch(`/c/${data.campaignId}/documents/${d.id}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ title: next })
+			body: JSON.stringify({ action: 'rename', title: next })
 		});
-		if (res.ok) data.title = next;
-		else title = data.title;
-	}
-
-	function playerUrl() {
-		return `${location.origin}/c/${data.campaignId}/play`;
-	}
-
-	async function copyPlayerLink() {
-		try {
-			await navigator.clipboard?.writeText(playerUrl());
-			showToast('Player link copied');
-		} catch {
-			showToast('Could not copy link', 'err');
+		if (res.ok) {
+			doc = { ...d, title: next };
+			documents = documents.map((x) => (x.id === d.id ? { ...x, title: next } : x));
+		} else {
+			docTitle = d.title;
 		}
 	}
 
@@ -249,7 +232,6 @@
 		const res = await fetch(`/c/${data.campaignId}/maps`, { method: 'POST', body: fd });
 		if (res.ok) {
 			const map = await res.json();
-			// append the embed directive + push map into local list (deduped vs SSE)
 			if (!data.maps.some((m: { id: string }) => m.id === map.id)) {
 				data.maps = [...data.maps, map];
 			}
@@ -262,8 +244,12 @@
 		input.value = '';
 	}
 
+	function onDeleted() {
+		// the current document may have been deleted; go back to the list
+		location.href = `/c/${data.campaignId}`;
+	}
+
 	onMount(() => {
-		// restore panel visibility
 		try {
 			const saved = JSON.parse(localStorage.getItem(uiKey) ?? '{}');
 			if (typeof saved.showOutline === 'boolean') showOutline = saved.showOutline;
@@ -272,11 +258,10 @@
 		} catch {
 			// corrupt localStorage entry; keep defaults
 		}
-		// listen for rolls made by players (and co-DM tabs)
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => {
 			connected = true;
-			flushQueuedSave(); // if a save was queued while offline, push it now
+			flushQueuedSave();
 		};
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => applyFeedEvent(JSON.parse(e.data), feed);
@@ -286,10 +271,12 @@
 				a11y?.announce(`${r.roller} rolled ${r.expression}`);
 			},
 			setRolls: (rolls) => rollLog?.setRolls(rolls),
+			onDocuments: (ds) => {
+				documents = ds;
+			},
 			applySnapshot: (s) => {
 				rollLog?.setRolls(s.rolls);
 				data.maps = s.maps;
-				rev = s.rev;
 				wysiwyg?.applyState(s.maps, s.tokens);
 			},
 			onMapAdded: (m) => {
@@ -302,7 +289,6 @@
 			applyLayerCleared: (mapId, layer) => wysiwyg?.applyLayerCleared(mapId, layer),
 			applyMapPing: (mapId, ping) => wysiwyg?.applyMapPing(mapId, ping)
 		};
-		// close the ⋮ overflow menu when clicking anywhere outside it
 		const closeMore = (e: PointerEvent) => {
 			if (more && !(e.target as HTMLElement).closest('.more')) more = false;
 		};
@@ -332,21 +318,18 @@
 
 <A11yLive bind:this={a11y} />
 
-<svelte:head><title>{title} — DM</title></svelte:head>
+<svelte:head><title>{docTitle} — {data.campaignTitle} — DM</title></svelte:head>
 
 <header class="bar">
 	<a href="/" class="back">←</a>
-	<span
-		class="conn"
-		class:on={connected}
-		title={connected ? 'Realtime connected' : 'Realtime disconnected'}
-	></span>
+	<span class="conn" class:on={connected} title={connected ? 'Realtime connected' : 'Realtime disconnected'}></span>
+	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
 	<button
 		type="button"
 		class="toggle"
 		class:on={showOutline}
-		title="Toggle outline (Ctrl+.)"
-		aria-label="Toggle outline"
+		title="Toggle document list (Ctrl+.)"
+		aria-label="Toggle document list"
 		onclick={toggleOutline}>☰</button
 	>
 	<button
@@ -357,27 +340,29 @@
 		aria-label="Toggle raw markdown source"
 		onclick={toggleSource}>✎</button
 	>
-	{#if editingTitle}
-		<!-- svelte-ignore a11y_autofocus -->
-		<input
-			class="title-input"
-			bind:value={title}
-			onblur={saveTitle}
-			onkeydown={(e) => {
-				if (e.key === 'Enter') saveTitle();
-				if (e.key === 'Escape') {
-					title = data.title;
-					editingTitle = false;
-				}
-			}}
-			autofocus
-		/>
-	{:else}
-		<h1>
-			<button type="button" class="title-btn" title="Rename" onclick={() => (editingTitle = true)}>
-				{title}
-			</button>
-		</h1>
+	{#if doc}
+		{#if editingTitle}
+			<!-- svelte-ignore a11y_autofocus -->
+			<input
+				class="title-input"
+				bind:value={docTitle}
+				onblur={saveTitle}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') saveTitle();
+					if (e.key === 'Escape') {
+						docTitle = doc?.title ?? docTitle;
+						editingTitle = false;
+					}
+				}}
+				autofocus
+			/>
+		{:else}
+			<h1>
+				<button type="button" class="title-btn" title="Rename document" onclick={() => (editingTitle = true)}>
+					{docTitle}
+				</button>
+			</h1>
+		{/if}
 	{/if}
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab" class:active={true}>Notes</a>
@@ -413,29 +398,7 @@
 		>
 		{#if more}
 			<div class="menu" role="menu">
-				<button
-					type="button"
-					role="menuitem"
-					onclick={() => {
-						more = false;
-						copyPlayerLink();
-					}}
-					>Copy player link</button
-				>
-				<a
-					role="menuitem"
-					href={`/c/${data.campaignId}/export`}
-					onclick={() => (more = false)}
-					>Export</a
-				>
-				<a
-					role="menuitem"
-					href={`/c/${data.campaignId}/play`}
-					target="_blank"
-					rel="noreferrer"
-					onclick={() => (more = false)}
-					>Open player view</a
-				>
+				<a role="menuitem" href={`/c/${data.campaignId}/export`} onclick={() => (more = false)}>Export</a>
 			</div>
 		{/if}
 	</div>
@@ -453,7 +416,7 @@
 	{#if showOutline}
 		<aside class="rail">
 			<details class="find">
-				<summary>Find in notes</summary>
+				<summary>Find in this document</summary>
 				<input class="find-input" placeholder="Search…" bind:value={find} />
 				{#if findResults.length > 0}
 					<ul class="find-results">
@@ -469,41 +432,55 @@
 					<p class="find-none">No matches</p>
 				{/if}
 			</details>
-			<Outline items={outlineItems} />
+			<DocumentList
+				campaignId={data.campaignId}
+				documents={documents}
+				activeId={doc?.id ?? ''}
+				dm
+				onDeleted={onDeleted}
+			/>
 		</aside>
 		<div
 			class="rh rh-outline"
 			role="separator"
 			aria-orientation="vertical"
-			title="Drag to resize outline"
+			title="Drag to resize document list"
 			onmousedown={startResize('outline')}
 		></div>
 	{/if}
 	<div class="split">
 		<section class="pane source">
-			{#if content.trim() === '' && !sourceMode}
-				<div class="empty-hint" aria-hidden="true">
-					<h2>Start writing…</h2>
-					<p>Type <code># Heading</code>, roll like <code>2d6+3</code>, link a section with <code>[[Name]]</code>, or press <code>/</code> for a command menu (incl. adding a map).
-						<span class="khint">Shortcuts: <code>Ctrl+\</code> source · <code>Ctrl+.</code> outline</span>
-					</p>
-				</div>
-			{/if}
-			{#if sourceMode}
-				<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
+			{#if doc}
+				{#if content.trim() === '' && !sourceMode}
+					<div class="empty-hint" aria-hidden="true">
+						<h2>Start writing…</h2>
+						<p>
+							Type <code># Heading</code>, roll like <code>2d6+3</code>, link another document with
+							<code>[[Quest]]</code> or <code>[[Quest#Step2]]</code>, or press <code>/</code> for a command menu
+							(incl. adding a map). <span class="khint">Shortcuts: <code>Ctrl+\</code> source · <code>Ctrl+.</code> document list</span>
+						</p>
+					</div>
+				{/if}
+				{#if sourceMode}
+					<Editor bind:this={editor} bind:value={content} onchange={onEdit} />
+				{:else}
+					<WysiwygEditor
+						bind:this={wysiwyg}
+						value={content}
+						campaignId={data.campaignId}
+						isSecret={() => rollLog?.isSecret() ?? false}
+						getMaps={() => data.maps}
+						addMap={(m) => {
+							if (!data.maps.some((x: { id: string }) => x.id === m.id)) data.maps = [...data.maps, m];
+						}}
+						onchange={onEdit}
+					/>
+				{/if}
 			{:else}
-				<WysiwygEditor
-					bind:this={wysiwyg}
-					value={content}
-					campaignId={data.campaignId}
-					isSecret={() => rollLog?.isSecret() ?? false}
-					meta={metaMap}
-					getMaps={() => data.maps}
-					addMap={(m) => {
-						if (!data.maps.some((x: { id: string }) => x.id === m.id)) data.maps = [...data.maps, m];
-					}}
-					onchange={onEdit}
-				/>
+				<div class="empty-hint">
+					<h2>No documents yet</h2>
+					<p>Use <code>+</code> in the document list to create your first document.</p>
+				</div>
 			{/if}
 		</section>
 	</div>
@@ -536,6 +513,14 @@
 	.bar h1 {
 		font-size: 1.1rem;
 		margin: 0;
+	}
+	.crumb {
+		color: var(--ink-soft);
+		font-size: 0.85rem;
+		white-space: nowrap;
+		max-width: 10rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	.title-btn {
 		font-family: var(--font-display);
@@ -678,7 +663,6 @@
 	.layout.no-rail {
 		grid-template-columns: 1fr var(--rolls-w, 19rem);
 	}
-	/* drag handles on the sidebar borders */
 	.rh {
 		position: absolute;
 		top: 0;
@@ -811,8 +795,6 @@
 		border-color: var(--gold);
 		background: var(--parchment-deep);
 	}
-	/* Narrow windows: drop redundant feedback so the header fits on one line and the
-	   fixed-height editor layout keeps working (no wrap). */
 	@media (max-width: 900px) {
 		.bar {
 			gap: 0.4rem;

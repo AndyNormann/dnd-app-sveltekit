@@ -181,7 +181,6 @@
 		<a href={`/c/${data.campaignId}/combat/roster`} class="tab">Roster</a>
 	</nav>
 	<div class="spacer"></div>
-	<a href={`/c/${data.campaignId}/play/combat`} target="_blank" rel="noreferrer">Spectate</a>
 	<TypeSwitcher />
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>

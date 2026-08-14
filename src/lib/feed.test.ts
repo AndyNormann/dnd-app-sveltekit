@@ -7,6 +7,7 @@ const roll = {
 };
 const snapshot = {
 	type: 'snapshot' as const,
+	documents: [],
 	title: 'T', html: '<p>x</p>', rev: 3, maps: [], tokens: [], rolls: [roll.roll]
 };
 const initiative = { type: 'initiative-updated' as const, entries: [], round: 2 };

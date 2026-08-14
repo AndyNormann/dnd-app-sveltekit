@@ -1,5 +1,6 @@
 import {
 	getCampaign,
+	listDocumentSummaries,
 	getCampaignRev,
 	getHeadingMeta,
 	listMaps,
@@ -44,6 +45,7 @@ export const GET: RequestHandler = ({ params, cookies }) => {
 				const meta = toMetaMap(getHeadingMeta(params.id));
 				const html = renderSharedForPlayer(campaign.content, meta);
 				const rev = getCampaignRev(params.id);
+				const documents = listDocumentSummaries(params.id);
 
 				const maps: MapData[] = listMaps(params.id).map((m) => ({
 					id: m.id,
@@ -71,7 +73,7 @@ export const GET: RequestHandler = ({ params, cookies }) => {
 					created_at: r.created_at
 				}));
 
-				send({ type: 'snapshot', title: campaign.title, html, rev, maps, tokens, rolls });
+				send({ type: 'snapshot', title: campaign.title, html, rev, documents, maps, tokens, rolls });
 			}
 
 			// Heartbeat so proxies don't reap an idle SSE connection mid-session.

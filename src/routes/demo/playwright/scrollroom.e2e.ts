@@ -25,17 +25,14 @@ async function loginDM(browser: Browser) {
 test('notes pages let you scroll past the last content', async ({ browser }) => {
 	const dm = await loginDM(browser);
 	const id = await createCampaign(dm.request);
+	const docs = await dm.request.get(`/c/${id}/documents`, { headers: { Origin: ORIGIN } });
+	const { documents } = (await docs.json()) as { documents: { id: string }[] };
+	const docId = documents[0].id;
 	const body = Array.from({ length: 20 }, (_, i) => `# Heading ${i}\n\nParagraph ${i} text.`).join('\n\n');
-	const saved = (await (
-		await dm.request.post(`/c/${id}/content`, { headers: { Origin: ORIGIN }, data: { content: body } })
-	).json()) as { content: string };
-	const ids = [...saved.content.matchAll(/<!--id:([A-Za-z0-9_-]+)-->/g)].map((m) => m[1]);
-	for (const hid of ids) {
-		await dm.request.post(`/c/${id}/share`, {
-			headers: { Origin: ORIGIN },
-			data: { headingId: hid, state: 1 }
-		});
-	}
+	await dm.request.post(`/c/${id}/documents/${docId}/content`, {
+		headers: { Origin: ORIGIN },
+		data: { content: body }
+	});
 
 	// --- DM editor: the Milkdown host scrolls internally; after scrolling it to
 	// the very bottom the last text should sit above the host's bottom edge.
@@ -58,24 +55,6 @@ test('notes pages let you scroll past the last content', async ({ browser }) => 
 	// enough room below the last text to keep scrolling
 	expect(dmGap.scrollH).toBeGreaterThan(dmGap.clientH + 100);
 	expect(dmGap.room).toBeGreaterThan(120);
-
-	// --- player reading view ---
-	const player = await browser.newPage();
-	await player.goto(`/c/${id}/play`);
-	await player.waitForSelector('main .rendered');
-	await player.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-	await player.waitForTimeout(250);
-	const plGap = await player
-		.locator('main .rendered')
-		.last()
-		.evaluate((el) => {
-			const rect = el.getBoundingClientRect();
-			const room = window.innerHeight - rect.bottom;
-			const extra = document.body.scrollHeight - (window.scrollY + window.innerHeight);
-			return { room, extra, bottom: rect.bottom, inner: window.innerHeight };
-		});
-	expect(plGap.room).toBeGreaterThan(plGap.inner * 0.2);
-	await player.close();
 
 	await dm.ctx.close();
 });

@@ -7,7 +7,7 @@ import { cursor } from '@milkdown/kit/plugin/cursor';
 import { trailing } from '@milkdown/kit/plugin/trailing';
 import { getMarkdown } from '@milkdown/utils';
 import { nord } from '@milkdown/theme-nord';
-import { buildInteractivePlugin, type HeadingMeta } from './interactive';
+import { buildInteractivePlugin } from './interactive';
 import { buildSlashPlugin } from './slash';
 import { mapBlock, mapBlockView, mapDirectiveTransformer, mapApi, configureMaps } from './mapNode';
 import { headingHashRemark, headingHashPlugin } from './headingHash';
@@ -35,7 +35,6 @@ export interface CreateEditorOptions {
 	onChange?: (markdown: string) => void;
 	campaignId: string;
 	isSecret?: () => boolean;
-	meta?: Map<string, HeadingMeta>;
 	getMaps?: () => MapData[];
 	/** Push a freshly uploaded map into the live maps list (slash `/map` insert). */
 	addMap?: (map: MapData) => void;
@@ -74,8 +73,7 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 
 	const interactive = buildInteractivePlugin({
 		campaignId: opts.campaignId,
-		isSecret: opts.isSecret,
-		meta: opts.meta ?? new Map()
+		isSecret: opts.isSecret
 	});
 
 	const slash = buildSlashPlugin({

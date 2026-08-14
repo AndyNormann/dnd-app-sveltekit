@@ -1,6 +1,7 @@
 import {
 	getCampaign,
 	getHeadingMeta,
+	listDocuments,
 	listMaps,
 	listReveals,
 	listRolls,
@@ -39,9 +40,15 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 
 	const bundle = {
 		app: 'dnd-campaign-notes',
-		version: 1,
+		version: 2,
 		title: campaign.title,
-		content: campaign.content,
+		documents: listDocuments(params.id).map((d) => ({
+			id: d.id,
+			title: d.title,
+			content: d.content,
+			position: d.position,
+			shared: d.shared
+		})),
 		heading_meta: getHeadingMeta(params.id),
 		maps,
 		reveals: listMaps(params.id).flatMap((m) =>

@@ -38,3 +38,11 @@ export function renderSharedForPlayer(markdown: string, meta: MetaMap): string {
 	const html = renderWithAnchors(expandWikiLinks(shared, resolver, 'plain'));
 	return sanitizeHtml(html, SANITIZE_OPTS);
 }
+
+/** Render a whole document for players (document-level sharing; no per-heading filter). */
+export function renderDocument(markdown: string): string {
+	const headings = parseHeadings(markdown);
+	const resolver = makeWikiResolver(headings);
+	const html = renderWithAnchors(expandWikiLinks(markdown, resolver, 'plain'));
+	return sanitizeHtml(html, SANITIZE_OPTS);
+}

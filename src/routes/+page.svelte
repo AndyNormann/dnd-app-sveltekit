@@ -122,7 +122,6 @@
 					<li class="card">
 						<a href={`/c/${r.id}`} class="title">{r.title}</a>
 						<p class="snippet">{r.snippet}</p>
-						<a href={`/c/${r.id}/play`} class="play">player view</a>
 					</li>
 				{/each}
 			</ul>
@@ -139,7 +138,6 @@
 						<span class="counts">{c.maps} map{c.maps === 1 ? '' : 's'} · {c.rolls} roll{c.rolls === 1 ? '' : 's'}</span>
 					</span>
 					<span class="actions">
-						<a href={`/c/${c.id}/play`} class="play">player view</a>
 						<form
 							method="POST"
 							action="?/delete"

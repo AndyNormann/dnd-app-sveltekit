@@ -24,7 +24,7 @@ async function loginDM(browser: Browser) {
 	return { dm, page };
 }
 
-test('WYSIWYG editor renders interactive markdown, saves, and collapse hides content', async ({
+test('WYSIWYG editor renders interactive markdown, saves, and the document list shows the doc', async ({
 	browser
 }) => {
 	const anon = await browser.newContext();
@@ -43,19 +43,9 @@ test('WYSIWYG editor renders interactive markdown, saves, and collapse hides con
 	await expect(editor.locator('.wiki-dec')).toHaveCount(1);
 	await expect(page.locator('.save-state')).toContainText('Saved', { timeout: 5000 });
 
-	// server injects a heading id -> heading gets its DM controls
-	const controls = editor.locator('.dm-heading-controls');
-	await expect(controls).toHaveCount(1, { timeout: 5000 });
-
-	// collapse: hides the paragraph below the heading
-	const body = editor.locator('p', { hasText: '2d6+3' });
-	await expect(body).toBeVisible();
-	await controls.locator('.dhc-collapse').click();
-	await expect(body).toBeHidden();
-
-	// expand again
-	await controls.locator('.dhc-collapse').click();
-	await expect(body).toBeVisible();
+	// the document list shows the seeded document
+	await expect(page.locator('.doc-list .doc')).toHaveCount(1);
+	await expect(page.locator('.doc-list .doc .doc-name')).toContainText('Wysiwyg Campaign');
 
 	// reload and confirm the WYSIWYG persisted the typed markdown
 	await page.reload();

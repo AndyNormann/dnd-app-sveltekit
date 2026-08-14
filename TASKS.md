@@ -329,3 +329,37 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       The board sits in a scrollable, touch-pannable viewport with +/−/fit zoom
       controls. Coordinate math is refactored to derive cell size from the board's
       bounding rect so it stays correct at any zoom.
+
+## Document model (Bear-like notes) — restructuring
+
+> The campaign keeps a set of **documents** instead of one content blob. The DM
+> notes page becomes a document list (sidebar) + editor; the player portal shows
+> shared documents read-only. Per-heading share/collapse and the section-highlight
+> box are removed. Sharing is per-document, one shared set for all players, hidden
+> by default.
+
+- [x] **F1. Documents data model + migration**
+      New `documents` table (id, campaign_id, title, content, position, shared,
+      created_at, updated_at, rev) + CRUD module (list/get/create/update/
+      rename/delete/reorder/setShared). `createCampaign` seeds one empty
+      document; existing campaigns with content but no documents migrate to a
+      single document (title = campaign title or "Notes", shared=0). Export/
+      import bundle documents.
+- [x] **F2. DM notes page → document list + editor**
+      Left sidebar = `DocumentList` (all docs): `+` create, drag-to-reorder,
+      delete-with-confirm, select. Middle = Milkdown editor for the selected
+      document; title field renames. Right rail = campaign roll log (unchanged).
+      Tabs Notes|Combat|Roster unchanged. Realtime events carry the document id.
+- [x] **F3. Per-document sharing + player portal**
+      DM toggles each document Shared/Hidden (sidebar). Player portal `/p/<token>`
+      shows shared documents read-only; remove the anonymous `/c/[id]/play` and
+      `/c/[id]/play/combat` spectator views. Document-share changes broadcast.
+- [x] **F4. Editor cleanup + wiki links + maps**
+      Remove heading share/collapse controls and the section-highlight box (keep
+      editable `#` markers + dice pills). Wiki links `[[Doc]]` / `[[Doc#Heading]]`
+      open the document (scroll to heading). `/map` gains "pick existing or upload
+      new".
+- [x] **F5. Export/backup + tests**
+      Export/backup/restore cover all documents. Update/rewrite unit + e2e tests
+      for the document model (share, hierarchy, section-highlight, wysiwyg,
+      find-in-notes, combat-flow) and mark TASKS.md [x] + commit.

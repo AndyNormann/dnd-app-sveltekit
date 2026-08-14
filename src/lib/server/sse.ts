@@ -6,6 +6,8 @@ import type { MapData, RollData } from '$lib/types';
 export type CampaignEvent =
 	| { type: 'doc-updated'; html: string }
 	| { type: 'share-changed'; html: string }
+	| { type: 'documents-updated'; documents: import('./documents').DocumentSummary[] }
+	| { type: 'document-updated'; documentId: string; html: string }
 	| { type: 'map-added'; map: MapData }
 	| { type: 'map-revealed'; mapId: string; op: RevealOp }
 	| { type: 'map-hidden'; mapId: string; op: RevealOp }
@@ -34,6 +36,7 @@ export type CampaignEvent =
 			title: string;
 			html: string;
 			rev: number;
+			documents: import('./documents').DocumentSummary[];
 			maps: MapData[];
 			tokens: { mapId: string; tokens: TokenRow[] }[];
 			rolls: RollData[];

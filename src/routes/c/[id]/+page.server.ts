@@ -1,14 +1,13 @@
 import {
 	getCampaign,
-	getHeadingMeta,
+	listDocumentSummaries,
+	getDocument,
 	listMaps,
 	listReveals,
 	listRolls,
-	updateContent,
 	listInitiative,
 	getInitiativeRound
 } from '$lib/server/db';
-import { ensureHeadingIds } from '$lib/markdown';
 import { isDM } from '$lib/server/auth';
 import { PLAYER_COOKIE } from '$lib/server/player';
 import { redirect, error } from '@sveltejs/kit';
@@ -23,11 +22,12 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 	const campaign = getCampaign(params.id);
 	if (!campaign) throw error(404, 'Campaign not found');
 
-	// canonicalize ids on load so freshly-typed headings get stable ids
-	const { content, changed } = ensureHeadingIds(campaign.content);
-	if (changed) updateContent(params.id, content);
+	const documents = listDocumentSummaries(params.id);
+	// select the requested document, else the first one
+	let docId = url.searchParams.get('doc') ?? '';
+	const selected = docId ? getDocument(docId) : documents[0] ? getDocument(documents[0].id) : null;
+	if (selected && selected.campaign_id !== params.id) throw error(404, 'Document not found');
 
-	const meta = getHeadingMeta(params.id);
 	const maps: MapData[] = listMaps(params.id).map((m) => ({
 		id: m.id,
 		width: m.width,
@@ -51,10 +51,9 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 
 	return {
 		campaignId: campaign.id,
-		title: campaign.title,
-		content,
-		rev: campaign.rev,
-		meta,
+		campaignTitle: campaign.title,
+		documents,
+		document: selected, // full selected document (or null)
 		maps,
 		rolls,
 		initiative: listInitiative(params.id),

@@ -1,7 +1,7 @@
 import { db } from './conn';
 import { nanoid } from 'nanoid';
+import { createDocument } from './documents';
 import { createMap, setMapGrid, setMapLayer, addReveal, addToken } from './maps';
-import { setHeadingShared, setHeadingCollapsed } from './notes';
 import { addRoll } from './rolls';
 
 export interface Campaign {
@@ -55,6 +55,7 @@ export function createCampaign(title: string): Campaign {
 		Date.now(),
 		Date.now()
 	);
+	createDocument(id, title || 'Notes');
 	return getCampaign(id)!;
 }
 
@@ -152,6 +153,13 @@ export function deleteCampaign(id: string): string[] {
 export function restoreCampaign(
 	bundle: {
 		title?: string;
+		documents?: {
+			id?: string;
+			title?: string;
+			content?: string;
+			position?: number;
+			shared?: boolean | number;
+		}[];
 		content?: string;
 		heading_meta?: { heading_id: string; shared?: number; collapsed?: number }[];
 		maps?: { id: string; filename: string; width: number; height: number; grid_size?: number; active_layer?: number }[];
@@ -198,12 +206,37 @@ export function restoreCampaign(
 		if (m.active_layer) setMapLayer(nm.id, m.active_layer);
 	}
 
-	// rewrite ::map{id=...} directives to the new map ids
-	let content = bundle.content ?? '';
-	content = content.replace(/::map\{id=([A-Za-z0-9_-]+)\}/g, (match, id: string) => {
-		return idMap[id] ? `::map{id=${idMap[id]}}` : match;
-	});
-	updateContent(campaign.id, content);
+	const rewriteMaps = (md: string) =>
+		md.replace(/::map\{id=([A-Za-z0-9_-]+)\}/g, (match, id: string) =>
+			idMap[id] ? `::map{id=${idMap[id]}}` : match
+		);
+
+	// documents: if the bundle carries documents, replace the seeded doc; else
+	// put the legacy single-blob content into the seeded doc. Map ids are
+	// rewritten to the fresh map ids.
+	db.query('DELETE FROM documents WHERE campaign_id = ?').run(campaign.id);
+	if (bundle.documents && bundle.documents.length > 0) {
+		for (const d of bundle.documents) {
+			db.query(
+				'INSERT INTO documents (id, campaign_id, title, content, position, shared, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+			).run(
+				nanoid(12),
+				campaign.id,
+				(d.title ?? 'Untitled').slice(0, 200),
+				rewriteMaps(d.content ?? ''),
+				d.position ?? 0,
+				d.shared ? 1 : 0,
+				Date.now(),
+				Date.now()
+			);
+		}
+	} else if (bundle.content) {
+		db.query('UPDATE documents SET content = ?, updated_at = ? WHERE campaign_id = ?').run(
+			rewriteMaps(bundle.content),
+			Date.now(),
+			campaign.id
+		);
+	}
 
 	// reveals (added in bundle order, so seq follows the original ordering)
 	for (const r of bundle.reveals ?? []) {
@@ -243,12 +276,6 @@ export function restoreCampaign(
 		const mapId = idMap[t.map_id];
 		if (!mapId) continue;
 		addToken(mapId, t.label ?? 'Token', t.color ?? '#8b2020', t.x ?? 0, t.y ?? 0);
-	}
-
-	// heading share/collapse meta (keys are stable id markers preserved in content)
-	for (const hm of bundle.heading_meta ?? []) {
-		if (hm.shared && hm.shared !== 0) setHeadingShared(campaign.id, hm.heading_id, hm.shared);
-		if (hm.collapsed) setHeadingCollapsed(campaign.id, hm.heading_id, !!hm.collapsed);
 	}
 
 	// rolls
