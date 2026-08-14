@@ -28,6 +28,7 @@ export type CampaignEvent =
 	| { type: 'combat-log'; entry: import('./db').CombatLogEntry }
 	| { type: 'map-ping'; mapId: string; ping: import('../types').PingData }
 	| { type: 'combat-ping'; ping: import('../types').PingData }
+	| { type: 'combat-ready'; readyIds: string[] }
 	| {
 			type: 'snapshot';
 			title: string;

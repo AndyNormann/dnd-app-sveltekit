@@ -20,6 +20,7 @@ export interface FeedHandlers {
 	applyMapOp?: (mapId: string, op: RevealOp) => void;
 	applyMapPing?: (mapId: string, ping: PingData) => void;
 	applyCombatPing?: (ping: PingData) => void;
+	applyCombatReady?: (readyIds: string[]) => void;
 	applyCombatUnits?: (units: CombatUnit[]) => void;
 	applyInitiative?: (entries: InitEntry[], round: number) => void;
 	applyCombatDrawings?: (drawings: CombatDrawing[]) => void;
@@ -70,6 +71,9 @@ export function applyFeedEvent(ev: CampaignEvent, h: FeedHandlers): void {
 			break;
 		case 'combat-ping':
 			h.applyCombatPing?.(ev.ping);
+			break;
+		case 'combat-ready':
+			h.applyCombatReady?.(ev.readyIds);
 			break;
 		case 'combat-units-updated':
 			h.applyCombatUnits?.(ev.units);

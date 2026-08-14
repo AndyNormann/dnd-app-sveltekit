@@ -7,6 +7,25 @@
 
 	let q = $state(data.query);
 	let importErr = $state('');
+	let restoreMsg = $state('');
+
+	function fmtSize(n: number) {
+		return n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+	}
+	function fmtBackupTs(ts: number) {
+		return new Date(ts).toLocaleString();
+	}
+	async function restoreBackup(name: string) {
+		if (!confirm(`Restore the entire database from “${name}”?\nThis replaces ALL campaigns with the backup. A safety snapshot is taken first.`)) return;
+		restoreMsg = 'Restoring…';
+		const res = await fetch(`/backups/${encodeURIComponent(name)}/restore`, { method: 'POST' });
+		if (!res.ok) {
+			restoreMsg = 'Restore failed';
+			return;
+		}
+		restoreMsg = 'Restored — reloading…';
+		location.reload();
+	}
 
 	function onImport(e: Event) {
 		const f = (e.currentTarget as HTMLFormElement).querySelector(
@@ -72,6 +91,25 @@
 		<input name="q" placeholder="Search campaigns &amp; notes…" bind:value={q} />
 		<button type="submit">Search</button>
 	</form>
+
+	{#if data.isDM && data.backups && data.backups.length > 0}
+		<section class="backups">
+			<h2 class="bhead">Backups</h2>
+			{#if restoreMsg}<p class="restore-msg">{restoreMsg}</p>{/if}
+			<ul class="bgrid">
+				{#each data.backups as b (b.name)}
+					<li class="bcard">
+						<span class="bname" title={b.name}>{b.name}</span>
+						<span class="bmeta">{fmtBackupTs(b.ts)} · {fmtSize(b.size)}</span>
+						<div class="bactions">
+							<a href={`/backups/${encodeURIComponent(b.name)}`} class="bdl" title="Download this backup">Download</a>
+							<button type="button" class="bdel" onclick={() => restoreBackup(b.name)} title="Restore this backup as the live database">Restore</button>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 
 	{#if data.query}
 		{#if data.results.length === 0}
@@ -319,5 +357,71 @@
 	.empty {
 		color: var(--ink-soft);
 		font-style: italic;
+	}
+	.backups {
+		margin-bottom: 2rem;
+	}
+	.bhead {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 1rem;
+		color: var(--accent);
+		margin: 0 0 0.6rem;
+	}
+	.restore-msg {
+		color: var(--gold);
+		font-size: 0.9rem;
+		margin: 0 0 0.5rem;
+	}
+	.bgrid {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+		gap: 0.6rem;
+	}
+	.bcard {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		padding: 0.7rem 0.9rem;
+		background: var(--parchment-light);
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		box-shadow: var(--shadow);
+	}
+	.bname {
+		font-size: 0.82rem;
+		color: var(--ink);
+		word-break: break-all;
+	}
+	.bmeta {
+		font-size: 0.78rem;
+		color: var(--ink-soft);
+	}
+	.bactions {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.bactions a,
+	.bactions button {
+		font-size: 0.8rem;
+		padding: 0.25rem 0.6rem;
+		border: 1px solid var(--rule);
+		border-radius: 5px;
+		background: var(--parchment-light);
+		color: var(--ink-soft);
+		cursor: pointer;
+		text-decoration: none;
+	}
+	.bactions a:hover,
+	.bactions button:hover {
+		border-color: var(--gold);
+		color: var(--ink);
+	}
+	.bactions .bdel {
+		border-color: var(--accent-soft);
+		color: var(--accent-soft);
 	}
 </style>

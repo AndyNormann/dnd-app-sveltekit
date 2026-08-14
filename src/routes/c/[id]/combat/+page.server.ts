@@ -11,6 +11,7 @@ import {
 	listCombatLogs
 } from '$lib/server/db';
 import { isDM } from '$lib/server/auth';
+import { getReadyUnitIds } from '$lib/server/combatReady';
 import { PLAYER_COOKIE } from '$lib/server/player';
 import { redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -33,6 +34,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		drawings: listCombatDrawings(params.id),
 		boardConfig: getBoardConfig(params.id),
 		activeUnitId: getActiveUnitId(params.id),
-		logs: listCombatLogs(params.id)
+		logs: listCombatLogs(params.id),
+		readyIds: getReadyUnitIds(params.id)
 	};
 };

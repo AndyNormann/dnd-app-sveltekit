@@ -289,3 +289,41 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - Collaborative editing (CRDT/OT)
 - Version history / cross-session undo
 - Private notes / player character sheets — not yet (player identity via fixed links is in)
+
+## Combat + UX batch (2, 4, 5, 6, 9, 10, 11)
+
+> Seven improvements implemented in one pass: encounter save/load, player ready
+> signalling, in-campaign find, board drawing undo, restore-from-backup, realtime
+> aria-live, and a mobile-friendly (zoom/pan) combat board.
+
+- [x] **E1. Save / restore an encounter**
+      `encounters` table stores a named snapshot of the board (units incl.
+      positions/HP + drawings). DM saves the current board, reloads it later
+      (clears current board + initiative, restores units/drawings, resets
+      movement), or deletes. DM-only route `/c/[id]/combat/encounters`.
+- [x] **E2. Player "done / ready" signalling**
+      A player marks their unit ready on the combat page; the DM sees how many /
+      which players are ready. Ready is in-memory per campaign, reset whenever the
+      turn advances or initiative is rolled. SSE `combat-ready` event + DM-only
+      status line; player button on the portal combat page.
+- [x] **E3. In-campaign "find in notes"**
+      A Find box on the DM notes page searches the live document, lists matching
+      sections, and clicking a result scrolls the Milkdown editor to that heading.
+- [x] **E4. Combat board drawing undo**
+      One "Undo" for the last stroke on the DM board toolbar: POST
+      `{action:'undo'}` to the drawings route (deletes the most recent drawing,
+      broadcasts the remaining list).
+- [x] **E5. Restore-from-backup UI**
+      Home page (DM only) lists dated backups with Download + Restore. Restore
+      snapshots the current DB, swaps the live DB file for the chosen backup, and
+      hot-reopens the connection (`conn.ts` gains `reopenDb`), then the page
+      reloads.
+- [x] **E6. Real-time aria-live**
+      A small `A11yLive` component (polite `role=status` + assertive
+      `role=alert` regions) mounted on the DM/player notes and combat pages;
+      important SSE events (handout, roll, combat log, turn change, ready) are
+      announced to screen readers.
+- [x] **E7. Mobile combat board (zoom/pan)**
+      The board sits in a scrollable, touch-pannable viewport with +/−/fit zoom
+      controls. Coordinate math is refactored to derive cell size from the board's
+      bounding rect so it stays correct at any zoom.

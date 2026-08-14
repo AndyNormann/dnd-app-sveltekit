@@ -183,6 +183,48 @@ export function clearCombatDrawings(campaignId: string): void {
 	db.query('DELETE FROM combat_drawings WHERE campaign_id = ?').run(campaignId);
 }
 
+/** Delete the most recently added drawing for a campaign; returns its id or null. */
+export function removeLastCombatDrawing(campaignId: string): string | null {
+	const row = db
+		.query('SELECT id FROM combat_drawings WHERE campaign_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1')
+		.get(campaignId) as { id: string } | null;
+	if (!row) return null;
+	db.query('DELETE FROM combat_drawings WHERE id = ?').run(row.id);
+	return row.id;
+}
+
+/** Re-insert a saved combat unit (used when loading an encounter). Movement resets to 0. */
+export function restoreCombatUnit(u: CombatUnit): void {
+	db.query(
+		`INSERT INTO combat_units (id, campaign_id, kind, character_id, name, color, speed, init_bonus, hp, max_hp, alive, movement_used, conditions, x, y, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		u.id,
+		u.campaign_id,
+		u.kind,
+		u.character_id ?? null,
+		u.name,
+		u.color,
+		u.speed,
+		u.init_bonus,
+		u.hp,
+		u.max_hp,
+		u.alive,
+		0,
+		u.conditions,
+		u.x,
+		u.y,
+		Date.now()
+	);
+}
+
+/** Re-insert a saved combat drawing (used when loading an encounter). */
+export function restoreCombatDrawing(d: CombatDrawing): void {
+	db.query(
+		'INSERT INTO combat_drawings (id, campaign_id, color, width, mode, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+	).run(d.id, d.campaign_id, d.color, d.width, d.mode, JSON.stringify(d.points), Date.now());
+}
+
 
 // --- Combat board config + movement budget ---
 

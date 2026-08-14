@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { createCampaign, deleteCampaign, listCampaignSummaries, restoreCampaign, searchCampaigns } from '$lib/server/db';
 import { isDM } from '$lib/server/auth';
+import { listBackups } from '$lib/server/backup';
 import { UPLOAD_DIR } from '$lib/server/uploads';
 import { mkdirSync } from 'node:fs';
 import { unlink, writeFile } from 'node:fs/promises';
@@ -10,8 +11,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url, cookies }) => {
 	const q = url.searchParams.get('q')?.trim() ?? '';
-	if (q) return { campaigns: [], query: q, results: searchCampaigns(q), isDM: isDM(cookies) };
-	return { campaigns: listCampaignSummaries(), query: '', results: [], isDM: isDM(cookies) };
+	const dm = isDM(cookies);
+	if (q) return { campaigns: [], query: q, results: searchCampaigns(q), isDM: dm };
+	// only the DM sees the backup list (a snapshot contains the whole DB)
+	const backups = dm ? listBackups() : [];
+	return { campaigns: listCampaignSummaries(), query: '', results: [], isDM: dm, backups };
 };
 
 export const actions: Actions = {

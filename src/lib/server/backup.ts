@@ -1,6 +1,6 @@
-import { mkdirSync, readdirSync, unlinkSync } from 'node:fs';
+import { mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import db, { checkpoint } from './db';
+import { db, checkpoint } from './db';
 
 const BACKUP_DIR = process.env.BACKUP_DIR ?? 'data/backups';
 // how often to snapshot (default 30 min)
@@ -33,6 +33,33 @@ export function backupNow(): string {
 		}
 	}
 	return dest;
+}
+
+/** List the on-disk backups (name, size, timestamp) oldest-first. */
+export function listBackups(): { name: string; size: number; ts: number }[] {
+	try {
+		mkdirSync(BACKUP_DIR, { recursive: true });
+	} catch {
+		// ignore
+	}
+	return readdirSync(BACKUP_DIR)
+		.filter((f) => f.endsWith('.db'))
+		.sort()
+		.map((name) => {
+			const st = statSync(join(BACKUP_DIR, name));
+			return { name, size: st.size, ts: st.mtimeMs };
+		});
+}
+
+/** Resolve a backup name to an absolute path, rejecting any path traversal. */
+export function resolveBackup(name: string): string | null {
+	if (!/^[A-Za-z0-9._-]+\.db$/.test(name)) return null;
+	if (name.includes('..')) return null;
+	return join(BACKUP_DIR, name);
+}
+
+export function backupDir(): string {
+	return BACKUP_DIR;
 }
 
 let started = false;

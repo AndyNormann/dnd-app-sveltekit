@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import Outline from '$lib/components/Outline.svelte';
+	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp } from '$lib/types';
@@ -14,6 +15,7 @@
 	let connected = $state(false);
 	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
+	let a11y: A11yLive;
 
 	function refreshOutline(container: HTMLElement) {
 		const sel = 'h1,h2,h3,h4,h5,h6';
@@ -48,7 +50,10 @@
 			onMapAdded: (m) => {
 				if (!maps.some((x) => x.id === m.id)) maps = [...maps, m];
 			},
-			onTitle: (t) => (title = t)
+			onTitle: (t) => (title = t),
+			onHandout: (id) => {
+				a11y?.announce('The DM shared something new');
+			}
 		};
 		es.onmessage = (e) => {
 			applyFeedEvent(JSON.parse(e.data), feed);
@@ -58,6 +63,8 @@
 </script>
 
 <svelte:head><title>{title}</title></svelte:head>
+
+<A11yLive bind:this={a11y} />
 
 <nav class="tabs">
 	<span class="you" title="You are connected as this character">Playing as {data.character.name}</span>

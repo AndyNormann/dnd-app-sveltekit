@@ -10,6 +10,7 @@ import {
 	listCombatLogs
 } from '$lib/server/db';
 import { PLAYER_COOKIE } from '$lib/server/player';
+import { getReadyUnitIds } from '$lib/server/combatReady';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -37,6 +38,7 @@ export const load: PageServerLoad = ({ params, cookies }) => {
 		drawings: listCombatDrawings(ch.campaign_id),
 		boardConfig: getBoardConfig(ch.campaign_id),
 		activeUnitId: getActiveUnitId(ch.campaign_id),
-		logs: listCombatLogs(ch.campaign_id)
+		logs: listCombatLogs(ch.campaign_id),
+		readyIds: getReadyUnitIds(ch.campaign_id)
 	};
 };

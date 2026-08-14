@@ -4,6 +4,7 @@
 	import WysiwygEditor from '$lib/components/WysiwygEditor.svelte';
 	import RollLog from '$lib/components/RollLog.svelte';
 	import Outline from '$lib/components/Outline.svelte';
+	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { parseHeadings } from '$lib/markdown';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { RollData } from '$lib/types';
@@ -35,6 +36,33 @@
 	let wysiwyg: WysiwygEditor | undefined = $state();
 	let rollLog: RollLog;
 	const uiKey = `dnd-ui-${data.campaignId}`;
+
+	let find = $state('');
+	let a11y: A11yLive;
+
+	const findResults = $derived.by(() => {
+		const q = find.trim().toLowerCase();
+		if (!q) return [];
+		const sections: { level: number; title: string; body: string; idx: number }[] = [];
+		let cur: { level: number; title: string; body: string; idx: number } | null = null;
+		let idx = 0;
+		for (const line of content.split('\n')) {
+			const m = /^(#{1,6})\s+(.*)$/.exec(line);
+			if (m) {
+				cur = { level: m[1].length, title: m[2].replace(/<!--.*?-->/g, '').trim(), body: '', idx };
+				idx++;
+				sections.push(cur);
+			} else if (cur) {
+				cur.body += line + ' ';
+			}
+		}
+		return sections.filter((s) => `${s.title} ${s.body}`.toLowerCase().includes(q));
+	});
+
+	function scrollEditorToHeading(i: number) {
+		const els = document.querySelectorAll('.mdx-host .ProseMirror h1,h2,h3,h4,h5,h6');
+		(els[i] as HTMLElement | undefined)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 
 	// shared heading meta for the WYSIWYG heading controls (mutated in place)
 	const metaMap = new Map(
@@ -252,7 +280,10 @@
 		es.onerror = () => (connected = false);
 		es.onmessage = (e) => applyFeedEvent(JSON.parse(e.data), feed);
 		const feed: FeedHandlers = {
-			addRoll: (r) => rollLog?.addRoll(r),
+			addRoll: (r) => {
+				rollLog?.addRoll(r);
+				a11y?.announce(`${r.roller} rolled ${r.expression}`);
+			},
 			setRolls: (rolls) => rollLog?.setRolls(rolls),
 			applySnapshot: (s) => {
 				rollLog?.setRolls(s.rolls);
@@ -297,6 +328,8 @@
 </script>
 
 <svelte:window onkeydown={onKeydown} />
+
+<A11yLive bind:this={a11y} />
 
 <svelte:head><title>{title} — DM</title></svelte:head>
 
@@ -417,6 +450,23 @@
 >
 	{#if showOutline}
 		<aside class="rail">
+			<details class="find">
+				<summary>Find in notes</summary>
+				<input class="find-input" placeholder="Search…" bind:value={find} />
+				{#if findResults.length > 0}
+					<ul class="find-results">
+						{#each findResults as s (s.idx)}
+							<li>
+								<button type="button" onclick={() => scrollEditorToHeading(s.idx)}>
+									<span class="fhash">{'#'.repeat(s.level)}</span> {s.title}
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{:else if find.trim() !== ''}
+					<p class="find-none">No matches</p>
+				{/if}
+			</details>
 			<Outline items={outlineItems} />
 		</aside>
 		<div
@@ -762,5 +812,66 @@
 		.bar .conn {
 			display: none;
 		}
+	}
+	.find {
+		font-family: system-ui, sans-serif;
+		font-size: 0.82rem;
+		padding: 0.25rem 0.5rem;
+	}
+	.find summary {
+		cursor: pointer;
+		color: var(--gold);
+		font-family: var(--font-display);
+		font-weight: 700;
+		text-transform: uppercase;
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+	}
+	.find-input {
+		width: 100%;
+		margin-top: 0.4rem;
+		padding: 0.3rem 0.4rem;
+		border: 1px solid var(--rule);
+		border-radius: 5px;
+		background: var(--parchment-light);
+		color: var(--ink);
+		font-size: 0.82rem;
+		box-sizing: border-box;
+	}
+	.find-results {
+		list-style: none;
+		margin: 0.4rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.find-results li {
+		margin: 0;
+	}
+	.find-results button {
+		width: 100%;
+		text-align: left;
+		border: 0;
+		background: none;
+		color: var(--ink-soft);
+		padding: 0.2rem 0.3rem;
+		border-radius: 4px;
+		cursor: pointer;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.find-results button:hover {
+		background: var(--parchment-deep);
+		color: var(--accent);
+	}
+	.fhash {
+		color: var(--gold);
+	}
+	.find-none {
+		color: var(--ink-soft);
+		font-style: italic;
+		margin: 0.4rem 0 0;
 	}
 </style>

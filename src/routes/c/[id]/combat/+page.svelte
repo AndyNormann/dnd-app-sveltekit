@@ -3,9 +3,17 @@
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
+	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
-	import type { CharacterRow, Monster, CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
+	import type {
+		CharacterRow,
+		Monster,
+		CombatUnit,
+		CombatDrawing,
+		BoardConfig,
+		EncounterRow
+	} from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
@@ -29,6 +37,11 @@
 	let enemyColor = $state('#a33');
 	let encMonId = $state('');
 	let encCount = $state('1');
+	let encounters = $state<EncounterRow[]>([]);
+	let encName = $state('');
+	let encErr = $state('');
+	let readyIds = $state<string[]>(data.readyIds);
+	let a11y: A11yLive;
 	let errorMsg = $state('');
 	let toast = $state<string | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout>;
@@ -114,7 +127,69 @@
 		showToast('Board cleared');
 	}
 
+	// --- encounter save/load + ready signalling ---
+
+	const readyNames = $derived(
+		units
+			.filter((u) => readyIds.includes(u.id))
+			.map((u) => u.name)
+			.join(', ')
+	);
+	const playerCount = $derived(units.filter((u) => u.kind === 'player').length);
+
+	async function loadEncounters() {
+		const res = await fetch(`/c/${data.campaignId}/combat/encounters`);
+		if (res.ok) encounters = await res.json();
+	}
+
+	async function saveEncounter(e: Event) {
+		e.preventDefault();
+		encErr = '';
+		if (!encName.trim()) return;
+		const res = await fetch(`/c/${data.campaignId}/combat/encounters`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'save', name: encName })
+		});
+		if (!res.ok) encErr = 'Could not save encounter';
+		else {
+			encName = '';
+			encErr = '';
+			loadEncounters();
+			showToast('Encounter saved');
+		}
+	}
+
+	async function loadEncounter(id: string) {
+		encErr = '';
+		const res = await fetch(`/c/${data.campaignId}/combat/encounters`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'load', id })
+		});
+		if (!res.ok) encErr = 'Could not load encounter';
+		else showToast('Encounter loaded');
+	}
+
+	async function deleteEnc(id: string) {
+		const res = await fetch(`/c/${data.campaignId}/combat/encounters`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'delete', id })
+		});
+		if (res.ok) loadEncounters();
+	}
+
+	function clearReady() {
+		fetch(`/c/${data.campaignId}/combat/ready`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'reset' })
+		});
+	}
+
 	onMount(() => {
+		loadEncounters();
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
@@ -126,12 +201,17 @@
 				board?.setActiveUnitId(active);
 				activeName = entries.find((x) => x.active === 1)?.name ?? '';
 				round = r;
+				readyIds = []; // a new turn clears everyone's ready state
 			},
+			applyCombatReady: (r) => (readyIds = r),
 			applyCombatUnits: (u) => {
 				units = u;
 				board?.applyUnits(u);
 			},
-			applyCombatLog: (entry) => combatLog?.add(entry),
+			applyCombatLog: (entry) => {
+				combatLog?.add(entry);
+				a11y?.announce(entry.text);
+			},
 			applyCombatDrawings: (d) => {
 				drawings = d;
 				board?.applyDrawings(d);
@@ -174,6 +254,8 @@
 
 <svelte:window onkeydown={onKeydown} />
 
+<A11yLive bind:this={a11y} />
+
 <header class="bar">
 	<a href="/" class="back">←</a>
 	<span class="conn" class:on={connected} title={connected ? 'Realtime connected' : 'Realtime disconnected'}></span>
@@ -206,6 +288,12 @@
 		<section class="panel board">
 			{#if activeName}
 				<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
+			{/if}
+			{#if playerCount > 0}
+				<div class="ready-status">
+					<button type="button" class="clear-ready" onclick={clearReady} title="Clear all ready states">✕</button>
+					<span>🟢 {readyIds.length}/{playerCount} ready{readyNames ? ` · ${readyNames}` : ''}</span>
+				</div>
 			{/if}
 			<CombatBoard
 				bind:this={board}
@@ -247,6 +335,27 @@
 				<button type="submit">Add enemy</button>
 			</form>
 			<button type="button" class="big danger" onclick={clearBoard}>🗑 Clear board</button>
+		</section>
+
+		<section class="panel enc">
+			<div class="enc-title">💾 Encounters</div>
+			<form class="enc-save" onsubmit={saveEncounter}>
+				<input class="nm" placeholder="Encounter name" bind:value={encName} maxlength="60" />
+				<button type="submit">Save board</button>
+			</form>
+			{#if encErr}<p class="error">{encErr}</p>{/if}
+			<ul class="enc-list">
+				{#each encounters as e (e.id)}
+					<li>
+						<span class="enc-name" title={e.units.map((u) => u.name).join(', ')}>{e.name}</span>
+						<span class="enc-count">{e.units.length} unit{e.units.length === 1 ? '' : 's'}</span>
+						<div class="enc-actions">
+							<button type="button" onclick={() => loadEncounter(e.id)}>Load</button>
+							<button type="button" class="del" onclick={() => deleteEnc(e.id)} title="Delete encounter">✕</button>
+						</div>
+					</li>
+				{/each}
+			</ul>
 		</section>
 
 		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
@@ -483,5 +592,105 @@
 		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);
 		color: var(--ink);
+	}
+	.ready-status {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.82rem;
+		color: var(--ink-soft);
+		margin-bottom: 0.6rem;
+		padding: 0.3rem 0.6rem;
+		background: var(--parchment-deep);
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+	}
+	.clear-ready {
+		border: 0;
+		background: none;
+		color: var(--ink-soft);
+		cursor: pointer;
+		font-size: 0.85rem;
+		padding: 0 0.1rem;
+	}
+	.enc-title {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 0.95rem;
+		color: var(--accent);
+		margin-bottom: 0.5rem;
+	}
+	.enc-save {
+		display: flex;
+		gap: 0.35rem;
+		margin-bottom: 0.5rem;
+	}
+	.enc-save input {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid var(--rule);
+		border-radius: 5px;
+		padding: 0.3rem 0.4rem;
+		font-size: 0.85rem;
+		background: var(--parchment-deep);
+		color: var(--ink);
+	}
+	.enc-save button {
+		border: 0;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 5px;
+		padding: 0.3rem 0.7rem;
+		cursor: pointer;
+	}
+	.enc-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.enc-list li {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.35rem 0.5rem;
+		background: var(--parchment-deep);
+		border: 1px solid var(--rule);
+		border-radius: 5px;
+	}
+	.enc-name {
+		flex: 1;
+		min-width: 0;
+		font-size: 0.88rem;
+		color: var(--ink);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.enc-count {
+		font-size: 0.75rem;
+		color: var(--ink-soft);
+		flex: none;
+	}
+	.enc-actions {
+		display: inline-flex;
+		gap: 0.3rem;
+	}
+	.enc-actions button {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		color: var(--ink-soft);
+		border-radius: 4px;
+		padding: 0.15rem 0.5rem;
+		cursor: pointer;
+		font-size: 0.78rem;
+	}
+	.enc-actions button.del {
+		color: var(--danger);
+	}
+	.enc-actions button:hover {
+		border-color: var(--gold);
 	}
 </style>

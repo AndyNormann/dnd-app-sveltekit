@@ -7,3 +7,4 @@ export * from './initiative';
 export * from './characters';
 export * from './monsters';
 export * from './combatDb';
+export * from './encounters';

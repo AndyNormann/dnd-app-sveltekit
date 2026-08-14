@@ -4,6 +4,7 @@
 	import RollLog from '$lib/components/RollLog.svelte';
 	import Outline from '$lib/components/Outline.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
+	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp, RollData } from '$lib/types';
@@ -28,6 +29,7 @@
 	let outlineItems = $state<{ id: string; level: number; text: string }[]>([]);
 	let doc: RenderedDoc;
 	let rollLog: RollLog;
+	let a11y: A11yLive;
 
 	// resizable sidebars (persisted per campaign)
 	let outlineW = $state(12);
@@ -106,10 +108,14 @@
 			onMapAdded: (m) => {
 				if (!maps.some((x) => x.id === m.id)) maps = [...maps, m];
 			},
-			addRoll: (r) => rollLog?.addRoll(r),
+			addRoll: (r) => {
+				rollLog?.addRoll(r);
+				a11y?.announce(`${r.roller} rolled ${r.expression}`);
+			},
 			setRolls: (rolls) => rollLog?.setRolls(rolls),
 			onHandout: (id) => {
 				showBanner('📢 New from the DM');
+				a11y?.announce('The DM shared something new');
 				// the shared html will have been delivered; scroll to + flash the heading
 				setTimeout(() => {
 					document
@@ -129,6 +135,8 @@
 </script>
 
 <svelte:head><title>{title}</title></svelte:head>
+
+<A11yLive bind:this={a11y} />
 
 <nav class="tabs">
 	<a href={`/c/${data.campaignId}/play`} class="tab" class:active={true}>Notes</a>

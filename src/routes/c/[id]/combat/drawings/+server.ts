@@ -2,7 +2,8 @@ import {
 	getCampaign,
 	listCombatDrawings,
 	addCombatDrawing,
-	clearCombatDrawings
+	clearCombatDrawings,
+	removeLastCombatDrawing
 } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
@@ -26,6 +27,15 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		clearCombatDrawings(params.id);
 		broadcast(params.id, { type: 'combat-drawings-updated', drawings: [] });
 		return json({ ok: true });
+	}
+
+	if (body.action === 'undo') {
+		const removed = removeLastCombatDrawing(params.id);
+		broadcast(params.id, {
+			type: 'combat-drawings-updated',
+			drawings: listCombatDrawings(params.id)
+		});
+		return json({ ok: true, removed });
 	}
 
 	const color = String(body.color ?? '#222').slice(0, 20);

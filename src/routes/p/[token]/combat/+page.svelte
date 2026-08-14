@@ -4,6 +4,7 @@
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
+	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
@@ -26,6 +27,21 @@
 	let activeUnitId = $state<string | null>(data.activeUnitId);
 	const myUnitId = $derived(units.find((u) => u.character_id === data.character.id)?.id ?? null);
 	const isMyTurn = $derived(activeUnitId != null && activeUnitId === myUnitId);
+	let ready = $state(myUnitId != null && data.readyIds.includes(myUnitId));
+	let a11y: A11yLive;
+
+	async function toggleReady() {
+		if (!myUnitId) return;
+		const res = await fetch(`/c/${data.campaignId}/combat/ready`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ unitId: myUnitId, ready: !ready })
+		});
+		if (res.ok) {
+			const body = (await res.json()) as { readyIds: string[] };
+			ready = body.readyIds.includes(myUnitId);
+		}
+	}
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
@@ -42,8 +58,13 @@
 				board?.setActiveUnitId(active);
 				activeUnitId = active;
 				activeName = entries.find((x) => x.active === 1)?.name ?? '';
+				ready = false; // a new turn clears your ready state
 			},
-			applyCombatLog: (entry) => log?.add(entry),
+			applyCombatReady: (r) => (ready = myUnitId != null && r.includes(myUnitId)),
+			applyCombatLog: (entry) => {
+				log?.add(entry);
+				a11y?.announce(entry.text);
+			},
 			applyCombatUnits: (u) => {
 				units = u;
 				board?.applyUnits(u);
@@ -71,9 +92,10 @@
 	<a href={`/p/${data.token}/combat`} class="tab" class:active={true}>Combat</a>
 </nav>
 
+<A11yLive bind:this={a11y} />
+
 <main class="combat">
-	<div class="top">
-		<h1 class="campaign-title">{title}</h1>
+	<div class="top">		<h1 class="campaign-title">{title}</h1>
 		<div class="conn" class:on={connected} title={connected ? 'Live' : 'Reconnecting…'}></div>
 		<LiveStamp at={lastActivity} />
 	</div>
@@ -104,6 +126,16 @@
 				initialConfig={boardConfig}
 				activeUnitId={data.activeUnitId}
 			/>
+			{#if myUnitId}
+				<button
+					type="button"
+					class="ready-btn"
+					class:on={ready}
+					onclick={toggleReady}
+					title={ready ? 'Click to mark yourself not done' : 'Mark yourself done'}
+					>{ready ? '✅ Done' : 'I\'m done'}</button
+				>
+			{/if}
 		</section>
 		<section class="rail right">
 			<CombatLog bind:this={log} initial={data.logs} />
@@ -216,5 +248,23 @@
 		border-color: #3a9b45;
 		color: #f6f1e3;
 		box-shadow: 0 0 0 2px rgba(58, 155, 69, 0.4);
+	}
+	.ready-btn {
+		display: block;
+		margin: 0.75rem auto 0;
+		border: 1px solid var(--gold);
+		background: var(--parchment-deep);
+		color: var(--ink-soft);
+		border-radius: 6px;
+		padding: 0.5rem 1.4rem;
+		cursor: pointer;
+		font-family: var(--font-display);
+		font-weight: 600;
+		font-size: 0.95rem;
+	}
+	.ready-btn.on {
+		background: #1f5d2b;
+		border-color: #3a9b45;
+		color: #f6f1e3;
 	}
 </style>

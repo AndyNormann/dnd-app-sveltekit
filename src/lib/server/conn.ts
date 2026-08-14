@@ -3,12 +3,30 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 /** Database file path, overridable via env so tests can use an isolated DB. */
-const DB_PATH = process.env.DB_PATH ?? 'data/app.db';
+export const DB_PATH = process.env.DB_PATH ?? 'data/app.db';
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
-const db = new Database(DB_PATH);
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
+function open(): Database {
+	const d = new Database(DB_PATH);
+	d.exec('PRAGMA journal_mode = WAL;');
+	d.exec('PRAGMA foreign_keys = ON;');
+	return d;
+}
+
+// `export let` is a live ESM binding, so `reopenDb()` (used by the restore-from-
+// backup flow) makes every module that imported `{ db }` see the fresh handle.
+export let db: Database = open();
+
+/** Close the current connection (safe point for swapping the DB file underneath it). */
+export function closeDb(): void {
+	db.close();
+}
+
+/** Close and re-open the connection — call after replacing the DB file. */
+export function reopenDb(): void {
+	db.close();
+	db = open();
+}
 
 db.exec(`
 	CREATE TABLE IF NOT EXISTS campaigns (
@@ -147,6 +165,16 @@ db.exec(`
 	);
 	CREATE INDEX IF NOT EXISTS idx_combat_logs_campaign ON combat_logs(campaign_id, id);
 
+	CREATE TABLE IF NOT EXISTS encounters (
+		id TEXT PRIMARY KEY,
+		campaign_id TEXT NOT NULL,
+		name TEXT NOT NULL,
+		units TEXT NOT NULL,
+		drawings TEXT NOT NULL,
+		created_at INTEGER NOT NULL
+	);
+	CREATE INDEX IF NOT EXISTS idx_encounters_campaign ON encounters(campaign_id, created_at);
+
 	CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_link ON characters(link_token);
 `);
 
@@ -230,5 +258,4 @@ db.exec(`
 }
 
 
-export { db };
 export default db;

@@ -64,6 +64,26 @@
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let measureCanvas: HTMLCanvasElement | undefined = $state();
 	let boardEl: HTMLDivElement | undefined = $state();
+	let viewportEl: HTMLDivElement | undefined = $state();
+	let zoom = $state(1); // board zoom for small screens (layout-affecting CSS `zoom`)
+
+	function clampZoom(z: number) {
+		zoom = Math.max(0.3, Math.min(3, Math.round(z * 100) / 100));
+	}
+	function fitZoom() {
+		if (!viewportEl) return;
+		const fit = (viewportEl.clientWidth - 8) / (config.grid_cols * CELL);
+		clampZoom(fit < 1 ? fit : 1);
+	}
+	function undoLastStroke() {
+		// optimistic local remove (SSE reconciles with the server list)
+		drawings = drawings.slice(0, -1);
+		fetch(`/c/${campaignId}/combat/drawings`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'undo' })
+		});
+	}
 
 	let drawing = $state(false);
 	let currentPoints: [number, number][] = [];
@@ -135,7 +155,11 @@
 	function toCell(e: { clientX: number; clientY: number }): [number, number] {
 		const rect = boardEl?.getBoundingClientRect();
 		if (!rect) return [0, 0];
-		return [(e.clientX - rect.left) / CELL, (e.clientY - rect.top) / CELL];
+		// derive cell size from the live rect so it stays correct at any zoom/scale
+		return [
+			(e.clientX - rect.left) / (rect.width / config.grid_cols),
+			(e.clientY - rect.top) / (rect.height / config.grid_rows)
+		];
 	}
 
 	function boardTheme() {
@@ -467,9 +491,12 @@
 			}
 			dragStart = { x: u.x, y: u.y };
 			const r = boardEl?.getBoundingClientRect();
+			const cw = (r?.width ?? config.grid_cols * CELL) / config.grid_cols;
+			const ch = (r?.height ?? config.grid_rows * CELL) / config.grid_rows;
+			// grab offset in cells (zoom-proof), so the token doesn't jump on grab
 			grabOffset = {
-				x: e.clientX - (r?.left ?? 0) - u.x * CELL,
-				y: e.clientY - (r?.top ?? 0) - u.y * CELL
+				x: (e.clientX - (r?.left ?? 0)) / cw - u.x,
+				y: (e.clientY - (r?.top ?? 0)) / ch - u.y
 			};
 			dragCost = null;
 			errorMsg = '';
@@ -482,12 +509,10 @@
 
 	function onDragMove(e: MouseEvent) {
 		if (!draggingId || !dragStart || !grabOffset) return;
-		const r = boardEl?.getBoundingClientRect();
-		const tx = (e.clientX - (r?.left ?? 0)) - grabOffset.x;
-		const ty = (e.clientY - (r?.top ?? 0)) - grabOffset.y;
+		const c = toCell(e);
 		let cell = {
-			x: Math.max(0, Math.min(config.grid_cols - 1, Math.round(tx / CELL))),
-			y: Math.max(0, Math.min(config.grid_rows - 1, Math.round(ty / CELL)))
+			x: Math.max(0, Math.min(config.grid_cols - 1, Math.round(c[0] - grabOffset.x))),
+			y: Math.max(0, Math.min(config.grid_rows - 1, Math.round(c[1] - grabOffset.y)))
 		};
 		if (!dm) {
 			// player: clamp to the speed budget and report cost/remaining live
@@ -559,6 +584,7 @@
 			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
 			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
 			<button type="button" class:on={tool === 'ping'} onclick={() => (tool = 'ping')}>📌 Ping</button>
+			<button type="button" onclick={undoLastStroke}>↩ Undo</button>
 			<span class="colors">
 				{#each COLORS as c}
 					<button
@@ -588,10 +614,17 @@
 		</div>
 	{/if}
 
+	<div class="zoombar">
+		<button type="button" onclick={() => clampZoom(zoom - 0.25)} aria-label="Zoom out">−</button>
+		<span class="zval">{Math.round(zoom * 100)}%</span>
+		<button type="button" onclick={() => clampZoom(zoom + 0.25)} aria-label="Zoom in">+</button>
+		<button type="button" onclick={fitZoom} aria-label="Fit board to width">Fit</button>
+	</div>
+	<div class="board-viewport" bind:this={viewportEl}>
 	<div
 		class="board"
 		bind:this={boardEl}
-		style="width:{config.grid_cols * CELL}px;height:{config.grid_rows * CELL}px"
+		style="width:{config.grid_cols * CELL}px;height:{config.grid_rows * CELL}px;zoom:{zoom}"
 		onpointerdown={onPointerDown}
 		onpointermove={onPointerMove}
 		onpointerup={onPointerUp}
@@ -705,6 +738,7 @@
 			{/if}
 		{/if}
 	</div>
+	</div>
 
 	{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
 </div>
@@ -762,6 +796,34 @@
 		overflow: hidden;
 		touch-action: none;
 		cursor: crosshair;
+	}
+	.board-viewport {
+		overflow: auto;
+		max-width: 100%;
+		touch-action: pan-x pan-y;
+		border-radius: 4px;
+	}
+	.zoombar {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-bottom: 0.4rem;
+		flex-wrap: wrap;
+	}
+	.zoombar button {
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
+		border-radius: 5px;
+		padding: 0.15rem 0.5rem;
+		cursor: pointer;
+		font-size: 0.8rem;
+		color: var(--ink-soft);
+	}
+	.zoombar .zval {
+		font-size: 0.8rem;
+		color: var(--ink-soft);
+		min-width: 2.6rem;
+		text-align: center;
 	}
 	.grid {
 		position: absolute;

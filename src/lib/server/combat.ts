@@ -21,6 +21,7 @@ import {
 	type CombatLogEntry
 } from './db';
 import { moveBudget, moveCost, isOwnTurn, isDown as unitIsDown, applyHpDelta } from '$lib/combatRules';
+import { resetReady } from './combatReady';
 
 /**
  * Deep module owning the combat-session rules: rolling initiative, advancing the
@@ -69,6 +70,7 @@ export function rollInitiative(
 	});
 	setInitiativeRound(campaignId, 1);
 	resetAllMovement(campaignId);
+	resetReady(campaignId);
 	const log = addCombatLog(campaignId, '🎲 Initiative rolled — Round 1');
 	return ok({ entries: listInitiative(campaignId), round: 1, log });
 }
@@ -99,6 +101,7 @@ export function advanceTurn(
 	updateInitiative(entries[nextIndex].id, { active: 1 });
 	setInitiativeRound(campaignId, round);
 	resetAllMovement(campaignId);
+	resetReady(campaignId);
 	const log = addCombatLog(
 		campaignId,
 		roundInc === 1
