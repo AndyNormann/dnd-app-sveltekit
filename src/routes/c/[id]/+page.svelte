@@ -843,9 +843,8 @@
 		bottom: 1.25rem;
 		z-index: 2000;
 		padding: 0.6rem 1rem;
-		background: var(--parchment-light);
-		border: 1px solid var(--gold);
-		border-left: 4px solid var(--success);
+		background: linear-gradient(180deg, rgba(79, 160, 92, 0.10), transparent 60%), var(--parchment-light);
+		border: 1px solid var(--rule);
 		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);

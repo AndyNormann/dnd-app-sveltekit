@@ -96,7 +96,7 @@
 		height: 100%;
 		overflow: auto;
 		/* the editor is the writing surface: a lit parchment panel with a soft top glow */
-		background: radial-gradient(90% 65% at 50% 0%, rgba(236, 225, 204, 0.055), transparent 65%), var(--parchment-light);
+		background: radial-gradient(90% 65% at 50% 0%, rgba(236, 217, 180, 0.06), transparent 65%), var(--parchment-light);
 	}
 	.loading {
 		position: sticky;
@@ -213,7 +213,7 @@
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);
 		background: var(--parchment-deep);
-		box-shadow: inset 0 1px 0 rgba(236, 225, 204, 0.07), 0 1px 2px rgba(0, 0, 0, 0.35);
+		box-shadow: inset 0 1px 0 rgba(236, 217, 180, 0.08), 0 1px 2px rgba(0, 0, 0, 0.35);
 		color: var(--accent-soft);
 		border-radius: 5px;
 		padding: 0 0.4rem;
@@ -297,7 +297,7 @@
 	}
 	:global(.dnd-wiki-item:hover),
 	:global(.dnd-wiki-item.sel) {
-		background: rgba(111, 143, 245, 0.14);
+		background: rgba(212, 161, 60, 0.14);
 		color: var(--accent-soft);
 	}
 	:global(.dnd-wiki-none) {

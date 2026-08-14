@@ -43,37 +43,37 @@
 		--type-root: 17.5px;
 		font-size: var(--type-root);
 	}
-	/* Theme — warm parchment-dark (renders the "parchment/ink" material the tokens
-	   promise) with indigo reserved for interactive and gold as the secondary hue. */
+	/* Theme — candlelit dark-parchment: the app reads as an old tome open on a
+	   lantern-lit table. Brass-gold is the D&D metal (interactive + links); a
+	   seal-red marks danger; moss-green marks success; hairline rules are warm
+	   bronze. Warm umber surfaces + a candlelight vignette replace flat brown. */
 	:global(:root) {
-		--parchment: #1e1a14;
-		--parchment-deep: #16120d;
-		--parchment-light: #2a241b;
-		--ink: #ece1cc;
-		--ink-soft: #b3a689;
-		--rule: #3a3126;
-		--board-bg: #241f17;
-		--board-grid: rgba(236, 225, 204, 0.08);
-		--accent: #6f8ff5;
-		--accent-soft: #9db4fa;
-		/* a real warm gold as the secondary hue: active/highlight/underline borders,
-		   while accent stays indigo for interactive/links — gives the palette hierarchy */
-		--gold: #c8a13d;
-		--section-hl: rgba(111, 143, 245, 0.08); /* indigo wash that ties to the accent */
-		--danger: #e25d54; /* a real warning/error red (success stays green) */
-		--success: #3a9b45; /* realtime/status green */
+		--parchment: #1a130b;
+		--parchment-deep: #120d07;
+		--parchment-light: #241b10;
+		--ink: #ecd9b4;
+		--ink-soft: #bda37c;
+		--rule: #3a2d18;
+		--board-bg: #1f1710;
+		--board-grid: rgba(236, 217, 180, 0.10);
+		--accent: #d4a13c;
+		--accent-soft: #e2be6b;
+		--gold: #dcb25a;
+		--section-hl: rgba(212, 161, 60, 0.10);
+		--danger: #d96a5a;
+		--success: #4fa05c;
 		--success-deep: #1f5d2b;
-		--ok-text: #f6f1e3;
-		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
-		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.55);
-		--shadow-glow: 0 0 18px rgba(0, 0, 0, 0.35);
+		--ok-text: #f2e7cd;
+		/* warm-tuned elevation shadows (brass-tinted falloff so panels lift off the umber) */
+		--shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.6);
+		--shadow-glow: 0 0 18px rgba(0, 0, 0, 0.4);
 		/* coherent radius scale + player-token ring cue */
 		--radius-sm: 5px;
 		--radius-md: 8px;
 		--radius-lg: 12px;
-		--token-ring: rgba(111, 143, 245, 0.9);
+		--token-ring: rgba(212, 161, 60, 0.9);
 	}
 		/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
 	:global(:root[data-type='garamond']) {
@@ -119,11 +119,34 @@
 	:global(body) {
 		margin: 0;
 		background: var(--parchment);
-		/* a warm candlelight vignette so the parchment canvas reads as lit, not flat */
-		background-image: radial-gradient(1100px 700px at 50% -10%, rgba(236, 225, 204, 0.05), transparent 62%);
+		/* a candlelit vellum: warm brass glow pooling from the lantern above,
+		   sinking to deep umber at the corners — the lit-tome read, not flat brown */
+		background-image:
+			radial-gradient(1200px 780px at 50% -8%, rgba(220, 178, 90, 0.14), transparent 60%),
+			radial-gradient(1600px 1000px at 50% 108%, rgba(0, 0, 0, 0.5), transparent 58%);
 		background-attachment: fixed;
 		color: var(--ink);
 		font-family: var(--font-body);
+	}
+	/* Browser surfaces belong to the theme too — selection, scrollbars, caret. */
+	:global(::selection) {
+		background: rgba(212, 161, 60, 0.35);
+		color: var(--ink);
+	}
+	:global(*::-webkit-scrollbar) {
+		width: 12px;
+		height: 12px;
+	}
+	:global(*::-webkit-scrollbar-track) {
+		background: var(--parchment-deep);
+	}
+	:global(*::-webkit-scrollbar-thumb) {
+		background: var(--rule);
+		border: 3px solid var(--parchment-deep);
+		border-radius: 999px;
+	}
+	:global(*::-webkit-scrollbar-thumb:hover) {
+		background: var(--gold);
 	}
 	:global(a) {
 		color: var(--accent);

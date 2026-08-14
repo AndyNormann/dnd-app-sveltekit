@@ -313,7 +313,7 @@
 	@keyframes roll-land {
 		0% {
 			background: var(--parchment-deep);
-			box-shadow: inset 3px 0 0 var(--gold);
+			box-shadow: inset 2px 0 0 var(--gold);
 		}
 		100% {
 			background: transparent;

@@ -116,7 +116,7 @@
 		width: 100%;
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
-		border-top: 3px solid var(--gold);
+		border-top: 1px solid var(--gold);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-md);
 		font-family: var(--font-ui);
@@ -163,7 +163,7 @@
 		transition: background 0.15s ease;
 	}
 	.entry.active {
-		background: rgba(111, 143, 245, 0.10);
+		background: rgba(212, 161, 60, 0.10);
 		box-shadow: inset 3px 0 0 var(--accent);
 	}
 	.entry.dead {
@@ -213,7 +213,7 @@
 		transition: background 0.12s ease;
 	}
 	.play:hover {
-		background: rgba(111, 143, 245, 0.15);
+		background: rgba(212, 161, 60, 0.15);
 	}
 	.up,
 	.down,
@@ -231,7 +231,7 @@
 	.down:hover,
 	.rr:hover {
 		color: var(--accent);
-		background: rgba(111, 143, 245, 0.12);
+		background: rgba(212, 161, 60, 0.12);
 	}
 	.rm {
 		border: 0;
@@ -262,7 +262,7 @@
 		transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
 	}
 	.actions button:hover {
-		background: rgba(111, 143, 245, 0.14);
+		background: rgba(212, 161, 60, 0.14);
 		border-color: var(--accent);
 		color: var(--accent-soft);
 	}

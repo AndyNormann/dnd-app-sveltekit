@@ -303,7 +303,7 @@
 		padding: 1.1rem 1.2rem 0.9rem;
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
-		border-top: 2px solid rgba(111, 143, 245, 0.3);
+		border-top: 2px solid rgba(212, 161, 60, 0.3);
 		border-radius: 6px;
 		box-shadow: var(--shadow);
 	}

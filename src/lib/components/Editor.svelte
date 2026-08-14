@@ -80,7 +80,7 @@
 	}
 	:global(.cm-host .cm-selectionBackground),
 	:global(.cm-host ::selection) {
-		background: rgba(111, 143, 245, 0.35);
+		background: rgba(212, 161, 60, 0.35);
 	}
 	:global(.cm-host .cm-cursor) {
 		border-left-color: var(--accent-soft);
