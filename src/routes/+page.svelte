@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import favicon from '$lib/assets/favicon.svg';
+	import Seal from '$lib/components/Seal.svelte';
 	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import type { PageData } from './$types';
 
@@ -61,7 +61,13 @@
 <main>
 	<header class="top">
 		<TypeSwitcher />
-		<h1><img class="logo" src={favicon} alt="" /> Campaigns</h1>
+		<div class="masthead">
+			<Seal size={46} />
+			<div class="masthead-txt">
+				<h1>Campaigns</h1>
+				<span class="tagline">The DM's war table</span>
+			</div>
+		</div>
 		{#if data.isDM}
 			<form method="POST" action="/logout" class="auth">
 				<span class="auth-pill on">DM</span>
@@ -74,10 +80,11 @@
 			</a>
 		{/if}
 	</header>
+	<div class="ornament" aria-hidden="true"><span>✦ ✦ ✦</span></div>
 
 	<form method="POST" action="?/create" use:enhance class="create">
-		<input name="title" placeholder="New campaign title" autocomplete="off" />
-		<button type="submit">Create</button>
+		<input name="title" placeholder="Name your campaign…" autocomplete="off" />
+		<button type="submit" class="btn-wax">Create</button>
 	</form>
 
 	<form method="POST" action="?/import" use:enhance class="import" enctype="multipart/form-data" onsubmit={onImport}>
@@ -119,7 +126,7 @@
 		{:else}
 			<ul class="results">
 				{#each data.results as r (r.id)}
-					<li class="card">
+					<li class="card filigree">
 						<a href={`/c/${r.id}`} class="title">{r.title}</a>
 						<p class="snippet">{r.snippet}</p>
 					</li>
@@ -131,7 +138,7 @@
 	{:else}
 		<ul class="grid">
 			{#each data.campaigns as c (c.id)}
-				<li class="card">
+				<li class="card filigree">
 					<a href={`/c/${c.id}`} class="title">{c.title}</a>
 					<span class="meta">
 						<span class="time">Edited {relTime(c.updated_at || c.created_at)}</span>
@@ -213,8 +220,32 @@
 		border-color: var(--accent);
 	}
 	.logo {
-		width: 2.2rem;
-		height: 2.2rem;
+		display: none;
+	}
+	.masthead {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+	}
+	.masthead-txt {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		line-height: 1;
+	}
+	.masthead-txt h1 {
+		margin: 0;
+	}
+	.tagline {
+		font-size: 0.72rem;
+		font-family: var(--font-ui);
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--gold);
+		margin-top: 0.35rem;
+	}
+	.ornament {
+		margin: 0 0 1.5rem;
 	}
 	.create {
 		display: flex;

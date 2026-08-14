@@ -119,14 +119,89 @@
 	:global(body) {
 		margin: 0;
 		background: var(--parchment);
-		/* a candlelit vellum: warm brass glow pooling from the lantern above,
-		   sinking to deep umber at the corners — the lit-tome read, not flat brown */
+		/* a candlelit vellum: brass glow pooling from the lantern above, sinking to
+		   deep umber at the corners, over a faint aged-paper grain */
 		background-image:
 			radial-gradient(1200px 780px at 50% -8%, rgba(220, 178, 90, 0.14), transparent 60%),
-			radial-gradient(1600px 1000px at 50% 108%, rgba(0, 0, 0, 0.5), transparent 58%);
+			radial-gradient(1600px 1000px at 50% 108%, rgba(0, 0, 0, 0.5), transparent 58%),
+			var(--paper-grain);
 		background-attachment: fixed;
 		color: var(--ink);
 		font-family: var(--font-body);
+	}
+	/* aged-paper grain + wax/corner utilities for the whole app (full-drench world) */
+	:global(:root) {
+		--paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+		--ink-divider: '✦';
+	}
+	/* scroll-ornament divider: ✦ between hairline rules */
+	:global(.ornament) {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		color: var(--gold);
+		font-size: 0.8rem;
+		letter-spacing: 0.2em;
+		text-align: center;
+	}
+	:global(.ornament::before),
+	:global(.ornament::after) {
+		content: '';
+		flex: 1;
+		height: 1px;
+		background: linear-gradient(90deg, transparent, var(--gold), transparent);
+	}
+	:global(.ornament span) {
+		font-family: var(--font-display);
+		text-shadow: 0 0 8px rgba(220, 178, 90, 0.35);
+	}
+	/* gold filigree corner accents for cards/panels */
+	:global(.filigree) {
+		position: relative;
+	}
+	:global(.filigree::before),
+	:global(.filigree::after) {
+		content: '';
+		position: absolute;
+		width: 14px;
+		height: 14px;
+		border-color: var(--gold);
+		border-style: solid;
+		border-width: 0;
+		opacity: 0.7;
+		pointer-events: none;
+	}
+	:global(.filigree::before) {
+		top: 6px;
+		left: 6px;
+		border-top-width: 2px;
+		border-left-width: 2px;
+		border-top-left-radius: 4px;
+	}
+	:global(.filigree::after) {
+		bottom: 6px;
+		right: 6px;
+		border-bottom-width: 2px;
+		border-right-width: 2px;
+		border-bottom-right-radius: 4px;
+	}
+	/* a wax-seal-red raised action that reads as the table's confirm press */
+	:global(.btn-wax) {
+		font-family: var(--font-ui);
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: var(--parchment-light);
+		background: linear-gradient(180deg, #e8795f, #8b2020);
+		border: 1px solid #5f1412;
+		border-radius: 6px;
+		box-shadow: inset 0 1px 0 rgba(255, 220, 200, 0.4), 0 2px 6px rgba(0, 0, 0, 0.4);
+		cursor: pointer;
+	}
+	:global(.btn-wax:hover) {
+		filter: brightness(1.1);
+	}
+	:global(.btn-wax:active) {
+		box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 	}
 	/* Browser surfaces belong to the theme too — selection, scrollbars, caret. */
 	:global(::selection) {
