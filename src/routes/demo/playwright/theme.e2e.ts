@@ -16,17 +16,19 @@ const lum = (c: string) => {
 	return m ? +m[1] : 0;
 };
 
-test('indigo-on-obsidian theme: dark backgrounds, light text, indigo accents', async ({ browser }) => {
+test('war-table theme: dark oak page, parchment editor with dark ink', async ({ browser }) => {
 	const { page, request } = await loginDM(browser);
-	// base is dark with light text
+	// the page is the dark oak table with warm light chrome text
 	const home = await page.evaluate(() => ({
 		bg: getComputedStyle(document.body).backgroundColor,
 		text: getComputedStyle(document.body).color,
-		accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
+		paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(),
+		paperInk: getComputedStyle(document.documentElement).getPropertyValue('--paper-ink').trim()
 	}));
-	expect(lum(home.bg)).toBeLessThan(80);
-	expect(lum(home.text)).toBeGreaterThan(180);
-	expect(home.accent).toBe('#6f8ff5'); // indigo default
+	expect(lum(home.bg)).toBeLessThan(80); // oak table is dark
+	expect(lum(home.text)).toBeGreaterThan(180); // chrome text is warm light
+	expect(home.paper).toBeTruthy();
+	expect(home.paperInk).toBeTruthy();
 
 	const res = await request.post('/?/create', {
 		form: { title: 'Dark' },
@@ -56,8 +58,8 @@ test('indigo-on-obsidian theme: dark backgrounds, light text, indigo accents', a
 			heading: get(host.querySelector('h1'), 'color')
 		};
 	});
-	expect(lum(dump.pageBg)).toBeLessThan(80);
-	expect(lum(dump.editorBg)).toBeLessThan(80);
-	expect(lum(dump.text)).toBeGreaterThan(180);
-	expect(lum(dump.heading)).toBeGreaterThan(180);
+	expect(lum(dump.pageBg)).toBeLessThan(80); // oak page stays dark
+	expect(lum(dump.editorBg)).toBeGreaterThan(170); // the editor is cream parchment
+	expect(lum(dump.text)).toBeLessThan(120); // ink is dark on the paper
+	expect(lum(dump.heading)).toBeLessThan(120); // headings are dark ink too
 });

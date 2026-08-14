@@ -745,10 +745,12 @@
 		display: grid;
 		grid-template-columns: var(--outline-w, 13rem) 1fr var(--rolls-w, 19rem);
 		grid-template-rows: 1fr;
-		height: calc(100vh - 3.3rem);
+		height: calc(100vh - 3.3rem - 0.9rem);
 		position: relative;
-		/* the tome lies on the table: a hairline gold frame + a soft cast shadow */
-		margin: 0.9rem 1rem 1rem;
+		/* the tome lies on the table: a hairline gold frame + a soft cast shadow.
+		   Height above is calc'd so the frame reaches the visible bottom, keeping
+		   the roll tray docked at the screen's bottom edge. */
+		margin: 0.9rem 1rem 0;
 		border: 1px solid var(--rule);
 		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
