@@ -172,8 +172,6 @@
 		font-size: 1.85rem;
 		font-weight: 600;
 		margin: 1.6em 0 0.35em;
-		padding-bottom: 0.25em;
-		border-bottom: 2px solid var(--gold);
 	}
 	:global(.mdx-host .ProseMirror h2) {
 		font-size: 1.5rem;

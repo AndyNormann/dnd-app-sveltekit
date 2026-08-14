@@ -38,7 +38,11 @@ test('indigo-on-obsidian theme: dark backgrounds, light text, indigo accents', a
 	const pm = page.locator('.mdx-host .ProseMirror');
 	await expect(pm).toBeVisible({ timeout: 10000 });
 	await pm.click();
-	await page.keyboard.type('# Section One\nBody text here.\n');
+	// create an H1 via the slash menu (auto `# ` conversion is disabled)
+	await page.keyboard.type('/');
+	await page.waitForSelector('.dnd-slash-h1');
+	await page.click('.dnd-slash-h1');
+	await page.keyboard.type('Section One');
 	await page.waitForTimeout(700);
 
 	const dump = await page.evaluate(() => {

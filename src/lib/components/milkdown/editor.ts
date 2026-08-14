@@ -9,6 +9,7 @@ import { getMarkdown } from '@milkdown/utils';
 import { nord } from '@milkdown/theme-nord';
 import { buildInteractivePlugin } from './interactive';
 import { buildSlashPlugin } from './slash';
+import { noAutoHeading } from './noAutoHeading';
 import { mapBlock, mapBlockView, mapDirectiveTransformer, mapApi, configureMaps } from './mapNode';
 import type { MapData, TokenData, PingData } from '$lib/types';
 
@@ -96,6 +97,7 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 		.config(nord)
 		.use(commonmark)
 		.use(gfm)
+		.use(noAutoHeading)
 		.use(mapBlock)
 		.use(mapBlockView)
 		.use(history)
