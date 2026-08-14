@@ -72,12 +72,25 @@
 	);
 
 	// Re-sync state when navigating to a different document (same route, new ?doc=).
+	// The Milkdown editor is a mounted component that doesn't react to a prop
+	// change, so push the newly-selected document's content into it explicitly.
+	// `prevDocId` is deliberately non-reactive so this effect only tracks
+	// `data.document` and never re-runs from its own `doc`/`content` writes.
+	let prevDocId: string | undefined;
 	$effect(() => {
 		const d = data.document;
+		const was = prevDocId;
+		prevDocId = d?.id ?? undefined;
 		doc = d;
 		content = d?.content ?? '';
 		docTitle = d?.title ?? '';
 		rev = d?.rev ?? 0;
+		if (d && d.id !== was) {
+			queueMicrotask(() => {
+				// only push if we're still on this document
+				if (doc?.id === d.id) (sourceMode ? editor : wysiwyg)?.setValue(d.content ?? '');
+			});
+		}
 	});
 
 	function persistUi() {
