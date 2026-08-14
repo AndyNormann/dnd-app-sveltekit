@@ -208,7 +208,7 @@
 		border: 0;
 		background: none;
 		cursor: pointer;
-		color: var(--rule);
+		color: var(--ink-soft);
 		border-radius: var(--radius-sm);
 		transition: color 0.12s ease, background 0.12s ease;
 	}
@@ -223,16 +223,19 @@
 	}
 	.actions button {
 		flex: 1;
-		border: 1px solid var(--rule);
-		background: var(--parchment-light);
+		border: 1px solid var(--accent-soft);
+		background: var(--parchment-deep);
+		color: var(--ink);
+		font-weight: 600;
 		border-radius: var(--radius-md);
-		padding: 0.3rem;
+		padding: 0.4rem;
 		cursor: pointer;
-		transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
+		transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
 	}
 	.actions button:hover {
-		background: var(--parchment-deep);
+		background: rgba(111, 143, 245, 0.14);
 		border-color: var(--accent);
+		color: var(--accent-soft);
 	}
 	.actions button:active {
 		transform: translateY(1px);

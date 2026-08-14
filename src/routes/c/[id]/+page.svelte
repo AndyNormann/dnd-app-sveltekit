@@ -616,7 +616,7 @@
 		border: 1px solid var(--rule);
 		border-radius: 6px;
 		background: var(--parchment-light);
-		color: var(--rule);
+		color: var(--ink-soft);
 		cursor: pointer;
 	}
 	.toggle.on {
