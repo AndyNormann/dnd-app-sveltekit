@@ -302,7 +302,7 @@
 	</section>
 </main>
 
-{#if toast}<div class="toast">{toast}</div>{/if}
+{#if toast}<div class="toast" role="status">{toast}</div>{/if}
 
 <style>
 	.bar {

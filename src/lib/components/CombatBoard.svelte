@@ -664,8 +664,8 @@
 				{#if u.alive === 0}<span class="skull">💀</span>{/if}
 				<span class="label">{u.name}</span>
 				{#if dm || u.id === myUnit?.id}<span class="hp">{u.hp}{u.max_hp ? `/${u.max_hp}` : ''}</span>{/if}
-				{#each conditionsList(u) as c}
-					<span class="cond" style="--cc:{condColor(c)}">{c}</span>
+				{#each conditionsList(u) as c, i}
+					<span class="cond" style="--cc:{condColor(c)}; bottom: calc(1.2rem + {i} * 1.05rem)">{c}</span>
 				{/each}
 			</div>
 		{/each}
@@ -704,7 +704,9 @@
 			{@const su = unitById(selectedId)}
 			{#if su}
 				{@const px = Math.max(0, Math.min(config.grid_cols * CELL - 150, su.x * CELL + 44))}
-				<div class="hp-pop" style="left:{px}px;top:{Math.max(0, su.y * CELL + 44)}px" onpointerdown={(e) => e.stopPropagation()}>
+				{@const popH = 170}
+				{@const ty = su.y * CELL + 44 + popH > config.grid_rows * CELL ? Math.max(0, su.y * CELL - popH) : su.y * CELL + 44}
+				<div class="hp-pop" style="left:{px}px;top:{Math.max(0, ty)}px" onpointerdown={(e) => e.stopPropagation()}>
 					<div class="hpn">{su.name} · <b>{su.hp}{su.max_hp ? `/${su.max_hp}` : ''}</b></div>
 					<div class="btns">
 						<button type="button" onclick={() => applyHpDelta(-1)}>−1</button>
@@ -1116,7 +1118,7 @@
 	}
 	.cond {
 		position: absolute;
-		top: 40px;
+		bottom: 1.2rem;
 		left: 50%;
 		transform: translateX(-50%);
 		font-size: 0.55rem;

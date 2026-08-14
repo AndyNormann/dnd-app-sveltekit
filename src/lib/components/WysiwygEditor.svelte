@@ -107,6 +107,20 @@
 	:global(.mdx-host .ProseMirror p) {
 		margin: 0.55em 0;
 	}
+	:global(.mdx-host .ProseMirror blockquote) {
+		margin: 0.8rem 0;
+		padding: 0.6rem 1rem;
+		background: var(--parchment-deep);
+		border: 0;
+		border-top: 3px solid var(--accent);
+		border-bottom: 3px solid var(--accent);
+		color: var(--ink);
+	}
+	:global(.mdx-host .ProseMirror blockquote p:first-child strong:first-child) {
+		font-family: var(--font-display);
+		color: var(--accent);
+		font-size: 1.15em;
+	}
 	:global(.mdx-host .ProseMirror h1),
 	:global(.mdx-host .ProseMirror h2),
 	:global(.mdx-host .ProseMirror h3),

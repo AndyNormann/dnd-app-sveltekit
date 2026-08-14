@@ -149,9 +149,10 @@
 	function onKeydown(e: KeyboardEvent) {
 		// N / Space advances the turn (DM only)
 		if (e.key === 'n' || e.key === 'N' || e.key === ' ') {
-			// ignore when typing in an input
+			// ignore when typing in a field or when a button/select has focus
 			const tag = (e.target as HTMLElement)?.tagName;
-			if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') return;
+			if ((e.target as HTMLElement)?.isContentEditable) return;
 			e.preventDefault();
 			initiative?.advance();
 		}
@@ -244,7 +245,7 @@
 	</section>
 </main>
 
-{#if toast}<div class="toast">{toast}</div>{/if}
+{#if toast}<div class="toast" role="status">{toast}</div>{/if}
 
 <style>
 	.bar {

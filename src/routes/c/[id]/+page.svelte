@@ -518,7 +518,7 @@
 </div>
 
 {#if toast}
-	<div class="toast" class:err={toast.type === 'err'}>{toast.msg}</div>
+	<div class="toast" role="status" class:err={toast.type === 'err'}>{toast.msg}</div>
 {/if}
 
 <style>
@@ -832,6 +832,13 @@
 		}
 		.bar {
 			flex-wrap: wrap;
+		}
+		.bar .title-btn {
+			flex: 1;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 		.pane {
 			height: calc(100vh - 3.3rem);
