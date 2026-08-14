@@ -53,6 +53,16 @@
 		handle?.setValue(next);
 	}
 
+	/** Insert a freshly-uploaded map block at the current caret. */
+	export function insertMap(mapId: string) {
+		handle?.insertMap(mapId);
+	}
+
+	/** Current document serialized to markdown (after any pending edits). */
+	export function getMarkdown(): string | undefined {
+		return handle?.getMarkdown();
+	}
+
 	/** Forward realtime map updates to mounted MapView instances. */
 	export function applyTokens(mapId: string, tokens: TokenData[]) {
 		handle?.applyTokens(mapId, tokens);
@@ -85,6 +95,8 @@
 	.mdx-host {
 		height: 100%;
 		overflow: auto;
+		/* the editor is the writing surface: a lit parchment panel with a soft top glow */
+		background: radial-gradient(90% 65% at 50% 0%, rgba(236, 225, 204, 0.055), transparent 65%), var(--parchment-light);
 	}
 	.loading {
 		position: sticky;
@@ -201,15 +213,18 @@
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);
 		background: var(--parchment-deep);
-		color: var(--accent);
-		border-radius: 4px;
-		padding: 0 0.35rem;
+		box-shadow: inset 0 1px 0 rgba(236, 225, 204, 0.07), 0 1px 2px rgba(0, 0, 0, 0.35);
+		color: var(--accent-soft);
+		border-radius: 5px;
+		padding: 0 0.4rem;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
 	}
 	:global(.dice-dec:hover) {
-		background: var(--rule);
+		background: var(--parchment-light);
+		border-color: var(--gold);
+		color: var(--accent);
 	}
 	:global(.wiki-dec) {
 		color: var(--accent);

@@ -19,6 +19,8 @@ export interface MilkdownHandle {
 	getMarkdown(): string;
 	/** Replace the whole document with the given markdown. */
 	setValue(markdown: string): void;
+	/** Insert a `::map` block at the current caret (WYSIWYG). */
+	insertMap(mapId: string): void;
 	/** Tear down the editor. */
 	destroy(): Promise<void>;
 	applyTokens(mapId: string, tokens: TokenData[]): void;
@@ -135,6 +137,14 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 				);
 				view.dispatch(tr);
 				lastMarkdown = markdown;
+			});
+		},
+		insertMap(mapId) {
+			editor.action((ctx) => {
+				const view = ctx.get(editorViewCtx);
+				const mapType = view.state.schema.nodes.mapBlock;
+				if (!mapType) return;
+				view.dispatch(view.state.tr.replaceSelectionWith(mapType.create({ mapId })));
 			});
 		},
 		destroy: async () => {

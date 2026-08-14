@@ -36,23 +36,24 @@
 
 <style>
 	:global(:root) {
-		--font-display: 'Source Serif 4', 'Georgia', serif;
+		--font-display: 'Cinzel', 'Source Serif 4', 'Georgia', serif;
 		--font-body: 'Source Serif 4', 'Georgia', serif;
 		--font-ui: 'Source Serif 4', 'Georgia', serif;
 		--text-base: 1.35rem;
 		--type-root: 17.5px;
 		font-size: var(--type-root);
 	}
-	/* Theme — Indigo on an Obsidian (neutral near-black) base. */
+	/* Theme — warm parchment-dark (renders the "parchment/ink" material the tokens
+	   promise) with indigo reserved for interactive and gold as the secondary hue. */
 	:global(:root) {
-		--parchment: #161616;
-		--parchment-deep: #101010;
-		--parchment-light: #222222;
-		--ink: #ececec;
-		--ink-soft: #a8a8a8;
-		--rule: #333333;
-		--board-bg: #222222;
-		--board-grid: rgba(236, 236, 236, 0.09);
+		--parchment: #1e1a14;
+		--parchment-deep: #16120d;
+		--parchment-light: #2a241b;
+		--ink: #ece1cc;
+		--ink-soft: #b3a689;
+		--rule: #3a3126;
+		--board-bg: #241f17;
+		--board-grid: rgba(236, 225, 204, 0.08);
 		--accent: #6f8ff5;
 		--accent-soft: #9db4fa;
 		/* a real warm gold as the secondary hue: active/highlight/underline borders,
@@ -81,7 +82,8 @@
 		--font-ui: 'EB Garamond', 'Georgia', serif;
 	}
 	:global(:root[data-type='source']) {
-		--font-display: 'Source Serif 4', 'Georgia', serif;
+		/* the default pairing: D&D display (Cinzel) over a readable book serif */
+		--font-display: 'Cinzel', 'Source Serif 4', 'Georgia', serif;
 		--font-body: 'Source Serif 4', 'Georgia', serif;
 		--font-ui: 'Source Serif 4', 'Georgia', serif;
 	}
@@ -117,6 +119,9 @@
 	:global(body) {
 		margin: 0;
 		background: var(--parchment);
+		/* a warm candlelight vignette so the parchment canvas reads as lit, not flat */
+		background-image: radial-gradient(1100px 700px at 50% -10%, rgba(236, 225, 204, 0.05), transparent 62%);
+		background-attachment: fixed;
 		color: var(--ink);
 		font-family: var(--font-body);
 	}

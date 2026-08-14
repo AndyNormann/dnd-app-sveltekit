@@ -248,11 +248,25 @@
 			if (!data.maps.some((m: { id: string }) => m.id === map.id)) {
 				data.maps = [...data.maps, map];
 			}
-			const insert = `\n\n::map{id=${map.id}}\n`;
-			const next = content + insert;
-			content = next;
-			(sourceMode ? editor : wysiwyg)?.setValue(next);
-			save();
+			if (sourceMode) {
+				// raw source: append a directive (CodeMirror has no caret block-insert)
+				const insert = `\n\n::map{id=${map.id}}\n`;
+				const next = content + insert;
+				content = next;
+				editor?.setValue(next);
+				save();
+			} else {
+				// WYSIWYG: insert at the caret, matching the /map slash command
+				wysiwyg?.insertMap(map.id);
+				// the onChange fires async; sync content from the editor and flush the
+				// debounced save so a quick reload can't lose the freshly inserted map
+				setTimeout(() => {
+					const md = wysiwyg?.getMarkdown();
+					if (md != null) content = md;
+					clearTimeout(saveTimer);
+					saveTimer = setTimeout(save, 0);
+				}, 0);
+			}
 		}
 		input.value = '';
 	}
@@ -337,6 +351,7 @@
 	<a href="/" class="back">←</a>
 	<span class="conn" class:on={connected} title={connected ? 'Realtime connected' : 'Realtime disconnected'}></span>
 	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
+	<span class="gsep" aria-hidden="true"></span>
 	<button
 		type="button"
 		class="toggle"
@@ -353,6 +368,7 @@
 		aria-label="Toggle raw markdown source"
 		onclick={toggleSource}>✎</button
 	>
+	<span class="gsep" aria-hidden="true"></span>
 	{#if doc}
 		{#if editingTitle}
 			<!-- svelte-ignore a11y_autofocus -->
@@ -393,6 +409,7 @@
 		{/if}
 	</span>
 	<div class="spacer"></div>
+	<span class="gsep" aria-hidden="true"></span>
 	<label class="upload">
 		Add map
 		<input type="file" accept="image/*" onchange={uploadMap} class="visually-hidden" />
@@ -412,10 +429,15 @@
 		{#if more}
 			<div class="menu" role="menu">
 				<a role="menuitem" href={`/c/${data.campaignId}/export`} onclick={() => (more = false)}>Export</a>
+				<span class="menu-sep" role="separator"></span>
+				<div class="menu-type">
+					<span class="menu-label">Typography</span>
+					<TypeSwitcher />
+				</div>
 			</div>
 		{/if}
 	</div>
-	<TypeSwitcher />
+	<span class="gsep" aria-hidden="true"></span>
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
 	</form>
@@ -687,6 +709,37 @@
 		background: var(--parchment-deep);
 		color: var(--accent);
 	}
+	/* visual grouping in the header bar */
+	.gsep {
+		width: 1px;
+		height: 1.35rem;
+		background: var(--rule);
+		margin: 0 0.15rem;
+		flex: none;
+	}
+	.menu-sep {
+		display: block;
+		height: 1px;
+		background: var(--rule);
+		margin: 0.25rem 0;
+	}
+	.menu-type {
+		padding: 0.5rem;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.4rem;
+	}
+	.menu-label {
+		font-family: var(--font-ui);
+		font-size: 0.68rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--ink-soft);
+	}
+	.menu-type :global(.type-switch) {
+		justify-content: space-between;
+	}
 	.layout {
 		display: grid;
 		grid-template-columns: var(--outline-w, 13rem) 1fr var(--rolls-w, 19rem);
@@ -730,6 +783,9 @@
 		padding: 0;
 		overflow: hidden;
 		min-height: 0;
+		/* the rolls rail reads as the table's edge: a warm gold-tinted crown
+		   fading into parchment */
+		background: linear-gradient(180deg, rgba(200, 161, 61, 0.08), transparent 34%), var(--parchment);
 	}
 	.split {
 		display: grid;
