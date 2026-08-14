@@ -801,6 +801,12 @@
 <style>
 	.board-wrap {
 		font-family: var(--font-ui);
+		/* the battle mat lies on the table: a leather/brass frame around the grid */
+		padding: 0.7rem;
+		background: linear-gradient(160deg, #3a2d1c, #241a10 70%);
+		border: 1px solid rgba(212, 161, 60, 0.35);
+		border-radius: var(--radius-lg);
+		box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.25), var(--shadow-lg);
 	}
 	.toolbar {
 		display: flex;
