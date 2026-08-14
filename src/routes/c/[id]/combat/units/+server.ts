@@ -2,6 +2,7 @@ import {
 	getCampaign,
 	getCharacter,
 	getMonster,
+	getCollection,
 	listCombatUnits,
 	addCombatUnit,
 	getBoardConfig
@@ -105,6 +106,40 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 					y
 				})
 			);
+		}
+		emitUnits(params.id);
+		return json({ ok: true, added });
+	}
+
+	if (body.action === 'add-collection') {
+		const coll = getCollection(String(body.collection_id ?? ''));
+		if (!coll || coll.campaign_id !== params.id) throw error(404, 'Collection not found');
+		const units = listCombatUnits(params.id);
+		const cfg = getBoardConfig(params.id);
+		const added: CombatUnit[] = [];
+		let idx = units.length;
+		for (const item of coll.items) {
+			const monster = getMonster(item.monster_id);
+			if (!monster || monster.campaign_id !== params.id) continue;
+			const count = Math.min(20, Math.max(1, Math.floor(item.count) || 1));
+			for (let i = 0; i < count; i++) {
+				const x = ((idx % 12) * 2) + 1;
+				const y = 2 + Math.floor((idx % 12) / 6);
+				added.push(
+					addCombatUnit(params.id, {
+						kind: 'enemy',
+						name: count > 1 ? `${monster.name} ${i + 1}` : monster.name,
+						color: monster.color,
+						speed: monster.speed,
+						init_bonus: monster.init_bonus,
+						max_hp: monster.max_hp,
+						hp: monster.max_hp,
+						x,
+						y
+					})
+				);
+				idx++;
+			}
 		}
 		emitUnits(params.id);
 		return json({ ok: true, added });

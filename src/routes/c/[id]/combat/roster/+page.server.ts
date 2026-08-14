@@ -1,4 +1,4 @@
-import { getCampaign, listCharacters, listMonsters } from '$lib/server/db';
+import { getCampaign, listCharacters, listMonsters, listCollections } from '$lib/server/db';
 import { isDM } from '$lib/server/auth';
 import { PLAYER_COOKIE } from '$lib/server/player';
 import { redirect, error } from '@sveltejs/kit';
@@ -15,6 +15,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		campaignId: campaign.id,
 		title: campaign.title,
 		characters: listCharacters(params.id),
-		monsters: listMonsters(params.id)
+		monsters: listMonsters(params.id),
+		collections: listCollections(params.id)
 	};
 };

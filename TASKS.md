@@ -296,11 +296,13 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 > signalling, in-campaign find, board drawing undo, restore-from-backup, realtime
 > aria-live, and a mobile-friendly (zoom/pan) combat board.
 
-- [x] **E1. Save / restore an encounter**
-      `encounters` table stores a named snapshot of the board (units incl.
-      positions/HP + drawings). DM saves the current board, reloads it later
-      (clears current board + initiative, restores units/drawings, resets
-      movement), or deletes. DM-only route `/c/[id]/combat/encounters`.
+- [x] **E1. Monster collections (roster → combat board)**
+      Replaces the save-board "encounters" with reusable monster groups. On the
+      Roster page the DM creates a collection (name) and adds monster templates
+      with counts. On the Combat page they pick one collection and drop the whole
+      group onto the board in one step (`add-collection` on the units route).
+      `collections` table (name + items JSON), DM-only route
+      `/c/[id]/combat/collections`, and a `CollectionCard` component on the roster.
 - [x] **E2. Player "done / ready" signalling**
       A player marks their unit ready on the combat page; the DM sees how many /
       which players are ready. Ready is in-memory per campaign, reset whenever the

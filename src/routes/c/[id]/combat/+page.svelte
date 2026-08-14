@@ -12,7 +12,7 @@
 		CombatUnit,
 		CombatDrawing,
 		BoardConfig,
-		EncounterRow
+		CollectionRow
 	} from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
@@ -35,11 +35,9 @@
 	let enemyInit = $state('0');
 	let enemyHp = $state('');
 	let enemyColor = $state('#a33');
-	let encMonId = $state('');
-	let encCount = $state('1');
-	let encounters = $state<EncounterRow[]>([]);
-	let encName = $state('');
-	let encErr = $state('');
+	let collections = $state<CollectionRow[]>(data.collections);
+	let collSel = $state('');
+	let collErr = $state('');
 	let readyIds = $state<string[]>(data.readyIds);
 	let a11y: A11yLive;
 	let errorMsg = $state('');
@@ -63,23 +61,6 @@
 		});
 		if (!res.ok) errorMsg = 'Could not add to board';
 		else showToast('Added to board');
-	}
-
-	async function spawnMonster(id: string, count: number) {
-		errorMsg = '';
-		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'add-monster', monster_id: id, count })
-		});
-		if (!res.ok) errorMsg = 'Could not add monsters';
-		else showToast(`Added to board`);
-	}
-
-	function addEncounter(e: Event) {
-		e.preventDefault();
-		if (!encMonId) return;
-		spawnMonster(encMonId, Math.floor(Number(encCount)) || 1);
 	}
 
 	async function addEnemy(e: Event) {
@@ -137,47 +118,21 @@
 	);
 	const playerCount = $derived(units.filter((u) => u.kind === 'player').length);
 
-	async function loadEncounters() {
-		const res = await fetch(`/c/${data.campaignId}/combat/encounters`);
-		if (res.ok) encounters = await res.json();
+	async function refreshCollections() {
+		const res = await fetch(`/c/${data.campaignId}/combat/collections`);
+		if (res.ok) collections = await res.json();
 	}
 
-	async function saveEncounter(e: Event) {
-		e.preventDefault();
-		encErr = '';
-		if (!encName.trim()) return;
-		const res = await fetch(`/c/${data.campaignId}/combat/encounters`, {
+	async function spawnCollection() {
+		collErr = '';
+		if (!collSel) return;
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'save', name: encName })
+			body: JSON.stringify({ action: 'add-collection', collection_id: collSel })
 		});
-		if (!res.ok) encErr = 'Could not save encounter';
-		else {
-			encName = '';
-			encErr = '';
-			loadEncounters();
-			showToast('Encounter saved');
-		}
-	}
-
-	async function loadEncounter(id: string) {
-		encErr = '';
-		const res = await fetch(`/c/${data.campaignId}/combat/encounters`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'load', id })
-		});
-		if (!res.ok) encErr = 'Could not load encounter';
-		else showToast('Encounter loaded');
-	}
-
-	async function deleteEnc(id: string) {
-		const res = await fetch(`/c/${data.campaignId}/combat/encounters`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'delete', id })
-		});
-		if (res.ok) loadEncounters();
+		if (!res.ok) collErr = 'Could not add collection';
+		else showToast('Collection added');
 	}
 
 	function clearReady() {
@@ -189,7 +144,7 @@
 	}
 
 	onMount(() => {
-		loadEncounters();
+		refreshCollections();
 		const es = new EventSource(`/c/${data.campaignId}/events`);
 		es.onopen = () => (connected = true);
 		es.onerror = () => (connected = false);
@@ -317,16 +272,16 @@
 				</select>
 				<button type="submit">Add player</button>
 			</form>
-			<form class="add-encounter" onsubmit={addEncounter}>
-				<select class="nm enc-select" bind:value={encMonId} aria-label="Monster to add">
-					<option value="">Pick monster…</option>
-					{#each monsters as m (m.id)}
-						<option value={m.id}>{m.name}</option>
+			<form class="add-encounter" onsubmit={(e) => { e.preventDefault(); spawnCollection(); }}>
+				<select class="nm enc-select" bind:value={collSel} aria-label="Collection to add">
+					<option value="">Pick collection…</option>
+					{#each collections as coll (coll.id)}
+						<option value={coll.id}>{coll.name}</option>
 					{/each}
 				</select>
-				<input class="num" placeholder="Count" title="How many" bind:value={encCount} maxlength="2" />
-				<button type="submit">Add encounter</button>
+				<button type="submit">Add collection</button>
 			</form>
+			{#if collErr}<p class="error">{collErr}</p>{/if}
 			<form class="add-enemy" onsubmit={addEnemy}>
 				<input class="nm" placeholder="Enemy name" bind:value={enemyName} maxlength="60" />
 				<input class="num" placeholder="Init+" bind:value={enemyInit} maxlength="4" />
@@ -337,26 +292,6 @@
 			<button type="button" class="big danger" onclick={clearBoard}>🗑 Clear board</button>
 		</section>
 
-		<section class="panel enc">
-			<div class="enc-title">💾 Encounters</div>
-			<form class="enc-save" onsubmit={saveEncounter}>
-				<input class="nm" placeholder="Encounter name" bind:value={encName} maxlength="60" />
-				<button type="submit">Save board</button>
-			</form>
-			{#if encErr}<p class="error">{encErr}</p>{/if}
-			<ul class="enc-list">
-				{#each encounters as e (e.id)}
-					<li>
-						<span class="enc-name" title={e.units.map((u) => u.name).join(', ')}>{e.name}</span>
-						<span class="enc-count">{e.units.length} unit{e.units.length === 1 ? '' : 's'}</span>
-						<div class="enc-actions">
-							<button type="button" onclick={() => loadEncounter(e.id)}>Load</button>
-							<button type="button" class="del" onclick={() => deleteEnc(e.id)} title="Delete encounter">✕</button>
-						</div>
-					</li>
-				{/each}
-			</ul>
-		</section>
 
 		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
 	</section>
@@ -612,85 +547,5 @@
 		cursor: pointer;
 		font-size: 0.85rem;
 		padding: 0 0.1rem;
-	}
-	.enc-title {
-		font-family: var(--font-display);
-		font-weight: 700;
-		font-size: 0.95rem;
-		color: var(--accent);
-		margin-bottom: 0.5rem;
-	}
-	.enc-save {
-		display: flex;
-		gap: 0.35rem;
-		margin-bottom: 0.5rem;
-	}
-	.enc-save input {
-		flex: 1;
-		min-width: 0;
-		border: 1px solid var(--rule);
-		border-radius: 5px;
-		padding: 0.3rem 0.4rem;
-		font-size: 0.85rem;
-		background: var(--parchment-deep);
-		color: var(--ink);
-	}
-	.enc-save button {
-		border: 0;
-		background: var(--accent);
-		color: var(--parchment-light);
-		border-radius: 5px;
-		padding: 0.3rem 0.7rem;
-		cursor: pointer;
-	}
-	.enc-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-	}
-	.enc-list li {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.35rem 0.5rem;
-		background: var(--parchment-deep);
-		border: 1px solid var(--rule);
-		border-radius: 5px;
-	}
-	.enc-name {
-		flex: 1;
-		min-width: 0;
-		font-size: 0.88rem;
-		color: var(--ink);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.enc-count {
-		font-size: 0.75rem;
-		color: var(--ink-soft);
-		flex: none;
-	}
-	.enc-actions {
-		display: inline-flex;
-		gap: 0.3rem;
-	}
-	.enc-actions button {
-		border: 1px solid var(--rule);
-		background: var(--parchment-light);
-		color: var(--ink-soft);
-		border-radius: 4px;
-		padding: 0.15rem 0.5rem;
-		cursor: pointer;
-		font-size: 0.78rem;
-	}
-	.enc-actions button.del {
-		color: var(--danger);
-	}
-	.enc-actions button:hover {
-		border-color: var(--gold);
 	}
 </style>

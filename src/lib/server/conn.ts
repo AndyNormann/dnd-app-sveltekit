@@ -165,15 +165,14 @@ db.exec(`
 	);
 	CREATE INDEX IF NOT EXISTS idx_combat_logs_campaign ON combat_logs(campaign_id, id);
 
-	CREATE TABLE IF NOT EXISTS encounters (
+	CREATE TABLE IF NOT EXISTS collections (
 		id TEXT PRIMARY KEY,
 		campaign_id TEXT NOT NULL,
 		name TEXT NOT NULL,
-		units TEXT NOT NULL,
-		drawings TEXT NOT NULL,
+		items TEXT NOT NULL,
 		created_at INTEGER NOT NULL
 	);
-	CREATE INDEX IF NOT EXISTS idx_encounters_campaign ON encounters(campaign_id, created_at);
+	CREATE INDEX IF NOT EXISTS idx_collections_campaign ON collections(campaign_id, created_at);
 
 	CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_link ON characters(link_token);
 `);

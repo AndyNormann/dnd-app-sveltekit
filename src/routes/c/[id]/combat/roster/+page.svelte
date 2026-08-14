@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import CollectionCard from '$lib/components/CollectionCard.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
-	import type { CharacterRow, Monster } from '$lib/server/db';
+	import type { CharacterRow, Monster, CollectionRow } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
@@ -10,6 +11,9 @@
 	let connected = $state(false);
 	let characters = $state<CharacterRow[]>(data.characters);
 	let monsters = $state<Monster[]>(data.monsters);
+	let collections = $state<CollectionRow[]>(data.collections);
+	let newColName = $state('');
+	let colErr = $state('');
 
 	// character form
 	let charName = $state('');
@@ -161,6 +165,27 @@
 		const res = await fetch(`/c/${data.campaignId}/monsters`);
 		if (res.ok) monsters = await res.json();
 	}
+	async function refreshCollections() {
+		const res = await fetch(`/c/${data.campaignId}/combat/collections`);
+		if (res.ok) collections = await res.json();
+	}
+	async function createCollection(e: Event) {
+		e.preventDefault();
+		colErr = '';
+		const name = newColName.trim();
+		if (!name) return;
+		const res = await fetch(`/c/${data.campaignId}/combat/collections`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'save', name, items: [] })
+		});
+		if (!res.ok) colErr = 'Could not create collection';
+		else {
+			newColName = '';
+			refreshCollections();
+			showToast('Collection created');
+		}
+	}
 
 	onMount(() => {
 		const es = new EventSource(`/c/${data.campaignId}/events`);
@@ -251,6 +276,30 @@
 			{/each}
 		</ul>
 	</section>
+
+	<section class="panel collections">
+		<h2>Collections</h2>
+		<p class="hint">Build reusable enemy groups, then drop one onto the board from the Combat page.</p>
+		<form class="new-col" onsubmit={createCollection}>
+			<input class="nm" placeholder="Collection name" bind:value={newColName} maxlength="60" />
+			<button type="submit">Create collection</button>
+		</form>
+		{#if colErr}<p class="error">{colErr}</p>{/if}
+		{#if collections.length === 0}
+			<p class="empty">No collections yet. Create one, then add enemies to it.</p>
+		{:else}
+			<div class="coll-grid">
+				{#each collections as coll (coll.id)}
+					<CollectionCard
+						collection={coll}
+						monsters={monsters}
+						campaignId={data.campaignId}
+						onchanged={refreshCollections}
+					/>
+				{/each}
+			</div>
+		{/if}
+	</section>
 </main>
 
 {#if toast}<div class="toast">{toast}</div>{/if}
@@ -334,6 +383,47 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 1rem;
 		align-items: start;
+	}
+	.collections {
+		grid-column: 1 / -1;
+	}
+	.hint {
+		color: var(--ink-soft);
+		font-size: 0.85rem;
+		margin: 0 0 0.6rem;
+	}
+	.new-col {
+		display: flex;
+		gap: 0.35rem;
+		margin-bottom: 0.6rem;
+	}
+	.new-col input {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid var(--rule);
+		border-radius: 5px;
+		padding: 0.3rem 0.4rem;
+		font-size: 0.85rem;
+		background: var(--parchment-deep);
+		color: var(--ink);
+	}
+	.new-col button {
+		border: 0;
+		background: var(--accent);
+		color: var(--parchment-light);
+		border-radius: 5px;
+		padding: 0.3rem 0.7rem;
+		cursor: pointer;
+	}
+	.error {
+		color: var(--danger);
+		font-size: 0.85rem;
+		margin: 0 0 0.5rem;
+	}
+	.coll-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		gap: 0.6rem;
 	}
 	@media (max-width: 48rem) {
 		.roster {

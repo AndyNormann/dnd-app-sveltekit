@@ -24,31 +24,45 @@ async function loginDM(browser: Browser) {
 	return { dm, page };
 }
 
-test('encounter save/load and drawing undo', async ({ browser }) => {
+test('monster collections: build on the roster, drop onto the combat board, drawing undo', async ({
+	browser
+}) => {
 	const anon = await browser.newContext();
 	const id = await createCampaign(anon.request);
 	const { dm, page } = await loginDM(browser);
+
+	// create two monster templates
+	await dm.request.post(`/c/${id}/monsters`, {
+		data: { name: 'Goblin', speed: 30, init_bonus: 1, max_hp: 7 }
+	});
+	await dm.request.post(`/c/${id}/monsters`, {
+		data: { name: 'Hobgoblin', speed: 30, init_bonus: 2, max_hp: 13 }
+	});
+
+	// build a collection on the roster page via the UI
+	await page.goto(`/c/${id}/combat/roster`);
+	await page.locator('.new-col input').fill('Goblin patrol');
+	await page.click('.new-col button[type=submit]');
+	await expect(page.locator('.coll').getByText('Goblin patrol')).toBeVisible({ timeout: 5000 });
+
+	const collCard = page.locator('.coll').first();
+	await collCard.locator('.add-item select').selectOption({ label: 'Goblin' });
+	await collCard.locator('.add-item .num').fill('3');
+	await collCard.locator('.add-item button').click();
+	await expect(collCard).toContainText('3× Goblin');
+	await collCard.locator('.add-item select').selectOption({ label: 'Hobgoblin' });
+	await collCard.locator('.add-item .num').fill('1');
+	await collCard.locator('.add-item button').click();
+	await expect(collCard).toContainText('1× Hobgoblin');
+
+	// drop the collection onto the combat board in one step
 	await page.goto(`/c/${id}/combat`);
-	await expect(page.locator('.board .token')).toHaveCount(0);
-
-	// add a goblin to the board
-	await page.locator('.add-enemy input[placeholder="Enemy name"]').fill('Goblin');
-	await page.locator('.add-enemy input[placeholder="HP"]').fill('7');
-	await page.click('.add-enemy button[type=submit]');
-	await expect(page.locator('.board .token').filter({ hasText: 'Goblin' })).toBeVisible();
-
-	// save it as an encounter
-	await page.locator('.enc-save input').fill('Goblin patrol');
-	await page.click('.enc-save button[type=submit]');
-	await expect(page.locator('.enc-list').getByText('Goblin patrol')).toBeVisible({ timeout: 5000 });
-
-	// clear the board, then reload the encounter
-	await page.click('button:has-text("Clear board")');
-	await expect(page.locator('.board .token')).toHaveCount(0);
-	await page.click('.enc-list button:has-text("Load")');
-	await expect(page.locator('.board .token').filter({ hasText: 'Goblin' })).toBeVisible({
+	await page.locator('.enc-select').selectOption({ label: 'Goblin patrol' });
+	await page.click('button:has-text("Add collection")');
+	await expect(page.locator('.board .token').filter({ hasText: /Goblin \d/ })).toHaveCount(3, {
 		timeout: 10000
 	});
+	await expect(page.locator('.board .token').filter({ hasText: 'Hobgoblin' })).toHaveCount(1);
 
 	// drawing undo via the API
 	const dmReq = dm.request;
@@ -72,7 +86,6 @@ test('player ready signals the DM; board zoom controls work', async ({ browser }
 	const id = await createCampaign(anon.request);
 	const { dm, page } = await loginDM(browser);
 
-	// create a character + add it to the board
 	const cre = await dm.request.post(`/c/${id}/characters`, {
 		data: { name: 'Aria', speed: 30, init_bonus: 2, color: '#1b6ca8', max_hp: 20, hp: 20 }
 	});
@@ -83,7 +96,6 @@ test('player ready signals the DM; board zoom controls work', async ({ browser }
 	});
 	expect(ad.ok()).toBeTruthy();
 
-	// the player marks ready on their portal combat page
 	const player = await browser.newPage();
 	await player.goto(`/p/${ch.link_token}/combat`);
 	await expect(player.locator('.board .token')).toHaveCount(1, { timeout: 10000 });
@@ -91,11 +103,9 @@ test('player ready signals the DM; board zoom controls work', async ({ browser }
 	await player.click('.ready-btn');
 	await expect(player.locator('.ready-btn')).toHaveClass(/on/);
 
-	// the DM sees 1/1 ready
 	await page.goto(`/c/${id}/combat`);
 	await expect(page.locator('.ready-status')).toContainText('1/1 ready', { timeout: 10000 });
 
-	// board zoom controls scale the view
 	await expect(page.locator('.board-viewport')).toBeVisible();
 	const z0 = (await page.locator('.zval').textContent()) ?? '';
 	await page.click('button[aria-label="Zoom in"]');
