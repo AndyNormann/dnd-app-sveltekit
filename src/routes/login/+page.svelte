@@ -64,7 +64,7 @@
 		border-radius: 6px;
 		background: var(--accent);
 		color: var(--parchment-light);
-		font-family: var(--font-display);
+		font-family: var(--font-ui);
 		cursor: pointer;
 	}
 	.back {

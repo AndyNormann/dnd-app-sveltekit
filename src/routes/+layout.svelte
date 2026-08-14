@@ -2,7 +2,9 @@
 	import '@fontsource/cinzel/600.css';
 	import '@fontsource/cinzel/700.css';
 	import '@fontsource/literata/400.css';
+	import '@fontsource/literata/500.css';
 	import '@fontsource/literata/600.css';
+	import '@fontsource/literata/700.css';
 	import '@fontsource/literata/400-italic.css';
 	import favicon from '$lib/assets/favicon.svg';
 

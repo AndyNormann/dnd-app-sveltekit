@@ -816,6 +816,23 @@
 			display: none;
 		}
 	}
+	@media (max-width: 56rem) {
+		.layout {
+			grid-template-columns: 1fr;
+			grid-template-rows: auto;
+			height: auto;
+		}
+		.rail,
+		.rh {
+			display: none;
+		}
+		.bar {
+			flex-wrap: wrap;
+		}
+		.pane {
+			height: calc(100vh - 3.3rem);
+		}
+	}
 	.find {
 		font-family: system-ui, sans-serif;
 		font-size: 0.82rem;

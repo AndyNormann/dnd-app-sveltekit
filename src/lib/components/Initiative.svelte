@@ -191,7 +191,9 @@
 		background: var(--parchment-light);
 		border-radius: 3px;
 		cursor: pointer;
-		width: 1.1rem;
+		min-width: 1.75rem;
+		height: 1.5rem;
+		line-height: 1;
 	}
 	.play {
 		border: 0;

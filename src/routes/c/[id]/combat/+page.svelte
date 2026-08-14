@@ -361,6 +361,21 @@
 			overflow: visible;
 		}
 	}
+	@media (max-width: 48rem) {
+		.bar {
+			flex-wrap: wrap;
+		}
+		.bar h1 {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			flex: 1;
+		}
+		.bar .conn {
+			display: none;
+		}
+	}
 	.panel {
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
@@ -473,7 +488,7 @@
 		border-radius: var(--radius-md);
 		padding: 0.5rem 0.9rem;
 		cursor: pointer;
-		font-family: var(--font-display);
+		font-family: var(--font-ui);
 		font-weight: 600;
 		transition: filter 0.12s ease, transform 0.06s ease;
 	}

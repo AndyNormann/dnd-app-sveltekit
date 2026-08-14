@@ -297,7 +297,7 @@
 	}
 	.banner {
 		position: absolute;
-		top: 0.6rem;
+		top: 4.2rem;
 		left: 50%;
 		transform: translateX(-50%);
 		background: var(--accent);
@@ -309,6 +309,7 @@
 		font-weight: 600;
 		box-shadow: var(--shadow-md);
 		animation: banner-in 0.2s ease;
+		z-index: 5;
 	}
 	@keyframes banner-in {
 		from {

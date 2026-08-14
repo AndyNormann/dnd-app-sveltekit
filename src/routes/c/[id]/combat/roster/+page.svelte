@@ -435,6 +435,16 @@
 		.roster {
 			grid-template-columns: 1fr;
 		}
+		.bar {
+			flex-wrap: wrap;
+		}
+		.bar h1 {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			flex: 1;
+		}
 	}
 	.panel {
 		background: var(--parchment-light);

@@ -922,10 +922,12 @@
 	}
 	.skull {
 		position: absolute;
-		top: -4px;
-		left: 50%;
-		transform: translateX(-50%);
-		font-size: 0.6rem;
+		top: 2px;
+		right: 2px;
+		left: auto;
+		transform: none;
+		z-index: 4;
+		font-size: 0.7rem;
 		pointer-events: none;
 		filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 	}
@@ -1108,7 +1110,7 @@
 		cursor: pointer;
 	}
 	.hp-pop .err {
-		color: var(--accent-soft);
+		color: var(--danger);
 		font-size: 0.75rem;
 		margin-top: 0.35rem;
 	}
@@ -1205,7 +1207,7 @@
 		min-width: 0;
 	}
 	.error {
-		color: var(--accent-soft);
+		color: var(--danger);
 		font-size: 0.85rem;
 		margin: 0.4rem 0 0;
 	}

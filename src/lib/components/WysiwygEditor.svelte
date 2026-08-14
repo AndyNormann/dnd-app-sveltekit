@@ -23,7 +23,7 @@
 	} = $props();
 
 	let host: HTMLDivElement;
-	let handle: MilkdownHandle | undefined;
+	let handle = $state<MilkdownHandle | undefined>();
 
 	onMount(() => {
 		// dynamic import keeps ProseMirror/Milkdown out of the SSR bundle
@@ -78,12 +78,22 @@
 	}
 </script>
 
-<div class="mdx-host" bind:this={host}></div>
+<div class="mdx-host" bind:this={host}>
+	{#if !handle}<div class="loading" aria-hidden="true">Loading editor…</div>{/if}
+</div>
 
 <style>
 	.mdx-host {
 		height: 100%;
 		overflow: auto;
+	}
+	.loading {
+		position: sticky;
+		top: 40%;
+		text-align: center;
+		color: var(--ink-soft);
+		font-family: var(--font-ui);
+		font-size: 0.9rem;
 	}
 	:global(.mdx-host .ProseMirror) {
 		min-height: 100%;
@@ -123,12 +133,12 @@
 	}
 	:global(.mdx-host .ProseMirror h2) {
 		font-size: 1.5rem;
-		font-weight: 560;
+		font-weight: 600;
 		margin: 1.05em 0 0.3em;
 	}
 	:global(.mdx-host .ProseMirror h3) {
 		font-size: 1.28rem;
-		font-weight: 520;
+		font-weight: 500;
 		margin: 0.8em 0 0.25em;
 	}
 	:global(.mdx-host .ProseMirror h4) {
@@ -138,12 +148,12 @@
 	}
 	:global(.mdx-host .ProseMirror h5) {
 		font-size: 1.08rem;
-		font-weight: 500;
+		font-weight: 400;
 		margin: 0.65em 0 0.2em;
 	}
 	:global(.mdx-host .ProseMirror h6) {
 		font-size: 1.02rem;
-		font-weight: 500;
+		font-weight: 400;
 		margin: 0.6em 0 0.2em;
 	}
 	:global(.dm-heading-controls) {

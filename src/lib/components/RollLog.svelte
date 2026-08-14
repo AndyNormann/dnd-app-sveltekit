@@ -181,12 +181,12 @@
 			{#each rolls as r (r.id)}
 				<div class="roll" class:secret={r.secret}>
 					<span class="who">{r.roller}{r.secret ? ' 🤫' : ''}</span>
+					<span class="total">{r.result}</span>
 					{#if dm && r.secret}
 						<button type="button" class="reveal" title="Show to players" onclick={() => revealRoll(r)}>
 							👁
 						</button>
 					{/if}
-					<span class="total">{r.result}</span>
 					{#if r.label}<span class="label">{r.label}</span>{/if}
 					<span class="detail">{r.breakdown}</span>
 				</div>
@@ -301,8 +301,9 @@
 	}
 	.roll {
 		display: grid;
-		grid-template-columns: 1fr auto;
+		grid-template-columns: 1fr auto auto;
 		gap: 0 0.5rem;
+		align-items: center;
 		padding: 0.35rem 0;
 		border-top: 1px solid var(--rule);
 	}

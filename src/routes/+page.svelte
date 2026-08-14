@@ -238,7 +238,7 @@
 		background: var(--accent);
 		color: var(--parchment-light);
 		font-size: 0.95rem;
-		font-family: var(--font-display);
+		font-family: var(--font-ui);
 		cursor: pointer;
 	}
 	.create button:hover {
@@ -265,7 +265,7 @@
 		border-radius: 6px;
 		background: var(--accent);
 		color: var(--parchment-light);
-		font-family: var(--font-display);
+		font-family: var(--font-ui);
 		cursor: pointer;
 	}
 	.snippet {

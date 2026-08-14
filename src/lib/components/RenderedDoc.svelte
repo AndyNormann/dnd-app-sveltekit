@@ -357,11 +357,22 @@
 
 <style>
 	.rendered {
-		line-height: 1.55;
+		line-height: 1.45;
 		word-wrap: break-word;
 		font-family: var(--font-body);
 		font-size: 1.35rem;
 		color: var(--ink);
+	}
+	.rendered :global(p) {
+		margin: 0.55em 0;
+	}
+	.rendered :global(ul),
+	.rendered :global(ol) {
+		padding-left: 1.4em;
+		margin: 0.55em 0;
+	}
+	.rendered :global(li) {
+		margin: 0.3em 0;
 	}
 	.rendered :global(h1),
 	.rendered :global(h2),

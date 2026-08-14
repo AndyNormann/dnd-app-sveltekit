@@ -258,7 +258,7 @@
 		border-radius: 6px;
 		padding: 0.5rem 1.4rem;
 		cursor: pointer;
-		font-family: var(--font-display);
+		font-family: var(--font-ui);
 		font-weight: 600;
 		font-size: 0.95rem;
 	}
