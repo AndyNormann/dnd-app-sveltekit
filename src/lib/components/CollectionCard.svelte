@@ -45,7 +45,7 @@
 			monSel = '';
 			monCount = '1';
 			onchanged();
-		} else itemErr = 'Could not update collection';
+		} else itemErr = 'Could not update encounter';
 	}
 
 	async function removeItem(monster_id: string) {
@@ -54,7 +54,7 @@
 	}
 
 	async function rename() {
-		const name = prompt(`Name for collection`, collection.name);
+		const name = prompt(`Name for encounter`, collection.name);
 		if (!name || name.trim() === '' || name.trim() === collection.name) return;
 		const ok = await save(collection.items, name.trim());
 		if (ok) onchanged();

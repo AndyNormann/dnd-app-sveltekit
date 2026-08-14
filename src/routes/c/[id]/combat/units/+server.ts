@@ -9,7 +9,7 @@ import {
 import type { CombatUnit } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
-import { clearBoard } from '$lib/server/combat';
+import { clearBoard, syncCharactersToBoard } from '$lib/server/combat';
 import { emitInitiative, emitUnits, emitDrawings } from '$lib/server/feed';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -33,6 +33,12 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		emitInitiative(params.id);
 		emitDrawings(params.id);
 		broadcast(params.id, { type: 'combat-log', entry: r.data.log });
+		return json({ ok: true });
+	}
+
+	if (body.action === 'add-players') {
+		syncCharactersToBoard(params.id);
+		emitUnits(params.id);
 		return json({ ok: true });
 	}
 

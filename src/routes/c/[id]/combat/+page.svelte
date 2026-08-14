@@ -85,8 +85,18 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'add-collection', collection_id: collSel })
 		});
-		if (!res.ok) collErr = 'Could not add collection';
-		else showToast('Collection added');
+		if (!res.ok) collErr = 'Could not add encounter';
+		else showToast('Encounter added');
+	}
+
+	async function addPlayers() {
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'add-players' })
+		});
+		if (!res.ok) collErr = 'Could not add players';
+		else showToast('Players added');
 	}
 
 	function clearReady() {
@@ -188,14 +198,15 @@
 		<div class="init-actions">
 			<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
 			<form class="add-encounter" onsubmit={(e) => { e.preventDefault(); spawnCollection(); }}>
-				<select class="nm enc-select" bind:value={collSel} aria-label="Collection to add">
-					<option value="">Pick collection…</option>
+				<select class="nm enc-select" bind:value={collSel} aria-label="Encounter to add">
+					<option value="">Pick encounter…</option>
 					{#each collections as coll (coll.id)}
 						<option value={coll.id}>{coll.name}</option>
 					{/each}
 				</select>
-				<button type="submit">Add collection</button>
+				<button type="submit">Add encounter</button>
 			</form>
+			<button type="button" class="big" onclick={addPlayers}>👥 Add players</button>
 			{#if collErr}<p class="error">{collErr}</p>{/if}
 		</div>
 	</section>

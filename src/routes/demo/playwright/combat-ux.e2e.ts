@@ -58,7 +58,7 @@ test('monster collections: build on the roster, drop onto the combat board, draw
 	// drop the collection onto the combat board in one step
 	await page.goto(`/c/${id}/combat`);
 	await page.locator('.enc-select').selectOption({ label: 'Goblin patrol' });
-	await page.click('button:has-text("Add collection")');
+	await page.click('button:has-text("Add encounter")');
 	await expect(page.locator('.board .token').filter({ hasText: /Goblin \d/ })).toHaveCount(3, {
 		timeout: 10000
 	});
@@ -111,7 +111,7 @@ test('player ready signals the DM; board zoom controls work', async ({ browser }
 	await player.close();
 });
 
-test('clear board keeps players + their initiative, drops enemies and drawings', async ({ browser }) => {
+test('clear board wipes everything; Add encounter + Add players buttons re-add the party', async ({ browser }) => {
 	const anon = await browser.newContext();
 	const id = await createCampaign(anon.request);
 	const { dm, page } = await loginDM(browser);
@@ -129,30 +129,32 @@ test('clear board keeps players + their initiative, drops enemies and drawings',
 	});
 	await dm.request.post(`/c/${id}/initiative`, { data: { action: 'roll' } });
 
-	let units = (await (await dm.request.get(`/c/${id}/combat/units`)).json()) as Array<{
-		kind: string;
-	}>;
+	let units = (await (await dm.request.get(`/c/${id}/combat/units`)).json()) as Array<{ kind: string }>;
 	expect(units.length).toBe(2);
 	let drawings = (await (await dm.request.get(`/c/${id}/combat/drawings`)).json()) as unknown[];
 	expect(drawings.length).toBe(1);
 
-	// the Clear board button lives in the board toolbar
+	// clear board lives in the toolbar; Add encounter + Add players sit under Initiative
 	await page.goto(`/c/${id}/combat`);
 	await expect(page.locator('.toolbar button.danger')).toBeVisible({ timeout: 10000 });
+	await expect(page.locator('.init-actions button', { hasText: 'Add encounter' })).toBeVisible();
+	await expect(page.locator('.init-actions button', { hasText: 'Add players' })).toBeVisible();
 
-	// clear via the same action the button fires
+	// clear wipes everything: players, enemies, drawings, initiative
 	const cl = await dm.request.post(`/c/${id}/combat/units`, { data: { action: 'clear' } });
 	expect(cl.ok()).toBeTruthy();
-
 	units = (await (await dm.request.get(`/c/${id}/combat/units`)).json()) as Array<{ kind: string }>;
 	drawings = (await (await dm.request.get(`/c/${id}/combat/drawings`)).json()) as unknown[];
-	const entries = (await (await dm.request.get(`/c/${id}/initiative`)).json()) as Array<{
-		unit_id: string;
-	}>;
-	expect(units.filter((u) => u.kind === 'player').length).toBe(1);
-	expect(units.filter((u) => u.kind === 'enemy').length).toBe(0);
+	const entries = (await (await dm.request.get(`/c/${id}/initiative`)).json()) as Array<{ unit_id: string }>;
+	expect(units.length).toBe(0);
 	expect(drawings.length).toBe(0);
-	expect(entries.length).toBe(1);
+	expect(entries.length).toBe(0);
+
+	// Add players puts the character back on the board
+	const ap = await dm.request.post(`/c/${id}/combat/units`, { data: { action: 'add-players' } });
+	expect(ap.ok()).toBeTruthy();
+	units = (await (await dm.request.get(`/c/${id}/combat/units`)).json()) as Array<{ kind: string }>;
+	expect(units.filter((u) => u.kind === 'player').length).toBe(1);
 
 	await anon.close();
 	await dm.close();

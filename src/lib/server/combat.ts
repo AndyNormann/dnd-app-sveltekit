@@ -5,13 +5,13 @@ import {
 	setUnitMovementUsed,
 	setInitiativeHpByUnit,
 	listCombatUnits,
+	clearCombatUnits,
 	listCharacters,
 	addCombatUnit,
 	listInitiative,
 	updateInitiative,
 	addInitiative,
 	clearInitiative,
-	removeInitiative,
 	clearCombatDrawings,
 	getInitiativeRound,
 	setInitiativeRound,
@@ -169,20 +169,12 @@ export function clearCombat(campaignId: string): Success<{ entries: InitEntry[];
 export function clearBoard(
 	campaignId: string
 ): Success<{ entries: InitEntry[]; round: number; log: CombatLogEntry }> {
-	// players are always on the board: keep player tokens, drop enemies and drawings
-	const units = listCombatUnits(campaignId);
-	for (const u of units) {
-		if (u.kind !== 'player') removeCombatUnit(u.id);
-	}
-	syncCharactersToBoard(campaignId);
-	clearCombatDrawings(campaignId);
-	// drop initiative entries pointing at now-removed (enemy) units, keep players
-	const unitIds = new Set(listCombatUnits(campaignId).map((u) => u.id));
-	for (const e of listInitiative(campaignId)) {
-		if (e.unit_id && !unitIds.has(e.unit_id)) removeInitiative(e.id);
-	}
+	// clear board clears completely: every unit (players + enemies), drawings, and initiative
+	clearCombatUnits(campaignId);
 	resetAllMovement(campaignId);
+	clearInitiative(campaignId);
 	setInitiativeRound(campaignId, 1);
+	clearCombatDrawings(campaignId);
 	const log = addCombatLog(campaignId, '🗑 Board cleared');
 	return ok({ entries: listInitiative(campaignId), round: 1, log });
 }

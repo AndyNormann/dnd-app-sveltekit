@@ -179,11 +179,11 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'save', name, items: [] })
 		});
-		if (!res.ok) colErr = 'Could not create collection';
+		if (!res.ok) colErr = 'Could not create encounter';
 		else {
 			newColName = '';
 			refreshCollections();
-			showToast('Collection created');
+			showToast('Encounter created');
 		}
 	}
 
@@ -278,11 +278,11 @@
 	</section>
 
 	<section class="panel collections">
-		<h2>Collections</h2>
+		<h2>Encounters</h2>
 		<p class="hint">Build reusable enemy groups, then drop one onto the board from the Combat page.</p>
 		<form class="new-col" onsubmit={createCollection}>
-			<input class="nm" placeholder="Collection name" bind:value={newColName} maxlength="60" />
-			<button type="submit">Create collection</button>
+			<input class="nm" placeholder="Encounter name" bind:value={newColName} maxlength="60" />
+			<button type="submit">Create encounter</button>
 		</form>
 		{#if colErr}<p class="error">{colErr}</p>{/if}
 		{#if collections.length === 0}
