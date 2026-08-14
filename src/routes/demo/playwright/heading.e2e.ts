@@ -48,6 +48,43 @@ test('typing # renders the hash as editable text, re-derives level, and round-tr
 	const json = JSON.parse(await res.text());
 	const docContent = (json.documents?.[0]?.content as string) ?? (json.content as string) ?? '';
 	expect(docContent).not.toContain('<!--id:');
+	expect(docContent).not.toContain('\\#');
 	const headingLines = docContent.split('\n').filter((l: string) => /^#{1,6} /.test(l));
 	expect(headingLines).toEqual(['## One', '## Two', '### Three']);
+});
+
+test('typing ## then space creates a clean H2 (no extra hashes)', async ({ browser }) => {
+	const dm = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	await dm.page.goto(`/c/${id}`);
+	await dm.page.waitForSelector('.mdx-host .ProseMirror');
+	const pm = dm.page.locator('.mdx-host .ProseMirror');
+	await pm.click();
+	await dm.page.keyboard.type('##');
+	await dm.page.keyboard.press(' ');
+	await dm.page.keyboard.type('Room');
+	await expect(pm.locator('h2')).toHaveText('## Room');
+	// no extra hashes inserted
+	expect(await pm.locator('h2').textContent()).not.toContain('####');
+	await dm.page.waitForTimeout(900);
+	const res = await dm.request.get(`/c/${id}/export`, { headers: { Origin: ORIGIN } });
+	const json = JSON.parse(await res.text());
+	const docContent = (json.documents?.[0]?.content as string) ?? '';
+	expect(docContent.trim()).toBe('## Room');
+});
+
+test('backspacing a lone # removes it (heading downgrades to paragraph)', async ({ browser }) => {
+	const dm = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	await dm.page.goto(`/c/${id}`);
+	await dm.page.waitForSelector('.mdx-host .ProseMirror');
+	const pm = dm.page.locator('.mdx-host .ProseMirror');
+	await pm.click();
+	await dm.page.keyboard.type('#');
+	await dm.page.keyboard.press(' ');
+	await expect(pm.locator('h1')).toHaveText('#');
+	// backspace twice: remove the hash, then the empty heading downgrades
+	await dm.page.keyboard.press('Backspace');
+	await dm.page.keyboard.press('Backspace');
+	await expect(pm.locator('h1,h2,h3,h4,h5,h6')).toHaveCount(0);
 });

@@ -68,7 +68,7 @@ export const headingHashPlugin: MilkdownPlugin = $prose((ctx) => {
 	const headingType = schema.nodes.heading;
 	return new Plugin({
 		key: new PluginKey('dnd-heading-hash'),
-		appendTransaction(_transactions, _oldState, newState) {
+		appendTransaction(_transactions, oldState, newState) {
 			if (!headingType) return null;
 			const headings: { pos: number; node: ProseNode }[] = [];
 			newState.doc.descendants((node, pos) => {
@@ -84,9 +84,15 @@ export const headingHashPlugin: MilkdownPlugin = $prose((ctx) => {
 				const first = node.firstChild;
 				const text = first && first.isText ? (first.text ?? '') : '';
 				const { h, hasSpace } = leadingHashes(text);
+				// a heading is "just created" when oldState had a non-heading node at the
+				// same block position (the input rule swaps a paragraph for a heading).
+				const justCreated = oldState.doc.nodeAt(pos)?.type !== headingType;
 
 				if (h === 0) {
-					// no hashes yet: inject to match the current level
+					// skip an empty heading that the user emptied (let Backspace/Enter
+					// downgrade it), but inject the marker on a newly-created heading
+					if (text.length === 0 && !justCreated) continue;
+					// inject to match the current level
 					tr = (tr ?? newState.tr).insertText('#'.repeat(level) + ' ', pos + 1, pos + 1);
 				} else {
 					// hashes drive the level
@@ -96,8 +102,9 @@ export const headingHashPlugin: MilkdownPlugin = $prose((ctx) => {
 							level: Math.min(6, Math.max(1, h))
 						});
 					}
-					// keep a space right after the hashes (ProseMirror drops it otherwise)
-					if (!hasSpace) {
+					// keep a separator space only when real content follows the hashes
+					// (so a lone `#` can be backspaced away)
+					if (!hasSpace && text.length > h) {
 						tr = (tr ?? newState.tr).insertText(' ', pos + 1 + h, pos + 1 + h);
 					}
 				}
