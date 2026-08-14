@@ -36,11 +36,11 @@
 
 <style>
 	:global(:root) {
-		--font-display: 'Cinzel', 'Georgia', serif;
-		--font-body: 'Literata', 'Georgia', serif;
-		--font-ui: 'Literata', 'Georgia', serif;
+		--font-display: 'Source Serif 4', 'Georgia', serif;
+		--font-body: 'Source Serif 4', 'Georgia', serif;
+		--font-ui: 'Source Serif 4', 'Georgia', serif;
 		--text-base: 1.35rem;
-		--type-root: 16px;
+		--type-root: 17.5px;
 		font-size: var(--type-root);
 	}
 	/* Theme — Indigo on an Obsidian (neutral near-black) base. */

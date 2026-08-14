@@ -17,8 +17,8 @@
 		{ key: 'large', label: 'L' }
 	];
 
-	let fontIdx = $state(1);
-	let sizeIdx = $state(1);
+	let fontIdx = $state(2); // default: Source Serif 4
+	let sizeIdx = $state(2); // default: Large
 
 	function apply() {
 		const f = FONTS[fontIdx];
@@ -45,8 +45,8 @@
 		const savedSize = localStorage.getItem('dnd-size');
 		const fi = FONTS.findIndex((f) => f.key === savedType);
 		const si = SIZES.findIndex((s) => s.key === savedSize);
-		fontIdx = fi >= 0 ? fi : 0; // default: Serif (current parchment pairing)
-		sizeIdx = si >= 0 ? si : 1; // default: standard size
+		fontIdx = fi >= 0 ? fi : 2; // default: Source Serif 4
+		sizeIdx = si >= 0 ? si : 2; // default: Large
 		apply();
 	}
 </script>

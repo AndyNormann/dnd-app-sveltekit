@@ -1,74 +1,68 @@
 import { test, expect } from '@playwright/test';
 
-test('typography switcher cycles fonts and sizes', async ({ page }) => {
+test('typography defaults to Source + Large and cycles fonts/sizes', async ({ page }) => {
 	await page.goto('/');
 	await page.waitForSelector('.type-switch');
 
-	// default = standard size
-	const sizeBtn = page.locator('.type-switch .size');
-	await expect(sizeBtn).toContainText('M');
-
-	const fontBtn = page.locator('.type-switch .t-btn:not(.size)');
-	await expect(fontBtn).toContainText('Literata');
-
-	// cycle serifs then sans/plain: Literata -> Garamond -> Source -> Lora -> Crimson -> Sans -> Plain
-	await fontBtn.click();
-	await expect(fontBtn).toContainText('Garamond');
-	await expect(page.locator('html')).toHaveAttribute('data-type', 'garamond');
-
-	await fontBtn.click();
+	// default = Source Serif 4 font, Large size
 	await expect(page.locator('html')).toHaveAttribute('data-type', 'source');
-
-	await fontBtn.click();
-	await expect(page.locator('html')).toHaveAttribute('data-type', 'lora');
-
-	await fontBtn.click();
-	await expect(page.locator('html')).toHaveAttribute('data-type', 'crimson');
-
-	await fontBtn.click();
-	await expect(page.locator('html')).toHaveAttribute('data-type', 'modern');
-
-	await fontBtn.click();
-	await expect(page.locator('html')).toHaveAttribute('data-type', 'plain');
-
-	// confirm the serif body actually applies
-	const garamondBody = await page.evaluate(() => {
-		document.documentElement.dataset.type = 'garamond';
-		return getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim();
-	});
-	expect(garamondBody).toContain('EB Garamond');
-
-	// cycle sizes: M -> L -> S
-	await sizeBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-size', 'large');
-	const largeRoot = await page.evaluate(() =>
+	await expect(page.locator('.type-switch .t-btn:not(.size)')).toContainText('Source');
+	await expect(page.locator('.type-switch .size')).toContainText('L');
+
+	// default serif drives headings + body + UI
+	const def = await page.evaluate(() => ({
+		display: getComputedStyle(document.documentElement).getPropertyValue('--font-display').trim(),
+		body: getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim(),
+		ui: getComputedStyle(document.documentElement).getPropertyValue('--font-ui').trim(),
+		root: getComputedStyle(document.documentElement).getPropertyValue('font-size').trim()
+	}));
+	expect(def.display).toContain('Source Serif 4');
+	expect(def.body).toContain('Source Serif 4');
+	expect(def.ui).toContain('Source Serif 4');
+	expect(def.root).toBe('17.5px');
+
+	// cycle sizes: large(2) -> compact -> standard -> large
+	const sizeBtn = page.locator('.type-switch .size');
+	await sizeBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-size', 'compact');
+	const compactRoot = await page.evaluate(() =>
 		getComputedStyle(document.documentElement).getPropertyValue('--type-root').trim()
 	);
 	await sizeBtn.click();
-	await expect(page.locator('html')).toHaveAttribute('data-size', 'compact');
-	await sizeBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-size', 'standard');
+	await sizeBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-size', 'large');
 
-	// serif preset also drives headings + UI font, not just body
-	// currently on 'plain' (index 6): click twice to reach garamond (index 1)
+	// cycle fonts from source(2): lora -> crimson -> modern -> plain -> literata -> garamond
+	const fontBtn = page.locator('.type-switch .t-btn:not(.size)');
 	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'lora');
 	await fontBtn.click();
-	const serif = await page.evaluate(() => ({
-		type: document.documentElement.dataset.type,
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'crimson');
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'modern');
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'plain');
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'literata');
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'garamond');
+
+	// garamond drives all three
+	const g = await page.evaluate(() => ({
 		display: getComputedStyle(document.documentElement).getPropertyValue('--font-display').trim(),
 		ui: getComputedStyle(document.documentElement).getPropertyValue('--font-ui').trim()
 	}));
-	expect(serif.type).toBe('garamond');
-	expect(serif.display).toContain('EB Garamond');
-	expect(serif.ui).toContain('EB Garamond');
-	await fontBtn.click(); // -> source
+	expect(g.display).toContain('EB Garamond');
+	expect(g.ui).toContain('EB Garamond');
 
-	// persisted to localStorage
+	// persisted
 	const stored = await page.evaluate(() => ({
 		type: localStorage.getItem('dnd-type'),
 		size: localStorage.getItem('dnd-size')
 	}));
-	expect(stored.type).toBe('source');
-	expect(stored.size).toBe('standard');
-	expect(largeRoot).toBe('17.5px');
+	expect(stored.type).toBe('garamond');
+	expect(stored.size).toBe('large');
+	expect(compactRoot).toBe('15px');
 });
