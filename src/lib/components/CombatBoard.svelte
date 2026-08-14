@@ -641,6 +641,7 @@
 			{@const pos = tokenPos(u)}
 			<div
 				class="token"
+				class:player={u.kind === 'player'}
 				class:myturn={u.id === myUnit?.id}
 				class:active={u.id === activeId}
 				class:dead={u.alive === 0}
@@ -762,11 +763,20 @@
 	.toolbar button {
 		border: 1px solid var(--rule);
 		background: var(--parchment-light);
-		border-radius: 5px;
+		border-radius: var(--radius-md);
 		padding: 0.3rem 0.6rem;
 		cursor: pointer;
 		font-size: 0.85rem;
 		color: var(--ink-soft);
+		transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
+	}
+	.toolbar button:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
+		color: var(--ink);
+	}
+	.toolbar button:active {
+		transform: translateY(1px);
 	}
 	.toolbar button.on {
 		color: var(--accent);
@@ -805,16 +815,18 @@
 		position: relative;
 		border: 2px solid var(--rule);
 		background: var(--board-bg, #2d261c);
-		border-radius: 4px;
+		border-radius: var(--radius-md);
 		overflow: hidden;
 		touch-action: none;
 		cursor: crosshair;
+		box-shadow: var(--shadow-md);
 	}
 	.board-viewport {
 		overflow: auto;
 		max-width: 100%;
 		touch-action: pan-x pan-y;
-		border-radius: 4px;
+		border-radius: var(--radius-md);
+		box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.35);
 	}
 	.zoombar {
 		display: flex;
@@ -826,11 +838,16 @@
 	.zoombar button {
 		border: 1px solid var(--rule);
 		background: var(--parchment-light);
-		border-radius: 5px;
+		border-radius: var(--radius-sm);
 		padding: 0.15rem 0.5rem;
 		cursor: pointer;
 		font-size: 0.8rem;
 		color: var(--ink-soft);
+		transition: background 0.12s ease, border-color 0.12s ease;
+	}
+	.zoombar button:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
 	}
 	.zoombar .zval {
 		font-size: 0.8rem;
@@ -871,13 +888,20 @@
 		box-sizing: border-box;
 		border: 2px solid #fff;
 		border-radius: 50%;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+	}
+	/* players get an indigo identity ring so the party reads at a glance */
+	.token.player .dot {
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55), 0 0 0 2px var(--token-ring);
+	}
+	.token.player.sel .dot {
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55), 0 0 0 3px var(--accent);
 	}
 	.token.active .dot {
-		box-shadow: 0 0 0 2px var(--gold), 0 1px 3px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 0 0 2px var(--gold), 0 2px 6px rgba(0, 0, 0, 0.55);
 	}
 	.token.sel .dot {
-		box-shadow: 0 0 0 2px var(--accent), 0 1px 3px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 0 0 2px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.55);
 	}
 	.token.dead .dot {
 		filter: grayscale(1) brightness(0.75);

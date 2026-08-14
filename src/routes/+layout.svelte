@@ -42,6 +42,11 @@
 		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
 		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.55);
 		--shadow-glow: 0 0 18px rgba(0, 0, 0, 0.35);
+		/* coherent radius scale + player-token ring cue */
+		--radius-sm: 5px;
+		--radius-md: 8px;
+		--radius-lg: 12px;
+		--token-ring: rgba(111, 143, 245, 0.9);
 	}
 	:global(body) {
 		margin: 0;

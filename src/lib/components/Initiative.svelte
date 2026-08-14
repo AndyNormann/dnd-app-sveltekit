@@ -108,11 +108,12 @@
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
 		border-top: 3px solid var(--gold);
-		border-radius: 8px;
+		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-md);
 		font-family: system-ui, sans-serif;
 		font-size: 0.9rem;
 		color: var(--ink);
+		overflow: hidden;
 	}
 	.header {
 		width: 100%;
@@ -133,8 +134,16 @@
 	}
 	.empty {
 		color: var(--ink-soft);
-		font-style: italic;
-		margin: 0.3rem 0;
+		text-align: center;
+		padding: 1rem 0.4rem;
+		font-style: normal;
+	}
+	.empty::before {
+		content: '⚔️';
+		display: block;
+		font-size: 1.4rem;
+		opacity: 0.7;
+		margin-bottom: 0.3rem;
 	}
 	.entry {
 		display: flex;
@@ -142,10 +151,11 @@
 		gap: 0.3rem;
 		padding: 0.3rem 0.2rem;
 		border-top: 1px solid var(--rule);
+		transition: background 0.15s ease;
 	}
 	.entry.active {
-		background: var(--parchment-deep);
-		box-shadow: inset 3px 0 0 var(--gold);
+		background: rgba(111, 143, 245, 0.10);
+		box-shadow: inset 3px 0 0 var(--accent);
 	}
 	.entry.dead {
 		opacity: 0.5;
@@ -154,8 +164,12 @@
 		text-decoration: line-through;
 	}
 	.down {
-		color: var(--accent-soft);
-		font-size: 0.75rem;
+		color: var(--danger);
+		font-size: 0.72rem;
+		background: rgba(226, 93, 84, 0.12);
+		border: 1px solid rgba(226, 93, 84, 0.35);
+		border-radius: 999px;
+		padding: 0 0.4rem;
 	}
 	.nm {
 		flex: 1;
@@ -184,12 +198,23 @@
 		background: none;
 		cursor: pointer;
 		color: var(--accent);
+		border-radius: var(--radius-sm);
+		transition: background 0.12s ease;
+	}
+	.play:hover {
+		background: rgba(111, 143, 245, 0.15);
 	}
 	.rm {
 		border: 0;
 		background: none;
 		cursor: pointer;
 		color: var(--rule);
+		border-radius: var(--radius-sm);
+		transition: color 0.12s ease, background 0.12s ease;
+	}
+	.rm:hover {
+		color: var(--danger);
+		background: rgba(226, 93, 84, 0.12);
 	}
 	.actions {
 		display: flex;
@@ -200,8 +225,16 @@
 		flex: 1;
 		border: 1px solid var(--rule);
 		background: var(--parchment-light);
-		border-radius: 4px;
+		border-radius: var(--radius-md);
 		padding: 0.3rem;
 		cursor: pointer;
+		transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
+	}
+	.actions button:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
+	}
+	.actions button:active {
+		transform: translateY(1px);
 	}
 </style>

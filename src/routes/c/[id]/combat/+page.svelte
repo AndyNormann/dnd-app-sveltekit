@@ -214,8 +214,10 @@
 	<section class="col">
 		<section class="panel board">
 			{#if activeName}
+			{#key activeName}
 				<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
-			{/if}
+			{/key}
+		{/if}
 			{#if playerCount > 0}
 				<div class="ready-status">
 					<button type="button" class="clear-ready" onclick={clearReady} title="Clear all ready states">✕</button>
@@ -304,11 +306,18 @@
 		font-size: 0.85rem;
 		padding: 0.4rem 0.7rem;
 		border: 1px solid var(--rule);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		background: var(--parchment-light);
 		cursor: pointer;
 		text-decoration: none;
 		color: var(--ink-soft);
+		transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+	}
+	.bar button:hover,
+	.bar a[target]:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
+		color: var(--ink);
 	}
 	.logout {
 		margin: 0;
@@ -355,9 +364,21 @@
 	.panel {
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
-		border-radius: 8px;
+		border-radius: var(--radius-lg);
 		padding: 0.9rem;
 		margin-bottom: 1rem;
+	}
+	/* board is the hero surface: elevated + ringed so the eye lands there */
+	.panel.board {
+		border: 2px solid var(--rule);
+		box-shadow: var(--shadow-lg);
+	}
+	/* the combat log rail recedes so the board + initiative dominate */
+	.panel.rail.right {
+		background: transparent;
+		border: 0;
+		box-shadow: none;
+		padding: 0;
 	}
 	.turn-status {
 		font-family: var(--font-display);
@@ -370,6 +391,17 @@
 		border: 1px solid var(--gold);
 		border-radius: 6px;
 		display: inline-block;
+		animation: turn-in 0.28s ease;
+	}
+	@keyframes turn-in {
+		from {
+			opacity: 0;
+			transform: translateY(-2px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 	.turn-status kbd {
 		font-family: inherit;
@@ -417,9 +449,16 @@
 		border: 0;
 		background: var(--accent);
 		color: var(--parchment-light);
-		border-radius: 5px;
+		border-radius: var(--radius-sm);
 		padding: 0.3rem 0.7rem;
 		cursor: pointer;
+		transition: filter 0.12s ease, transform 0.06s ease;
+	}
+	.add-encounter button:hover {
+		filter: brightness(1.12);
+	}
+	.add-encounter button:active {
+		transform: translateY(1px);
 	}
 	.add-encounter .plus {
 		width: 2.1rem;
@@ -431,11 +470,18 @@
 		border: 0;
 		background: var(--accent);
 		color: var(--parchment-light);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		padding: 0.5rem 0.9rem;
 		cursor: pointer;
 		font-family: var(--font-display);
 		font-weight: 600;
+		transition: filter 0.12s ease, transform 0.06s ease;
+	}
+	.big:hover {
+		filter: brightness(1.12);
+	}
+	.big:active {
+		transform: translateY(1px);
 	}
 	.error {
 		color: var(--danger);
@@ -450,7 +496,7 @@
 		background: var(--parchment-light);
 		border: 1px solid var(--gold);
 		border-left: 4px solid #3a9b45;
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);
 		color: var(--ink);

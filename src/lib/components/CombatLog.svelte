@@ -39,11 +39,12 @@
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
 		border-top: 3px solid var(--gold);
-		border-radius: 8px;
+		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-md);
 		font-family: system-ui, sans-serif;
 		font-size: 0.85rem;
 		color: var(--ink);
+		overflow: hidden;
 	}
 	.header {
 		width: 100%;
@@ -66,8 +67,16 @@
 	}
 	.empty {
 		color: var(--ink-soft);
-		font-style: italic;
-		margin: 0.3rem 0;
+		text-align: center;
+		padding: 1rem 0.4rem;
+		font-style: normal;
+	}
+	.empty::before {
+		content: '📜';
+		display: block;
+		font-size: 1.3rem;
+		opacity: 0.7;
+		margin-bottom: 0.3rem;
 	}
 	.row {
 		padding: 0.28rem 0.1rem;
