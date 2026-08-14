@@ -47,27 +47,30 @@
 	   lantern-lit table. Brass-gold is the D&D metal (interactive + links); a
 	   seal-red marks danger; moss-green marks success; hairline rules are warm
 	   bronze. Warm umber surfaces + a candlelight vignette replace flat brown. */
+	/* Theme — the Rulebook: midnight-navy covers, parchment-cream pages, and gold
+	   used as trim/interactive rather than the base hue. Reads as the classic D&D
+	   Player's Handbook the moment it opens; the brown is gone entirely. */
 	:global(:root) {
-		--parchment: #1a130b;
-		--parchment-deep: #120d07;
-		--parchment-light: #241b10;
-		--ink: #ecd9b4;
-		--ink-soft: #bda37c;
-		--rule: #3a2d18;
-		--board-bg: #1f1710;
-		--board-grid: rgba(236, 217, 180, 0.10);
+		--parchment: #17233c;
+		--parchment-deep: #121c30;
+		--parchment-light: #1f2f4d;
+		--ink: #ecdfc4;
+		--ink-soft: #b8bfd4;
+		--rule: #33466b;
+		--board-bg: #1a2742;
+		--board-grid: rgba(220, 203, 168, 0.10);
 		--accent: #d4a13c;
 		--accent-soft: #e2be6b;
 		--gold: #dcb25a;
-		--section-hl: rgba(212, 161, 60, 0.10);
-		--danger: #d96a5a;
-		--success: #4fa05c;
+		--section-hl: rgba(212, 161, 60, 0.12);
+		--danger: #e8896f;
+		--success: #58b366;
 		--success-deep: #1f5d2b;
 		--ok-text: #f2e7cd;
-		/* warm-tuned elevation shadows (brass-tinted falloff so panels lift off the umber) */
-		--shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
-		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.6);
+		/* navy-tuned elevation shadows (cool falloff so panels lift off the deep blue) */
+		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+		--shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.55);
 		--shadow-glow: 0 0 18px rgba(0, 0, 0, 0.4);
 		/* coherent radius scale + player-token ring cue */
 		--radius-sm: 5px;
@@ -119,11 +122,11 @@
 	:global(body) {
 		margin: 0;
 		background: var(--parchment);
-		/* a candlelit vellum: brass glow pooling from the lantern above, sinking to
-		   deep umber at the corners, over a faint aged-paper grain */
+		/* torchlit navy: warm candle-gold glow pooling over the midnight-blue cover,
+		   sinking to deep navy at the corners, over a faint parchment grain */
 		background-image:
-			radial-gradient(1200px 780px at 50% -8%, rgba(220, 178, 90, 0.14), transparent 60%),
-			radial-gradient(1600px 1000px at 50% 108%, rgba(0, 0, 0, 0.5), transparent 58%),
+			radial-gradient(1200px 780px at 50% -8%, rgba(220, 178, 90, 0.16), transparent 60%),
+			radial-gradient(1600px 1000px at 50% 108%, rgba(0, 0, 0, 0.45), transparent 58%),
 			var(--paper-grain);
 		background-attachment: fixed;
 		color: var(--ink);
