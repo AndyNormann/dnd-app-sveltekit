@@ -4,6 +4,7 @@
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { CharacterRow, Monster, CollectionRow } from '$lib/server/db';
+	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -213,6 +214,7 @@
 		<a href={`/c/${data.campaignId}/combat/roster`} class="tab" class:active={true}>Roster</a>
 	</nav>
 	<div class="spacer"></div>
+	<TypeSwitcher />
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
 	</form>

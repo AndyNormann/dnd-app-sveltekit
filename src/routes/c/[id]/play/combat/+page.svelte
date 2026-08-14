@@ -4,6 +4,7 @@
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
+	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -36,6 +37,7 @@
 <nav class="tabs">
 	<a href={`/c/${data.campaignId}/play`} class="tab">Notes</a>
 	<a href={`/c/${data.campaignId}/play/combat`} class="tab" class:active={true}>Combat</a>
+	<span class="tabs-actions"><TypeSwitcher /></span>
 </nav>
 
 <main class="combat">
@@ -47,10 +49,16 @@
 
 <style>
 	.tabs {
+		position: relative;
 		display: flex;
 		justify-content: center;
 		gap: 0.25rem;
 		padding: 0.75rem 0 0;
+	}
+	.tabs-actions {
+		position: absolute;
+		top: 0.6rem;
+		right: 0.75rem;
 	}
 	.tab {
 		text-decoration: none;

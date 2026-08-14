@@ -5,6 +5,7 @@
 	import Outline from '$lib/components/Outline.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
+	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { MapData, RevealOp, RollData } from '$lib/types';
@@ -141,6 +142,7 @@
 <nav class="tabs">
 	<a href={`/c/${data.campaignId}/play`} class="tab" class:active={true}>Notes</a>
 	<a href={`/c/${data.campaignId}/play/combat`} class="tab">Combat</a>
+	<span class="tabs-actions"><TypeSwitcher /></span>
 </nav>
 
 <div class="page">
@@ -189,10 +191,16 @@
 
 <style>
 	.tabs {
+		position: relative;
 		display: flex;
 		justify-content: center;
 		gap: 0.25rem;
 		padding: 0.75rem 0 0;
+	}
+	.tabs-actions {
+		position: absolute;
+		top: 0.6rem;
+		right: 0.75rem;
 	}
 	.tab {
 		text-decoration: none;

@@ -5,6 +5,7 @@
 	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
+	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import type { MapData, RevealOp } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
@@ -70,6 +71,7 @@
 	<span class="you" title="You are connected as this character">Playing as {data.character.name}</span>
 	<a href={`/p/${data.token}`} class="tab" class:active={true}>Notes</a>
 	<a href={`/p/${data.token}/combat`} class="tab">Combat</a>
+	<span class="tabs-actions"><TypeSwitcher /></span>
 </nav>
 
 <div class="page">
@@ -94,6 +96,9 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.75rem 0 0;
+	}
+	.tabs {
+		position: relative;
 	}
 	.you {
 		margin-right: 0.6rem;

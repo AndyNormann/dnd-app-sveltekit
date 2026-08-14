@@ -4,6 +4,7 @@
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
+	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type {
@@ -181,6 +182,7 @@
 	</nav>
 	<div class="spacer"></div>
 	<a href={`/c/${data.campaignId}/play/combat`} target="_blank" rel="noreferrer">Spectate</a>
+	<TypeSwitcher />
 	<form method="POST" action="/logout" class="logout">
 		<button type="submit" title="Log out as DM">Log out</button>
 	</form>

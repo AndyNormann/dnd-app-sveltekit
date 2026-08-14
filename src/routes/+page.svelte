@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import favicon from '$lib/assets/favicon.svg';
+	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import type { PageData } from './$types';
 
 	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
@@ -59,6 +60,7 @@
 
 <main>
 	<header class="top">
+		<TypeSwitcher />
 		<h1><img class="logo" src={favicon} alt="" /> Campaigns</h1>
 		{#if data.isDM}
 			<form method="POST" action="/logout" class="auth">

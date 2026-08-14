@@ -23,6 +23,7 @@
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: 'Literata', 'Georgia', serif;
 		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--text-base: 1.35rem;
 	}
 	/* Theme — Indigo on an Obsidian (neutral near-black) base. */
 	:global(:root) {
@@ -54,6 +55,31 @@
 		--radius-md: 8px;
 		--radius-lg: 12px;
 		--token-ring: rgba(111, 143, 245, 0.9);
+	}
+	/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
+	:global(:root[data-type='modern']) {
+		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
+	:global(:root[data-type='classic']) {
+		--font-display: 'Georgia', 'Times New Roman', serif;
+		--font-body: 'Georgia', 'Times New Roman', serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
+	:global(:root[data-type='plain']) {
+		--font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
+	:global(:root[data-size='compact']) {
+		--text-base: 1.18rem;
+	}
+	:global(:root[data-size='standard']) {
+		--text-base: 1.35rem;
+	}
+	:global(:root[data-size='large']) {
+		--text-base: 1.5rem;
 	}
 	:global(body) {
 		margin: 0;

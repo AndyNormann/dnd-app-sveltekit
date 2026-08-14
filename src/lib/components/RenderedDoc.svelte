@@ -360,7 +360,7 @@
 		line-height: 1.45;
 		word-wrap: break-word;
 		font-family: var(--font-body);
-		font-size: 1.35rem;
+		font-size: var(--text-base, 1.35rem);
 		color: var(--ink);
 	}
 	.rendered :global(p) {
