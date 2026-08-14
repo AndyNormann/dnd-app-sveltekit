@@ -1051,12 +1051,12 @@
 		border-radius: 4px;
 		pointer-events: none;
 		color: var(--parchment-light);
-		background: #c0392b;
+		background: var(--danger);
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 		animation: rise 1.3s ease-out forwards;
 	}
 	.floating.heal {
-		background: #27ae60;
+		background: var(--success);
 	}
 	.hp-pop {
 		position: absolute;
@@ -1141,11 +1141,14 @@
 	}
 	.hp-pop .row {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.3rem;
 		align-items: center;
 	}
 	.hp-pop .num {
-		width: 2.6rem;
+		flex: 1 1 2.2rem;
+		min-width: 0;
+		box-sizing: border-box;
 	}
 	.hp-pop .dice {
 		flex: 1;

@@ -90,9 +90,11 @@ export const mapBlockView = $view(mapBlock, () => (node) => {
 		const data = getMaps().find((m) => m.id === mapId);
 		if (!data) {
 			dom.textContent = '[missing map]';
+			dom.className = 'map-placeholder';
 			return;
 		}
 		dom.textContent = '';
+		dom.className = 'map-widget';
 		inst = mount(MapView, {
 			target: dom,
 			props: { map: data, dm: true, campaignId }

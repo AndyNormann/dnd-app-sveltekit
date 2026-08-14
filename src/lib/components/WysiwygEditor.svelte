@@ -121,6 +121,37 @@
 		color: var(--accent);
 		font-size: 1.15em;
 	}
+	:global(.mdx-host .ProseMirror pre) {
+		background: var(--parchment-deep);
+		border: 1px solid var(--rule);
+		padding: 0.8rem;
+		border-radius: 6px;
+		overflow: auto;
+	}
+	:global(.mdx-host .ProseMirror code) {
+		font-family: ui-monospace, monospace;
+		background: var(--parchment-deep);
+		color: var(--accent-soft);
+		padding: 0.1em 0.3em;
+		border-radius: 4px;
+	}
+	:global(.mdx-host .ProseMirror pre code) {
+		background: none;
+		padding: 0;
+		color: inherit;
+	}
+	:global(.mdx-host .ProseMirror table) {
+		border-collapse: collapse;
+		margin: 0.6rem 0;
+	}
+	:global(.mdx-host .ProseMirror th),
+	:global(.mdx-host .ProseMirror td) {
+		border: 1px solid var(--rule);
+		padding: 0.35rem 0.6rem;
+	}
+	:global(.mdx-host .ProseMirror th) {
+		background: var(--parchment-deep);
+	}
 	:global(.mdx-host .ProseMirror h1),
 	:global(.mdx-host .ProseMirror h2),
 	:global(.mdx-host .ProseMirror h3),
@@ -238,6 +269,18 @@
 		   natural height — no internal scrollbar, so page scrolling is never trapped */
 		margin: 0.75rem 0 1.5rem;
 		max-width: 640px;
+	}
+	:global(.map-placeholder) {
+		font-style: italic;
+		color: var(--ink-soft);
+		border: 1px dashed var(--rule);
+		border-radius: 6px;
+		padding: 0.5rem;
+	}
+	:global(.map-widget) {
+		border: 1px solid var(--rule);
+		border-radius: var(--radius-md);
+		padding: 0.4rem;
 	}
 	:global(.mdx-host .ProseMirror .section-hl) {
 		/* marker only — the actual box is the measured .section-box overlay, so

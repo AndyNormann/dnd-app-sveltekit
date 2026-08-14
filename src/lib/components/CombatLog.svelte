@@ -10,10 +10,17 @@
 	// newest first (listCombatLogs orders DESC)
 	let logs = $state<CombatLogEntry[]>([...initial]);
 	let open = $state(true);
+	let feedEl: HTMLDivElement | undefined;
 
 	/** Prepend a freshly broadcast entry from the server. */
 	export function add(entry: CombatLogEntry) {
 		logs = [entry, ...logs.filter((e) => e.id !== entry.id)].slice(0, 80);
+		// if the DM is at the newest end (top), keep them pinned there
+		if (feedEl && feedEl.scrollTop <= 40) {
+			requestAnimationFrame(() => {
+				if (feedEl) feedEl.scrollTop = 0;
+			});
+		}
 	}
 </script>
 
@@ -22,7 +29,7 @@
 		📜 Combat log {open ? '▾' : '▴'}
 	</button>
 	{#if open}
-		<div class="feed">
+		<div class="feed" bind:this={feedEl}>
 			{#if logs.length === 0}
 				<p class="empty">Nothing yet. HP changes, turns and downed units land here.</p>
 			{/if}
