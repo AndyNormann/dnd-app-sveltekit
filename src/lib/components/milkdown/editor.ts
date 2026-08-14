@@ -8,6 +8,7 @@ import { trailing } from '@milkdown/kit/plugin/trailing';
 import { getMarkdown } from '@milkdown/utils';
 import { nord } from '@milkdown/theme-nord';
 import { buildInteractivePlugin } from './interactive';
+import { buildWikiAutocompletePlugin } from './wikiAutocomplete';
 import { buildSlashPlugin } from './slash';
 import { noAutoHeading } from './noAutoHeading';
 import { mapBlock, mapBlockView, mapDirectiveTransformer, mapApi, configureMaps } from './mapNode';
@@ -75,6 +76,10 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 		documents: opts.documents
 	});
 
+	const wikiAutocomplete = buildWikiAutocompletePlugin({
+		documents: opts.documents
+	});
+
 	const slash = buildSlashPlugin({
 		campaignId: opts.campaignId,
 		addMap: opts.addMap ?? (() => {}),
@@ -105,6 +110,7 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 		.use(trailing)
 		.use(listener)
 		.use(interactive)
+		.use(wikiAutocomplete)
 		.use(slash)
 		.config((ctx) => {
 			const lm = ctx.get(listenerCtx);

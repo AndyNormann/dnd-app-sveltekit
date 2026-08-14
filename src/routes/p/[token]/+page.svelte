@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import RenderedDoc from '$lib/components/RenderedDoc.svelte';
 	import DocumentList from '$lib/components/DocumentList.svelte';
+	import RollLog from '$lib/components/RollLog.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { DocumentSummary } from '$lib/server/db';
@@ -18,6 +19,7 @@
 	let maps = $state<MapData[]>(data.maps);
 	let connected = $state(false);
 	let doc: RenderedDoc;
+	let rollLog: RollLog;
 	let a11y: A11yLive;
 
 	$effect(() => {
@@ -41,6 +43,11 @@
 			onDocumentUpdated: (documentId, h) => {
 				if (documentId === currentDocId) html = h;
 			},
+			addRoll: (r) => {
+				rollLog?.addRoll(r);
+				a11y?.announce(`${r.roller} rolled ${r.expression}`);
+			},
+			setRolls: (rolls) => rollLog?.setRolls(rolls),
 			applyMapOp: (mapId, op) => doc?.applyMapOp(mapId, op),
 			applyTokens: (mapId, tokens) => doc?.applyTokens(mapId, tokens),
 			applyGrid: (mapId, size) => doc?.applyGrid(mapId, size),
@@ -93,9 +100,12 @@
 		{:else if html.trim() === ''}
 			<p class="empty">This document is empty for now.</p>
 		{:else}
-			<RenderedDoc bind:this={doc} {html} campaignId={data.campaignId} {maps} roller={data.character.name} />
+			<RenderedDoc bind:this={doc} {html} campaignId={data.campaignId} {maps} roller={data.character.name} onroll={(r) => rollLog?.addRoll(r)} />
 		{/if}
 	</main>
+	<aside class="rail rolls">
+		<RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
+	</aside>
 </div>
 
 <style>
@@ -129,7 +139,7 @@
 	}
 	.page {
 		display: grid;
-		grid-template-columns: 13rem minmax(0, 50rem);
+		grid-template-columns: 13rem minmax(0, 50rem) 18rem;
 		justify-content: center;
 		gap: 1.25rem;
 		font-family: var(--font-body);
@@ -142,6 +152,16 @@
 		max-height: calc(100vh - 2rem);
 		overflow-y: auto;
 		padding-top: 1.5rem;
+	}
+	.rail.rolls {
+		position: sticky;
+		top: 1rem;
+		align-self: start;
+		max-height: none;
+		height: calc(100vh - 2rem);
+		overflow: hidden;
+		border-left: 1px solid var(--rule);
+		padding: 0.5rem 0 0 0.75rem;
 	}
 	main {
 		--page-bg: var(--parchment-light);
@@ -191,6 +211,9 @@
 			justify-content: stretch;
 		}
 		.rail {
+			display: none;
+		}
+		.rail.rolls {
 			display: none;
 		}
 		main {

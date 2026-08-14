@@ -395,7 +395,7 @@
 	<div class="spacer"></div>
 	<label class="upload">
 		Add map
-		<input type="file" accept="image/*" onchange={uploadMap} hidden />
+		<input type="file" accept="image/*" onchange={uploadMap} class="visually-hidden" />
 	</label>
 	<div class="more">
 		<button
@@ -470,7 +470,8 @@
 						<p>
 							Type <code># Heading</code>, roll like <code>2d6+3</code>, link another document with
 							<code>[[Quest]]</code> or <code>[[Quest#Step2]]</code>, or press <code>/</code> for a command menu
-							(incl. adding a map). <span class="khint">Shortcuts: <code>Ctrl+\</code> source · <code>Ctrl+.</code> document list</span>
+							(incl. adding a map, or <code>H1/H2/H3</code> to make a heading — typing <code>#</code> stays plain text).
+							<span class="khint">Shortcuts: <code>Ctrl+\</code> source · <code>Ctrl+.</code> document list</span>
 						</p>
 					</div>
 				{/if}
@@ -515,6 +516,25 @@
 {/if}
 
 <style>
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+		border: 0;
+	}
+	.visually-hidden:focus {
+		position: static;
+		width: auto;
+		height: auto;
+		clip: auto;
+		margin: 0;
+	}
+
 	.bar {
 		display: flex;
 		align-items: center;

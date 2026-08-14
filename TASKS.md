@@ -363,3 +363,38 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       Export/backup/restore cover all documents. Update/rewrite unit + e2e tests
       for the document model (share, hierarchy, section-highlight, wysiwyg,
       find-in-notes, combat-flow) and mark TASKS.md [x] + commit.
+
+## Improvements batch (suggested slice)
+
+> Ten items from the "more suggestions" pass. Several were already satisfied by
+> earlier work; the rest were implemented in one commit.
+
+- [x] **1. Player portal notes rolling dead-end** — `/p/[token]` notes now has a
+      rolls rail (`RollLog`, player mode) plus `roll`/`rolls-cleared`/
+      `rolls-restored` SSE handling, and RenderedDoc gets `onroll`, so inline
+      dice on the player portal give live feedback.
+- [x] **2. Combat board grid labels** — axis letters (A…) across the top and row
+      numbers (1…) down the left, drawn on the board canvas for voice call-outs.
+- [x] **3. Add-map input keyboard accessibility** — the header "Add map" file
+      input is now visually-hidden-but-focusable (no more `display:none`), so
+      keyboard users can reach it. (Heading-controls a11y is moot: those
+      controls were removed in the document-model rewrite.)
+- [x] **4. Manual initiative reorder + re-roll one combatant** — per-entry ▲/▼
+      buttons swap adjacent combatants (by exchanging init values, keeping the
+      init-sort), and a ⟳ button re-rolls a single entry's initiative (d20 +
+      unit bonus). New `rerollCombatant` / `moveInitiativeEntry` in combat.ts,
+      `init` accepted by `updateInitiative`.
+- [x] **5. Conditions on board tokens** — already present (condition chips
+      render under each token).
+- [x] **6. Turn clock** — a `⏱ mm:ss` elapsed readout (DM + player toolbars)
+      that resets whenever the active turn changes.
+- [x] **7. Wiki-link autocomplete** — typing `[[` opens a popup listing matching
+      documents; Arrow keys / Enter complete the `[[Doc]]` link, Escape closes.
+      New `wikiAutocomplete.ts` `$prose` plugin + `.dnd-wiki-pop` CSS.
+- [x] **8. Mobile pass for DM notes** — already present (`.layout` collapses to
+      a single column at 56rem).
+- [x] **9. Share a single document** — already present via per-document Shared
+      toggles in the document model (F3).
+- [x] **10. Stale `# Heading` hint copy** — the empty-state hint now notes that
+      headings come from the `/` menu (H1/H2/H3) and that typing `#` stays plain
+      text.

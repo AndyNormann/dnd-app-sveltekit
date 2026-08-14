@@ -50,6 +50,12 @@
 	function remove(entry: InitEntry) {
 		post(`/c/${campaignId}/initiative/${entry.id}`, { action: 'remove' });
 	}
+	function reroll(entry: InitEntry) {
+		post(`/c/${campaignId}/initiative`, { action: 'reroll', entryId: entry.id });
+	}
+	function moveEntry(entry: InitEntry, dir: 'up' | 'down') {
+		post(`/c/${campaignId}/initiative`, { action: 'move', entryId: entry.id, dir });
+	}
 	function nextTurn() {
 		post(`/c/${campaignId}/initiative`, { action: 'next' });
 	}
@@ -76,6 +82,9 @@
 				<div class="entry" class:active={e.active === 1} class:dead={!!unit && unit.alive === 0}>
 					{#if dm}
 						<button type="button" class="play" title="It's their turn" aria-label="Set active turn" onclick={() => setActive(e)}>▶</button>
+						<button type="button" class="up" title="Move earlier in order" aria-label="Move up" onclick={() => moveEntry(e, 'up')}>▲</button>
+						<button type="button" class="down" title="Move later in order" aria-label="Move down" onclick={() => moveEntry(e, 'down')}>▼</button>
+						<button type="button" class="rr" title="Re-roll this initiative" aria-label="Re-roll initiative" onclick={() => reroll(e)}>⟳</button>
 						<button type="button" class="rm" title="Remove" aria-label="Remove" onclick={() => remove(e)}>✕</button>
 					{/if}
 					<span class="nm">{e.name}</span>
@@ -205,6 +214,24 @@
 	}
 	.play:hover {
 		background: rgba(111, 143, 245, 0.15);
+	}
+	.up,
+	.down,
+	.rr {
+		border: 0;
+		background: none;
+		cursor: pointer;
+		color: var(--ink-soft);
+		font-size: 0.7rem;
+		border-radius: var(--radius-sm);
+		padding: 0.1rem 0.2rem;
+		transition: color 0.12s ease, background 0.12s ease;
+	}
+	.up:hover,
+	.down:hover,
+	.rr:hover {
+		color: var(--accent);
+		background: rgba(111, 143, 245, 0.12);
 	}
 	.rm {
 		border: 0;

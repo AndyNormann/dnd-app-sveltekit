@@ -97,7 +97,7 @@ test('realtime: DM sharing a document reveals it live to an open player portal',
 
 	const portal = await openPortal(anon, token);
 	// document is hidden by default -> empty state
-	await expect(portal.locator('.empty')).toContainText('hasn\'t shared any documents');
+	await expect(portal.locator('main .empty')).toContainText('hasn\'t shared any documents');
 
 	// DM shares the document -> it appears live on the open portal
 	await shareDoc(dm, id, docId, cookieHeader);

@@ -158,6 +158,45 @@ export function advanceTurn(
 	return ok({ entries: listInitiative(campaignId), round, log });
 }
 
+/** Re-roll a single combatant's initiative (d20 + their init bonus, if unit-backed). */
+export function rerollCombatant(
+	campaignId: string,
+	entryId: number
+): Outcome<{ entries: InitEntry[]; round: number; log: CombatLogEntry }> {
+	const entry = listInitiative(campaignId).find((x) => x.id === entryId);
+	if (!entry) return notFound();
+	const unit = entry.unit_id
+		? listCombatUnits(campaignId).find((u) => u.id === entry.unit_id)
+		: null;
+	const init = Math.floor(Math.random() * 20) + 1 + (unit ? unit.init_bonus : 0);
+	updateInitiative(entryId, { init });
+	const log = addCombatLog(campaignId, `⟳ Re-rolled ${entry.name} (${init})`);
+	return ok({
+		entries: listInitiative(campaignId),
+		round: getInitiativeRound(campaignId),
+		log
+	});
+}
+
+/** Swap a combatant up/down in the turn order by exchanging adjacent init values (keeps the init-sort). */
+export function moveInitiativeEntry(
+	campaignId: string,
+	entryId: number,
+	dir: 'up' | 'down'
+): Outcome<{ entries: InitEntry[]; round: number; log: null }> {
+	const entries = listInitiative(campaignId);
+	const i = entries.findIndex((x) => x.id === entryId);
+	if (i < 0) return notFound();
+	const j = dir === 'up' ? i - 1 : i + 1;
+	if (j < 0 || j >= entries.length)
+		return ok({ entries, round: getInitiativeRound(campaignId), log: null });
+	const a = entries[i];
+	const b = entries[j];
+	updateInitiative(a.id, { init: b.init });
+	updateInitiative(b.id, { init: a.init });
+	return ok({ entries: listInitiative(campaignId), round: getInitiativeRound(campaignId), log: null });
+}
+
 /** Wipe the initiative list and reset the round counter to 1. */
 export function clearCombat(campaignId: string): Success<{ entries: InitEntry[]; round: number; log: null }> {
 	clearInitiative(campaignId);

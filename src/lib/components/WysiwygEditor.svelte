@@ -255,6 +255,41 @@
 		flex-direction: column;
 		gap: 2px;
 	}
+	:global(.dnd-wiki-pop) {
+		position: fixed;
+		z-index: 1001;
+		min-width: 10rem;
+		max-height: 14rem;
+		overflow-y: auto;
+		background: var(--parchment-light);
+		border: 1px solid var(--gold);
+		border-radius: 8px;
+		box-shadow: var(--shadow-lg);
+		padding: 0.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	:global(.dnd-wiki-item) {
+		text-align: left;
+		border: 0;
+		background: none;
+		color: var(--ink);
+		border-radius: 6px;
+		padding: 0.35rem 0.5rem;
+		cursor: pointer;
+		font-size: 0.9rem;
+	}
+	:global(.dnd-wiki-item:hover),
+	:global(.dnd-wiki-item.sel) {
+		background: rgba(111, 143, 245, 0.14);
+		color: var(--accent-soft);
+	}
+	:global(.dnd-wiki-none) {
+		color: var(--ink-soft);
+		font-size: 0.85rem;
+		padding: 0.35rem 0.5rem;
+	}
 	:global(.dnd-slash-item) {
 		display: flex;
 		align-items: center;

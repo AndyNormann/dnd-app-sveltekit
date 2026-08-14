@@ -46,17 +46,19 @@ export function getInitiative(id: number): InitEntry | null {
 
 export function updateInitiative(
 	id: number,
-	patch: { name?: string; hp?: number; active?: number }
+	patch: { name?: string; hp?: number; active?: number; init?: number }
 ): InitEntry | null {
 	const current = db.query('SELECT * FROM initiative_entries WHERE id = ?').get(id) as InitEntry | null;
 	if (!current) return null;
 	const name = patch.name ?? current.name;
 	const hp = patch.hp ?? current.hp;
 	const active = patch.active ?? current.active;
-	db.query('UPDATE initiative_entries SET name = ?, hp = ?, active = ? WHERE id = ?').run(
+	const init = patch.init ?? current.init;
+	db.query('UPDATE initiative_entries SET name = ?, hp = ?, active = ?, init = ? WHERE id = ?').run(
 		name,
 		hp,
 		active,
+		init,
 		id
 	);
 	return rowToInit(db.query('SELECT * FROM initiative_entries WHERE id = ?').get(id) as InitEntry);

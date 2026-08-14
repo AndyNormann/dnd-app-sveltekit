@@ -103,6 +103,28 @@
 	let grabOffset = $state<{ x: number; y: number } | null>(null);
 	let dragCost = $state<number | null>(null);
 	let activeId = $state<string | null>(activeUnitId);
+	// turn clock: counts up for the current active unit, resets whenever the turn changes
+	let elapsed = $state(0);
+	let clockInt: ReturnType<typeof setInterval> | undefined;
+	$effect(() => {
+		activeId; // retrigger on turn change
+		elapsed = 0;
+		if (clockInt) clearInterval(clockInt);
+		clockInt = setInterval(() => {
+			elapsed += 1;
+		}, 1000);
+		return () => {
+			if (clockInt) {
+				clearInterval(clockInt);
+				clockInt = undefined;
+			}
+		};
+	});
+	function fmtClock(s: number) {
+		const m = Math.floor(s / 60);
+		const sec = s % 60;
+		return `${m}:${sec.toString().padStart(2, '0')}`;
+	}
 	// floating HP chips + baseline for delta detection
 	let floating = $state<Record<string, { delta: number; x: number; y: number; key: number }>>({});
 	const prevHp = new Map<string, number>(initialUnits.map((u) => [u.id, u.hp]));
@@ -221,6 +243,20 @@
 			ctx.moveTo(0, j * CELL + 0.5);
 			ctx.lineTo(cols * CELL, j * CELL + 0.5);
 			ctx.stroke();
+		}
+		// axis labels: letters across the top, numbers down the left (call-outs over voice)
+		ctx.font = '9px system-ui, sans-serif';
+		ctx.fillStyle = th.grid;
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		const pad = 2;
+		for (let c = 0; c < cols; c++) {
+			const label = String.fromCharCode(65 + (c % 26));
+			ctx.fillText(label, c * CELL + CELL / 2, pad + 6);
+		}
+		ctx.textAlign = 'right';
+		for (let r = 0; r < rows; r++) {
+			ctx.fillText(String(r + 1), pad + 7, r * CELL + CELL / 2);
 		}
 	}
 
@@ -614,6 +650,7 @@
 					></button>
 				{/each}
 			</span>
+			<span class="turnclock" title="Elapsed time on this turn">⏱ {fmtClock(elapsed)}</span>
 		</div>
 	{:else}
 		<div class="toolbar">
@@ -625,6 +662,7 @@
 					>Turn: <b>{myUnit.name}</b> · moved {Math.min(usedCells, budgetCells)}/{budgetCells} cells</span
 				>
 			{/if}
+			<span class="turnclock" title="Elapsed time on this turn">⏱ {fmtClock(elapsed)}</span>
 		</div>
 	{/if}
 
@@ -821,6 +859,12 @@
 		margin-left: 0.5rem;
 		font-size: 0.85rem;
 		color: var(--ink-soft);
+	}
+	.turnclock {
+		margin-left: 0.5rem;
+		font-size: 0.85rem;
+		color: var(--accent);
+		font-variant-numeric: tabular-nums;
 	}
 	.board {
 		position: relative;
