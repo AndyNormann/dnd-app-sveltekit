@@ -28,10 +28,6 @@
 	let activeName = $state('');
 	let round = $state(data.initiativeRound);
 
-	let enemyName = $state('');
-	let enemyInit = $state('0');
-	let enemyHp = $state('');
-	let enemyColor = $state('#a33');
 	let collections = $state<CollectionRow[]>(data.collections);
 	let collSel = $state('');
 	let collErr = $state('');
@@ -45,27 +41,6 @@
 		toast = msg;
 		clearTimeout(toastTimer);
 		toastTimer = setTimeout(() => (toast = null), 2000);
-	}
-
-	async function addEnemy(e: Event) {
-		e.preventDefault();
-		errorMsg = '';
-		if (!enemyName.trim()) return;
-		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				action: 'add-enemy',
-				name: enemyName,
-				init_bonus: enemyInit,
-				max_hp: enemyHp,
-				color: enemyColor
-			})
-		});
-		if (!res.ok) return;
-		enemyName = '';
-		enemyInit = '0';
-		enemyHp = '';
 	}
 
 	function rollInitiative() {
@@ -215,6 +190,19 @@
 			initialRound={data.initiativeRound}
 			units={units}
 		/>
+		<div class="init-actions">
+			<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
+			<form class="add-encounter" onsubmit={(e) => { e.preventDefault(); spawnCollection(); }}>
+				<select class="nm enc-select" bind:value={collSel} aria-label="Collection to add">
+					<option value="">Pick collection…</option>
+					{#each collections as coll (coll.id)}
+						<option value={coll.id}>{coll.name}</option>
+					{/each}
+				</select>
+				<button type="submit">Add collection</button>
+			</form>
+			{#if collErr}<p class="error">{collErr}</p>{/if}
+		</div>
 	</section>
 
 	<section class="col">
@@ -236,31 +224,9 @@
 				initialDrawings={drawings}
 				initialConfig={boardConfig}
 				activeUnitId={data.activeUnitId}
+				onClearBoard={clearBoard}
 			/>
 		</section>
-
-		<section class="panel setup">
-			<button type="button" class="big" onclick={rollInitiative}>🎲 Roll initiative</button>
-			<form class="add-encounter" onsubmit={(e) => { e.preventDefault(); spawnCollection(); }}>
-				<select class="nm enc-select" bind:value={collSel} aria-label="Collection to add">
-					<option value="">Pick collection…</option>
-					{#each collections as coll (coll.id)}
-						<option value={coll.id}>{coll.name}</option>
-					{/each}
-				</select>
-				<button type="submit">Add collection</button>
-			</form>
-			{#if collErr}<p class="error">{collErr}</p>{/if}
-			<form class="add-enemy" onsubmit={addEnemy}>
-				<input class="nm" placeholder="Enemy name" bind:value={enemyName} maxlength="60" />
-				<input class="num" placeholder="Init+" bind:value={enemyInit} maxlength="4" />
-				<input class="num" placeholder="HP" bind:value={enemyHp} maxlength="6" />
-				<input class="color" type="color" bind:value={enemyColor} title="Enemy color" />
-				<button type="submit">Add enemy</button>
-			</form>
-			<button type="button" class="big danger" onclick={clearBoard}>🗑 Clear board</button>
-		</section>
-
 
 		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
 	</section>
@@ -409,14 +375,19 @@
 		margin-left: 0.4rem;
 		background: var(--parchment-light);
 	}
-	.add-enemy,
+	.init-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		margin-top: 0.8rem;
+		padding-top: 0.8rem;
+		border-top: 1px solid var(--rule);
+	}
 	.add-encounter {
 		display: flex;
 		gap: 0.35rem;
 		flex-wrap: wrap;
-		margin-bottom: 0.6rem;
 	}
-	.add-enemy input,
 	.add-encounter input,
 	.add-encounter select {
 		border: 1px solid var(--rule);
@@ -427,22 +398,15 @@
 		background: var(--parchment-deep);
 		color: var(--ink);
 	}
-	.add-enemy .nm,
 	.add-encounter .nm {
 		flex: 1 1 10rem;
 	}
-	.add-enemy .num,
 	.add-encounter .num {
 		width: 3.4rem;
 	}
 	.add-encounter .enc-select {
 		flex: 1 1 10rem;
 	}
-	.add-enemy input.color {
-		width: 2.4rem;
-		padding: 0.1rem;
-	}
-	.add-enemy button,
 	.add-encounter button {
 		border: 0;
 		background: var(--accent);
@@ -450,12 +414,6 @@
 		border-radius: 5px;
 		padding: 0.3rem 0.7rem;
 		cursor: pointer;
-	}
-	.setup {
-		display: flex;
-		gap: 0.6rem;
-		align-items: center;
-		flex-wrap: wrap;
 	}
 	.big {
 		border: 0;
@@ -466,13 +424,6 @@
 		cursor: pointer;
 		font-family: var(--font-display);
 		font-weight: 600;
-	}
-	.big.danger {
-		background: var(--accent-soft);
-	}
-	.add-enemy {
-		margin: 0;
-		flex: 1;
 	}
 	.error {
 		color: var(--danger);

@@ -34,10 +34,11 @@ test('combat: DM sets conditions, attacks (logged), and applies damage to a toke
 	const { dm, page } = await loginDM(browser);
 	await page.goto(`/c/${id}/combat`);
 
-	// add an enemy to the board
-	await page.locator('.add-enemy input[placeholder="Enemy name"]').fill('Goblin');
-	await page.locator('.add-enemy input[placeholder="HP"]').fill('12');
-	await page.click('.add-enemy button[type=submit]');
+	// add an enemy to the board (wait for SSE to be live so the board hears the broadcast)
+	await page.locator('.conn.on').waitFor({ timeout: 5000 });
+	await dm.request.post(`/c/${id}/combat/units`, {
+		data: { action: 'add-enemy', name: 'Goblin', max_hp: 12, hp: 12 }
+	});
 	const token = page.locator('.board-wrap .token').filter({ hasText: 'Goblin' });
 	await expect(token).toBeVisible({ timeout: 10000 });
 

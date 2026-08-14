@@ -45,9 +45,10 @@ test('rolls live in a right sidebar; initiative lives on its own combat page (li
 	await expect(page.locator('.rail.left .initiative')).toBeVisible();
 
 	// add an enemy to the board, then roll initiative (combat units populate the tracker)
-	await page.locator('.add-enemy input[placeholder="Enemy name"]').fill('Goblin');
-	await page.locator('.add-enemy input[placeholder="HP"]').fill('7');
-	await page.click('.add-enemy button[type=submit]');
+	await page.locator('.conn.on').waitFor({ timeout: 5000 });
+	await dm.request.post(`/c/${id}/combat/units`, {
+		data: { action: 'add-enemy', name: 'Goblin', max_hp: 7, hp: 7 }
+	});
 	await expect(page.locator('.board .token').filter({ hasText: 'Goblin' })).toBeVisible();
 	await page.click('button:has-text("Roll initiative")');
 	await expect(page.locator('.rail.left .initiative').getByText('Goblin')).toBeVisible({ timeout: 10000 });

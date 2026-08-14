@@ -57,13 +57,13 @@ test('combat: characters -> links -> board -> initiative -> movement gating -> h
 	await expect(player.locator('.you')).toHaveText('Playing as Aria');
 	await expect(player.locator('.combat .board')).toBeVisible({ timeout: 10000 });
 
-	// Aria is always on the board (characters auto-add); just add an enemy
+	// Aria is always on the board (characters auto-add); add an enemy via the API
 	await dm.page.goto(`/c/${id}/combat`);
 	await expect(dm.page.locator('.board .token').filter({ hasText: 'Aria' })).toBeVisible({ timeout: 10000 });
-	await dm.page.fill('.add-enemy input[placeholder="Enemy name"]', 'Goblin');
-	await dm.page.fill('.add-enemy input[placeholder="Init+"]', '1');
-	await dm.page.fill('.add-enemy input[placeholder="HP"]', '7');
-	await dm.page.click('.add-enemy button[type=submit]');
+	const ae = await dm.request.post(`/c/${id}/combat/units`, {
+		data: { action: 'add-enemy', name: 'Goblin', init_bonus: 1, max_hp: 7, hp: 7 }
+	});
+	expect(ae.ok()).toBeTruthy();
 	await expect(dm.page.locator('.board .token').filter({ hasText: 'Goblin' })).toBeVisible();
 
 	// roll initiative

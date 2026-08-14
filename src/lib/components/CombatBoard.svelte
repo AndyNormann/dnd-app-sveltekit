@@ -11,7 +11,8 @@
 		initialUnits = [],
 		initialDrawings = [],
 		initialConfig,
-		activeUnitId = null
+		activeUnitId = null,
+		onClearBoard = null
 	}: {
 		campaignId: string;
 		dm?: boolean;
@@ -20,6 +21,7 @@
 		initialDrawings?: CombatDrawing[];
 		initialConfig: BoardConfig;
 		activeUnitId?: string | null;
+		onClearBoard?: (() => void) | null;
 	} = $props();
 
 	const CELL = 40;
@@ -585,6 +587,9 @@
 			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
 			<button type="button" class:on={tool === 'ping'} onclick={() => (tool = 'ping')}>📌 Ping</button>
 			<button type="button" onclick={undoLastStroke}>↩ Undo</button>
+			{#if onClearBoard}
+				<button type="button" class="danger" onclick={onClearBoard}>🗑 Clear board</button>
+			{/if}
 			<span class="colors">
 				{#each COLORS as c}
 					<button
@@ -767,6 +772,14 @@
 		color: var(--accent);
 		border-color: var(--gold);
 		background: var(--parchment-deep);
+	}
+	.toolbar button.danger {
+		color: var(--danger);
+		border-color: var(--danger);
+	}
+	.toolbar button.danger:hover {
+		background: var(--danger);
+		color: var(--parchment-light);
 	}
 	.colors {
 		display: inline-flex;
