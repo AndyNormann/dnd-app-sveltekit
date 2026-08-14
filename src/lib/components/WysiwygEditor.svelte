@@ -9,7 +9,8 @@
 		campaignId,
 		isSecret,
 		getMaps,
-		addMap
+		addMap,
+		getDocuments
 	}: {
 		value: string;
 		onchange?: (v: string) => void;
@@ -17,6 +18,7 @@
 		isSecret?: () => boolean;
 		getMaps?: () => MapData[];
 		addMap?: (map: MapData) => void;
+		getDocuments?: () => { id: string; title: string }[];
 	} = $props();
 
 	let host: HTMLDivElement;
@@ -33,6 +35,7 @@
 				isSecret,
 				getMaps,
 				addMap,
+				documents: getDocuments,
 				onChange: (md) => {
 					value = md;
 					onchange?.(md);

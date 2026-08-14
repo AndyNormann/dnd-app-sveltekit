@@ -470,6 +470,7 @@
 						campaignId={data.campaignId}
 						isSecret={() => rollLog?.isSecret() ?? false}
 						getMaps={() => data.maps}
+						getDocuments={() => documents}
 						addMap={(m) => {
 							if (!data.maps.some((x: { id: string }) => x.id === m.id)) data.maps = [...data.maps, m];
 						}}

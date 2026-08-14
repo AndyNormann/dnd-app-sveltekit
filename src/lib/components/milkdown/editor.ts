@@ -38,6 +38,8 @@ export interface CreateEditorOptions {
 	getMaps?: () => MapData[];
 	/** Push a freshly uploaded map into the live maps list (slash `/map` insert). */
 	addMap?: (map: MapData) => void;
+	/** The campaign's documents, for cross-document wiki links. */
+	documents?: () => { id: string; title: string }[];
 }
 
 /**
@@ -73,12 +75,14 @@ export async function createMilkdownEditor(opts: CreateEditorOptions): Promise<M
 
 	const interactive = buildInteractivePlugin({
 		campaignId: opts.campaignId,
-		isSecret: opts.isSecret
+		isSecret: opts.isSecret,
+		documents: opts.documents
 	});
 
 	const slash = buildSlashPlugin({
 		campaignId: opts.campaignId,
-		addMap: opts.addMap ?? (() => {})
+		addMap: opts.addMap ?? (() => {}),
+		getMaps: opts.getMaps
 	});
 
 	const editor = await Editor.make()

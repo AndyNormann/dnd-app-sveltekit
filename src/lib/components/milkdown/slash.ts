@@ -9,6 +9,8 @@ export interface SlashOptions {
 	campaignId: string;
 	/** Push a freshly uploaded map into the live maps list so the inserted block resolves. */
 	addMap: (map: MapData) => void;
+	/** Existing campaign maps, so `/map` can offer "pick an existing map". */
+	getMaps?: () => MapData[];
 }
 
 interface MenuItem {
@@ -33,12 +35,14 @@ const ITEMS: MenuItem[] = [
  * near the caret.
  */
 export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
-	const { campaignId, addMap } = opts;
+	const { campaignId, addMap, getMaps } = opts;
 	const key = new PluginKey('dnd-slash');
 
 	let activeView: EditorView | undefined;
 	let menu: HTMLElement;
+	let mapsMenu: HTMLElement;
 	let fileInput: HTMLInputElement;
+	let lastPos = 0;
 
 	function hide() {
 		if (menu) menu.style.display = 'none';
@@ -62,7 +66,12 @@ export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
 		hide();
 		view.focus();
 		if (act === 'map') {
-			fileInput.click();
+			const existing = getMaps?.() ?? [];
+			if (existing.length > 0) {
+				showMapsMenu(view, existing);
+			} else {
+				fileInput.click();
+			}
 			return;
 		}
 		const { schema } = view.state;
@@ -88,6 +97,61 @@ export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
 				view.dispatch(view.state.tr.insertText('---\n\n'));
 			}
 		}
+	}
+
+	function hideMapsMenu() {
+		if (mapsMenu) mapsMenu.style.display = 'none';
+	}
+
+	function insertExistingMap(view: EditorView, mapId: string) {
+		hideMapsMenu();
+		view.focus();
+		const mapType = view.state.schema.nodes.mapBlock;
+		if (mapType) view.dispatch(view.state.tr.replaceSelectionWith(mapType.create({ mapId })));
+	}
+
+	function showMapsMenu(view: EditorView, maps: MapData[]) {
+		if (!mapsMenu) return;
+		mapsMenu.textContent = '';
+		const heading = document.createElement('div');
+		heading.className = 'dnd-slash-maps-title';
+		heading.textContent = 'Insert map';
+		mapsMenu.appendChild(heading);
+		for (const m of maps) {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'dnd-slash-item dnd-slash-map';
+			b.dataset.mapId = m.id;
+			b.textContent = `🗺 ${m.width}x${m.height}`;
+			b.title = m.id;
+			b.onmousedown = (e) => e.preventDefault();
+			b.onclick = (e) => {
+				e.stopPropagation();
+				if (activeView) insertExistingMap(activeView, m.id);
+			};
+			mapsMenu.appendChild(b);
+		}
+		const up = document.createElement('button');
+		up.type = 'button';
+		up.className = 'dnd-slash-item dnd-slash-map-upload';
+		up.textContent = '⬆ Upload new map';
+		up.onmousedown = (e) => e.preventDefault();
+		up.onclick = (e) => {
+			e.stopPropagation();
+			hideMapsMenu();
+			fileInput.click();
+		};
+		mapsMenu.appendChild(up);
+		// position near the caret
+		const coords = view.coordsAtPos(lastPos);
+		mapsMenu.style.display = 'block';
+		const rect = mapsMenu.getBoundingClientRect();
+		let left = coords.left;
+		let top = coords.bottom + 6;
+		if (left + rect.width > window.innerWidth - 8) left = window.innerWidth - rect.width - 8;
+		if (top + rect.height > window.innerHeight - 8) top = Math.max(8, coords.top - rect.height - 6);
+		mapsMenu.style.left = `${left}px`;
+		mapsMenu.style.top = `${top}px`;
 	}
 
 	async function uploadAndInsert(view: EditorView, file: File) {
@@ -120,6 +184,7 @@ export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
 					const $from = view.state.doc.resolve(from);
 					const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
 					if (before.trim() !== '') return false; // only trigger at block start
+					lastPos = from;
 					positionMenu(view, from);
 					return true; // consume the slash
 				}
@@ -146,6 +211,11 @@ export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
 				}
 				document.body.appendChild(menu);
 
+				mapsMenu = document.createElement('div');
+				mapsMenu.className = 'dnd-slash-maps';
+				mapsMenu.style.display = 'none';
+				document.body.appendChild(mapsMenu);
+
 				fileInput = document.createElement('input');
 				fileInput.type = 'file';
 				fileInput.accept = 'image/*';
@@ -159,10 +229,15 @@ export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
 				document.body.appendChild(fileInput);
 
 				const onKey = (e: KeyboardEvent) => {
-					if (e.key === 'Escape' || e.key === 'Enter') hide();
+					if (e.key === 'Escape' || e.key === 'Enter') {
+						hide();
+						hideMapsMenu();
+					}
 				};
 				const onDocMouseDown = (e: MouseEvent) => {
 					if (menu && menu.style.display !== 'none' && !menu.contains(e.target as Node)) hide();
+					if (mapsMenu && mapsMenu.style.display !== 'none' && !mapsMenu.contains(e.target as Node))
+						hideMapsMenu();
 				};
 				view.dom.addEventListener('keydown', onKey);
 				document.addEventListener('mousedown', onDocMouseDown);
@@ -171,6 +246,7 @@ export function buildSlashPlugin(opts: SlashOptions): MilkdownPlugin {
 						view.dom.removeEventListener('keydown', onKey);
 						document.removeEventListener('mousedown', onDocMouseDown);
 						menu?.remove();
+						mapsMenu?.remove();
 						fileInput?.remove();
 						activeView = undefined;
 					}

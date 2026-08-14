@@ -9,6 +9,8 @@ export interface InteractiveOptions {
 	campaignId: string;
 	/** Read the DM's secret-roll toggle so inline dice respect it. */
 	isSecret?: () => boolean;
+	/** The campaign's documents, for resolving cross-document wiki links. */
+	documents?: () => { id: string; title: string }[];
 }
 
 const WIKI_RE = /\[\[([^\][]+)\]\]/g;
@@ -40,17 +42,33 @@ export function buildInteractivePlugin(opts: InteractiveOptions): MilkdownPlugin
 		});
 	}
 
-	/** Open a wiki link target: `Doc` or `Doc#Heading`. */
+	/** Open a wiki link target: `[[Heading]]`, `[[Doc]]`, or `[[Doc#Heading]]`. */
 	function jumpToWiki(target: string) {
+		const [docPart, headingPart] = target.split('#');
 		const viewDom = document.querySelector('.mdx-host .ProseMirror') ?? null;
-		if (!viewDom) return;
-		const name = target.replace(/^#/, '').trim().toLowerCase();
-		const els = viewDom.querySelectorAll('h1,h2,h3,h4,h5,h6');
-		// prefer an exact heading; otherwise the heading whose text starts with it
-		const found = Array.from(els).find(
-			(h) => (h.textContent ?? '').trim().toLowerCase() === name
-		) ?? Array.from(els).find((h) => (h.textContent ?? '').trim().toLowerCase().startsWith(name));
-		(found as HTMLElement | undefined)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		const name = (headingPart ?? docPart ?? '').replace(/^#/, '').trim().toLowerCase();
+		if (viewDom) {
+			const els = viewDom.querySelectorAll('h1,h2,h3,h4,h5,h6');
+			// a heading in this document matches -> scroll to it
+			const found =
+				Array.from(els).find(
+					(h) => (h.textContent ?? '').trim().toLowerCase() === name
+				) ??
+				Array.from(els).find((h) =>
+					(h.textContent ?? '').trim().toLowerCase().startsWith(name)
+				);
+			if (found) {
+				(found as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+				return;
+			}
+		}
+		// otherwise it's a cross-document link -> open that document
+		const docs = opts.documents?.() ?? [];
+		const docName = (docPart ?? target).trim().toLowerCase();
+		const doc =
+			docs.find((d) => d.title.trim().toLowerCase() === docName) ??
+			docs.find((d) => d.title.trim().toLowerCase().includes(docName));
+		if (doc) location.href = `/c/${campaignId}?doc=${doc.id}`;
 	}
 
 	return $prose((ctx) => {
