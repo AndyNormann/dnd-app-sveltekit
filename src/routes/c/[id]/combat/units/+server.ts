@@ -10,7 +10,7 @@ import type { CombatUnit } from '$lib/server/db';
 import { broadcast } from '$lib/server/sse';
 import { isDM } from '$lib/server/auth';
 import { clearBoard } from '$lib/server/combat';
-import { emitInitiative, emitUnits } from '$lib/server/feed';
+import { emitInitiative, emitUnits, emitDrawings } from '$lib/server/feed';
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -31,6 +31,7 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 		const r = clearBoard(params.id);
 		emitUnits(params.id);
 		emitInitiative(params.id);
+		emitDrawings(params.id);
 		broadcast(params.id, { type: 'combat-log', entry: r.data.log });
 		return json({ ok: true });
 	}

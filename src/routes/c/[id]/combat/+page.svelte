@@ -59,11 +59,6 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'clear' })
 		});
-		fetch(`/c/${data.campaignId}/combat/drawings`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'clear' })
-		});
 		showToast('Board cleared');
 	}
 

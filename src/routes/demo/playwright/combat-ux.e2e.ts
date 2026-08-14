@@ -111,6 +111,53 @@ test('player ready signals the DM; board zoom controls work', async ({ browser }
 	await player.close();
 });
 
+test('clear board keeps players + their initiative, drops enemies and drawings', async ({ browser }) => {
+	const anon = await browser.newContext();
+	const id = await createCampaign(anon.request);
+	const { dm, page } = await loginDM(browser);
+
+	// character auto-adds a player token
+	const cre = await dm.request.post(`/c/${id}/characters`, {
+		data: { name: 'Aria', speed: 30, init_bonus: 2, color: '#1b6ca8', max_hp: 20, hp: 20 }
+	});
+	expect(cre.ok()).toBeTruthy();
+
+	// add an enemy, a drawing, and roll initiative
+	await dm.request.post(`/c/${id}/combat/units`, { data: { action: 'add-enemy', name: 'Goblin', max_hp: 7, hp: 7 } });
+	await dm.request.post(`/c/${id}/combat/drawings`, {
+		data: { color: '#222', width: 4, mode: 'draw', points: [[0, 0], [1, 1]] }
+	});
+	await dm.request.post(`/c/${id}/initiative`, { data: { action: 'roll' } });
+
+	let units = (await (await dm.request.get(`/c/${id}/combat/units`)).json()) as Array<{
+		kind: string;
+	}>;
+	expect(units.length).toBe(2);
+	let drawings = (await (await dm.request.get(`/c/${id}/combat/drawings`)).json()) as unknown[];
+	expect(drawings.length).toBe(1);
+
+	// the Clear board button lives in the board toolbar
+	await page.goto(`/c/${id}/combat`);
+	await expect(page.locator('.toolbar button.danger')).toBeVisible({ timeout: 10000 });
+
+	// clear via the same action the button fires
+	const cl = await dm.request.post(`/c/${id}/combat/units`, { data: { action: 'clear' } });
+	expect(cl.ok()).toBeTruthy();
+
+	units = (await (await dm.request.get(`/c/${id}/combat/units`)).json()) as Array<{ kind: string }>;
+	drawings = (await (await dm.request.get(`/c/${id}/combat/drawings`)).json()) as unknown[];
+	const entries = (await (await dm.request.get(`/c/${id}/initiative`)).json()) as Array<{
+		unit_id: string;
+	}>;
+	expect(units.filter((u) => u.kind === 'player').length).toBe(1);
+	expect(units.filter((u) => u.kind === 'enemy').length).toBe(0);
+	expect(drawings.length).toBe(0);
+	expect(entries.length).toBe(1);
+
+	await anon.close();
+	await dm.close();
+});
+
 test('backups list is DM-only', async ({ browser }) => {
 	const anon = await browser.newContext();
 	const anonRes = await anon.request.get('/backups');
