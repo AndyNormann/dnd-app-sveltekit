@@ -9,18 +9,34 @@ test('typography switcher cycles fonts and sizes', async ({ page }) => {
 	await expect(sizeBtn).toContainText('M');
 
 	const fontBtn = page.locator('.type-switch .t-btn:not(.size)');
-	await expect(fontBtn).toContainText('Serif');
+	await expect(fontBtn).toContainText('Literata');
 
-	// cycle fonts: Serif -> Sans -> Classic -> Plain
+	// cycle serifs then sans/plain: Literata -> Garamond -> Source -> Lora -> Crimson -> Sans -> Plain
 	await fontBtn.click();
-	await expect(fontBtn).toContainText('Sans');
+	await expect(fontBtn).toContainText('Garamond');
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'garamond');
+
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'source');
+
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'lora');
+
+	await fontBtn.click();
+	await expect(page.locator('html')).toHaveAttribute('data-type', 'crimson');
+
+	await fontBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-type', 'modern');
 
 	await fontBtn.click();
-	await expect(page.locator('html')).toHaveAttribute('data-type', 'classic');
-
-	await fontBtn.click();
 	await expect(page.locator('html')).toHaveAttribute('data-type', 'plain');
+
+	// confirm the serif body actually applies
+	const garamondBody = await page.evaluate(() => {
+		document.documentElement.dataset.type = 'garamond';
+		return getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim();
+	});
+	expect(garamondBody).toContain('EB Garamond');
 
 	// cycle sizes: M -> L -> S
 	await sizeBtn.click();

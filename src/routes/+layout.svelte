@@ -7,6 +7,22 @@
 	import '@fontsource/literata/600.css';
 	import '@fontsource/literata/700.css';
 	import '@fontsource/literata/400-italic.css';
+	import '@fontsource/eb-garamond/400.css';
+	import '@fontsource/eb-garamond/500.css';
+	import '@fontsource/eb-garamond/600.css';
+	import '@fontsource/eb-garamond/700.css';
+	import '@fontsource/eb-garamond/400-italic.css';
+	import '@fontsource/source-serif-4/400.css';
+	import '@fontsource/source-serif-4/600.css';
+	import '@fontsource/source-serif-4/700.css';
+	import '@fontsource/lora/400.css';
+	import '@fontsource/lora/500.css';
+	import '@fontsource/lora/600.css';
+	import '@fontsource/lora/700.css';
+	import '@fontsource/lora/400-italic.css';
+	import '@fontsource/crimson-pro/400.css';
+	import '@fontsource/crimson-pro/600.css';
+	import '@fontsource/crimson-pro/700.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
@@ -57,6 +73,26 @@
 		--token-ring: rgba(111, 143, 245, 0.9);
 	}
 	/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
+	:global(:root[data-type='garamond']) {
+		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-body: 'EB Garamond', 'Georgia', serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
+	:global(:root[data-type='source']) {
+		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-body: 'Source Serif 4', 'Georgia', serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
+	:global(:root[data-type='lora']) {
+		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-body: 'Lora', 'Georgia', serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
+	:global(:root[data-type='crimson']) {
+		--font-display: 'Cinzel', 'Georgia', serif;
+		--font-body: 'Crimson Pro', 'Georgia', serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	}
 	:global(:root[data-type='modern']) {
 		--font-display: 'Cinzel', 'Georgia', serif;
 		--font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;

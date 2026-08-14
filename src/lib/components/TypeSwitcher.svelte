@@ -3,9 +3,12 @@
 	// audition combos. State persists per-browser in localStorage and is applied
 	// to <html> via data-type / data-size, which +layout.svelte maps to CSS vars.
 	const FONTS = [
-		{ key: 'parchment', label: 'Serif' },
+		{ key: 'literata', label: 'Literata' },
+		{ key: 'garamond', label: 'Garamond' },
+		{ key: 'source', label: 'Source' },
+		{ key: 'lora', label: 'Lora' },
+		{ key: 'crimson', label: 'Crimson' },
 		{ key: 'modern', label: 'Sans' },
-		{ key: 'classic', label: 'Classic' },
 		{ key: 'plain', label: 'Plain' }
 	];
 	const SIZES = [
