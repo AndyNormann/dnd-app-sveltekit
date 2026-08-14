@@ -259,15 +259,6 @@
 		background: var(--parchment-light);
 		color: var(--ink);
 	}
-	.search button {
-		padding: 0.6rem 1.2rem;
-		border: 1px solid var(--accent);
-		border-radius: 6px;
-		background: var(--accent);
-		color: var(--parchment-light);
-		font-family: var(--font-ui);
-		cursor: pointer;
-	}
 	.snippet {
 		color: var(--ink-soft);
 		font-size: 0.9rem;
@@ -378,15 +369,6 @@
 		background: var(--parchment-deep);
 		border-color: var(--accent);
 		color: var(--ink);
-	}
-	.bhead {
-		font-family: var(--font-ui);
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--ink-soft);
-		cursor: pointer;
-		margin: 0 0 0.5rem;
-		user-select: none;
 	}
 	.backups {
 		margin-bottom: 1.5rem;

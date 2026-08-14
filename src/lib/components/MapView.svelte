@@ -564,11 +564,20 @@
 		border-radius: 5px;
 		cursor: pointer;
 		font-size: 0.8rem;
+		transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
+	}
+	.toolbar button:hover {
+		background: var(--parchment-deep);
+		border-color: var(--accent);
+		color: var(--ink);
+	}
+	.toolbar button:active {
+		transform: translateY(1px);
 	}
 	.toolbar button.active {
-		background: var(--accent);
-		color: var(--parchment-light);
-		border-color: var(--accent);
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
 	}
 	.size {
 		display: flex;

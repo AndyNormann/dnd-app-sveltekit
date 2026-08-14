@@ -225,11 +225,11 @@
 		height: 0.6rem;
 		border-radius: 50%;
 		background: transparent;
-		border: 1.5px solid #c33;
+		border: 1.5px solid var(--danger);
 	}
 	.conn.on {
-		background: #3a9b45;
-		border-color: #3a9b45;
+		background: var(--success);
+		border-color: var(--success);
 	}
 	.turn-banner {
 		text-align: center;
@@ -245,7 +245,7 @@
 	}
 	.turn-banner.mine {
 		background: #1f5d2b;
-		border-color: #3a9b45;
+		border-color: var(--success);
 		color: #f6f1e3;
 		box-shadow: 0 0 0 2px rgba(58, 155, 69, 0.4);
 	}
@@ -264,7 +264,7 @@
 	}
 	.ready-btn.on {
 		background: #1f5d2b;
-		border-color: #3a9b45;
+		border-color: var(--success);
 		color: #f6f1e3;
 	}
 </style>

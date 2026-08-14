@@ -41,9 +41,12 @@
 		font-family: var(--font-display);
 		color: var(--accent);
 	}
-	.warn,
-	.error {
+	.warn {
 		color: var(--accent-soft);
+		margin: 1rem 0;
+	}
+	.error {
+		color: var(--danger);
 		margin: 1rem 0;
 	}
 	form {

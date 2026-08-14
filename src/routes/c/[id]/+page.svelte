@@ -542,8 +542,12 @@
 		color: var(--accent);
 		border: 0;
 		background: none;
-		cursor: text;
+		cursor: pointer;
 		padding: 0;
+	}
+	.title-btn:hover {
+		color: var(--accent-soft);
+		text-decoration: underline;
 	}
 	.title-input {
 		font-family: var(--font-display);
@@ -729,12 +733,12 @@
 		height: 0.6rem;
 		border-radius: 50%;
 		background: transparent;
-		border: 1.5px solid #c33;
+		border: 1.5px solid var(--danger);
 		flex: none;
 	}
 	.conn.on {
-		background: #3a9b45;
-		border-color: #3a9b45;
+		background: var(--success);
+		border-color: var(--success);
 	}
 	.empty-hint {
 		position: absolute;
@@ -765,8 +769,8 @@
 		padding: 0.6rem 1rem;
 		background: var(--parchment-light);
 		border: 1px solid var(--gold);
-		border-left: 4px solid #3a9b45;
-		border-radius: 6px;
+		border-left: 4px solid var(--success);
+		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);
 		font-size: 0.95rem;

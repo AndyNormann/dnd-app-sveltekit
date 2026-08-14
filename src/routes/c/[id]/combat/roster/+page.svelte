@@ -352,12 +352,12 @@
 		height: 0.6rem;
 		border-radius: 50%;
 		background: transparent;
-		border: 1.5px solid #c33;
+		border: 1.5px solid var(--danger);
 		flex: none;
 	}
 	.conn.on {
-		background: #3a9b45;
-		border-color: #3a9b45;
+		background: var(--success);
+		border-color: var(--success);
 	}
 	.bar button {
 		font-size: 0.85rem;
@@ -538,16 +538,26 @@
 	}
 	.toast {
 		position: fixed;
-		bottom: 1rem;
-		left: 50%;
-		transform: translateX(-50%);
-		background: var(--parchment-deep);
+		right: 1.25rem;
+		bottom: 1.25rem;
+		background: var(--parchment-light);
 		color: var(--ink);
 		border: 1px solid var(--gold);
-		border-left: 4px solid var(--accent);
-		border-radius: 6px;
-		padding: 0.5rem 1rem;
+		border-left: 4px solid var(--success);
+		border-radius: var(--radius-md);
+		padding: 0.6rem 1rem;
 		box-shadow: var(--shadow-lg);
-		z-index: 100;
+		z-index: 2000;
+		animation: toast-in 0.18s ease;
+	}
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

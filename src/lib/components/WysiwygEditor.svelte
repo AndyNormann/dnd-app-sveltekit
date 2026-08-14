@@ -199,7 +199,7 @@
 	:global(.dm-heading-controls .dhc-vis.on) {
 		color: var(--gold);
 		border-color: var(--gold);
-		background: rgba(200, 161, 61, 0.08);
+		background: var(--section-hl, rgba(111, 143, 245, 0.08));
 	}
 	:global(.dice-dec) {
 		border: 1px solid var(--gold);
@@ -233,7 +233,7 @@
 		position: absolute;
 		pointer-events: none;
 		z-index: 1; /* above the editor text; heading controls sit higher so they stay on top */
-		background: var(--section-hl, rgba(200, 161, 61, 0.055));
+		background: var(--section-hl, rgba(111, 143, 245, 0.08));
 		border: none;
 		border-radius: 6px;
 		/* a gentle shade: no border, no hard shadow — just a faint wash so it

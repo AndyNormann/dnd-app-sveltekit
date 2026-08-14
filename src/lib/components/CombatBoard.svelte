@@ -173,7 +173,7 @@
 	// board colours follow the active theme's CSS vars
 	const cs = getComputedStyle(document.documentElement);
 	return {
-		bg: cs.getPropertyValue('--board-bg').trim() || '#2d261c',
+		bg: cs.getPropertyValue('--board-bg').trim() || '#222222',
 		grid: cs.getPropertyValue('--board-grid').trim() || 'rgba(255,255,255,0.08)'
 	};
 }
@@ -788,9 +788,9 @@
 		transform: translateY(1px);
 	}
 	.toolbar button.on {
-		color: var(--parchment-light);
-		background: var(--accent);
-		border-color: var(--accent);
+		color: var(--accent);
+		border-color: var(--gold);
+		background: var(--parchment-deep);
 	}
 	.toolbar button.danger {
 		color: var(--danger);
@@ -823,7 +823,7 @@
 	.board {
 		position: relative;
 		border: 2px solid var(--rule);
-		background: var(--board-bg, #2d261c);
+		background: var(--board-bg, #222222);
 		border-radius: var(--radius-md);
 		overflow: hidden;
 		touch-action: none;

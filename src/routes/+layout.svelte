@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '@fontsource/cinzel/500.css';
 	import '@fontsource/cinzel/600.css';
 	import '@fontsource/cinzel/700.css';
 	import '@fontsource/literata/400.css';
@@ -40,6 +41,9 @@
 		--gold: #c8a13d;
 		--section-hl: rgba(111, 143, 245, 0.08); /* indigo wash that ties to the accent */
 		--danger: #e25d54; /* a real warning/error red (success stays green) */
+		--success: #3a9b45; /* realtime/status green */
+		--success-deep: #1f5d2b;
+		--ok-text: #f6f1e3;
 		/* dark-tuned elevation shadows (the old light-ink rgba(43,35,23) was invisible on the near-black base) */
 		--shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
@@ -67,6 +71,16 @@
 		background: var(--parchment-deep);
 		color: var(--ink);
 		font-family: var(--font-ui);
+	}
+	:global(input[type='range']) {
+		accent-color: var(--accent);
+		background: transparent;
+	}
+	:global(input[type='color']) {
+		background: var(--parchment-deep);
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		padding: 2px;
 	}
 	/* UI controls share one face; Cinzel is reserved for titles only. */
 	:global(button) {

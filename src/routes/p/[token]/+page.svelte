@@ -151,11 +151,11 @@
 		height: 0.6rem;
 		border-radius: 50%;
 		background: transparent;
-		border: 1.5px solid #c33;
+		border: 1.5px solid var(--danger);
 	}
 	.conn.on {
-		background: #3a9b45;
-		border-color: #3a9b45;
+		background: var(--success);
+		border-color: var(--success);
 	}
 	.empty {
 		text-align: center;

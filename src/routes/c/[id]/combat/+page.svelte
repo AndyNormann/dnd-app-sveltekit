@@ -294,12 +294,12 @@
 		height: 0.6rem;
 		border-radius: 50%;
 		background: transparent;
-		border: 1.5px solid #c33;
+		border: 1.5px solid var(--danger);
 		flex: none;
 	}
 	.conn.on {
-		background: #3a9b45;
-		border-color: #3a9b45;
+		background: var(--success);
+		border-color: var(--success);
 	}
 	.bar button,
 	.bar a[target] {
@@ -389,6 +389,12 @@
 		box-shadow: var(--shadow-lg);
 	}
 	/* the combat log rail recedes so the board + initiative dominate */
+	.panel.rail.left {
+		background: transparent;
+		border: 0;
+		box-shadow: none;
+		padding: 0;
+	}
 	.panel.rail.right {
 		background: transparent;
 		border: 0;
@@ -510,11 +516,22 @@
 		padding: 0.6rem 1rem;
 		background: var(--parchment-light);
 		border: 1px solid var(--gold);
-		border-left: 4px solid #3a9b45;
+		border-left: 4px solid var(--success);
 		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);
 		color: var(--ink);
+		animation: toast-in 0.18s ease;
+	}
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 	.ready-status {
 		display: flex;

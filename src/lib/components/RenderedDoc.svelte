@@ -388,23 +388,29 @@
 	}
 	.rendered :global(h1) {
 		font-size: 2.3rem;
+		font-weight: 600;
 		border-bottom: 1px solid var(--gold);
 		padding-bottom: 0.25rem;
 	}
 	.rendered :global(h2) {
 		font-size: 1.8rem;
+		font-weight: 600;
 	}
 	.rendered :global(h3) {
 		font-size: 1.45rem;
+		font-weight: 500;
 	}
 	.rendered :global(h4) {
 		font-size: 1.25rem;
+		font-weight: 500;
 	}
 	.rendered :global(h5) {
 		font-size: 1.12rem;
+		font-weight: 400;
 	}
 	.rendered :global(h6) {
 		font-size: 1.05rem;
+		font-weight: 400;
 	}
 	.rendered :global(h3),
 	.rendered :global(h4),
