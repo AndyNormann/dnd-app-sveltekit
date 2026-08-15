@@ -167,15 +167,7 @@
 		--page-bg: var(--paper);
 		color: var(--paper-ink);
 		background: var(--paper);
-		background-image:
-			var(--paper-grain),
-			repeating-linear-gradient(
-				transparent 0,
-				transparent 1.9rem,
-				rgba(90, 70, 20, 0.05) 1.9rem,
-				rgba(90, 70, 20, 0.05) calc(1.9rem + 1px)
-			),
-			var(--paper);
+		background-image: var(--paper-grain), var(--paper);
 		border: none;
 		border-radius: 0;
 		clip-path: polygon(

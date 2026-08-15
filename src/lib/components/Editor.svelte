@@ -62,12 +62,6 @@
 	:global(.cm-host .cm-editor) {
 		background: var(--paper);
 		color: var(--paper-ink);
-		background-image: repeating-linear-gradient(
-			transparent 0,
-			transparent 1.9rem,
-			rgba(90, 70, 20, 0.06) 1.9rem,
-			rgba(90, 70, 20, 0.06) calc(1.9rem + 1px)
-		);
 	}
 	:global(.cm-host .cm-content) {
 		caret-color: #7a5c14;

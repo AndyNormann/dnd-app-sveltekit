@@ -224,16 +224,6 @@
 		);
 		filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
 	}
-	/* faint ruled journal lines for a page you write on. The line spacing tracks
-	   the editor's 1.9rem line-height so text sits on the rules. */
-	:global(.ruled) {
-		background-image: repeating-linear-gradient(
-			transparent 0,
-			transparent 1.9rem,
-			rgba(90, 70, 20, 0.07) 1.9rem,
-			rgba(90, 70, 20, 0.07) calc(1.9rem + 1px)
-		) !important;
-	}
 	/* dog-eared corner on parchment sheets */
 	:global(.sheet.dogear::after) {
 		content: '';
