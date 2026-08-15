@@ -213,24 +213,23 @@
 		margin: 0.6em 0 0.2em;
 	}
 	:global(.dice-dec) {
-		border: 1px solid #b59a5a;
-		background: rgba(122, 92, 20, 0.10);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.12);
-		color: #6a4f0e;
-		border-radius: 5px;
+		border: 1px solid var(--accent-soft);
+		background: rgba(179, 77, 30, 0.08);
+		color: var(--accent);
+		border-radius: var(--radius-sm);
 		padding: 0 0.4rem;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
 	}
 	:global(.dice-dec:hover) {
-		background: rgba(122, 92, 20, 0.18);
-		border-color: var(--gold);
-		color: #5a4107;
+		background: rgba(179, 77, 30, 0.14);
+		border-color: var(--accent);
+		color: var(--accent);
 	}
 	:global(.wiki-dec) {
 		color: var(--accent);
-		border-bottom: 1px solid #b59a5a;
+		border-bottom: 1px solid var(--accent-soft);
 		cursor: pointer;
 	}
 	:global(.map-widget) {

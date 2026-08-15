@@ -357,17 +357,9 @@
 		display: block;
 		margin: 0 0.55rem 0;
 		padding: 0.5rem 0.6rem 0.6rem;
-		/* a shallow inset dice tray: a recessed leather well with a raised rim, so
-		   the roll input reads as a real die-cup on the table */
-		border-radius: 10px;
-		border: 1px solid rgba(0, 0, 0, 0.7);
-		background:
-			radial-gradient(130% 110% at 50% -10%, rgba(140, 100, 50, 0.22), transparent 62%),
-			var(--parchment-deep);
-		box-shadow:
-			inset 0 3px 8px rgba(0, 0, 0, 0.65),
-			inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-			0 1px 0 rgba(255, 255, 255, 0.07);
+		background: var(--parchment);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius-sm);
 	}
 	.input .row {
 		display: flex;
@@ -375,14 +367,13 @@
 		gap: 0.3rem;
 	}
 	.input input {
-		border: 1px solid rgba(0, 0, 0, 0.5);
-		background: rgba(0, 0, 0, 0.22);
+		border: 1px solid var(--rule);
+		background: var(--parchment-light);
 		color: var(--ink);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		padding: 0.32rem 0.45rem;
 		font-size: 0.85rem;
 		min-width: 0;
-		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
 	.name {
 		flex: 1;
@@ -402,25 +393,21 @@
 		cursor: pointer;
 	}
 	.input button[type='submit'] {
-		/* the roll action reads as a gold d20 resting in the tray */
 		flex-shrink: 0;
-		width: 2.15rem;
-		height: 2.15rem;
-		padding: 0;
-		border-radius: 50%;
-		border: 1px solid rgba(255, 224, 180, 0.5);
-		background: radial-gradient(circle at 35% 28%, #efc66a, #b07d20 75%);
-		color: #241706;
-		font-family: var(--font-display);
-		font-weight: 700;
-		font-size: 0.95rem;
+		padding: 0.32rem 0.8rem;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--accent);
+		background: var(--accent);
+		color: var(--parchment-light);
+		font-family: var(--font-ui);
+		font-weight: 600;
+		font-size: 0.85rem;
 		line-height: 1;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 3px 7px rgba(0, 0, 0, 0.5);
 		cursor: pointer;
 	}
 	.input button[type='submit']:hover {
-		background: radial-gradient(circle at 35% 28%, #ffd782, #c9932c 75%);
-		transform: translateY(-1px);
+		background: var(--accent-soft);
+		border-color: var(--accent-soft);
 	}
 	.error {
 		color: var(--danger);
