@@ -203,7 +203,7 @@
 						<input type="checkbox" bind:checked={secret} /> 🤫
 					</label>
 				{/if}
-				<button type="submit">Roll</button>
+				<button type="submit" title="Roll (d20)" aria-label="Roll">⚔</button>
 			</div>
 			<input class="expr optlabel" placeholder="optional label" bind:value={label} maxlength="80" />
 		</form>
@@ -355,8 +355,19 @@
 	}
 	.input {
 		display: block;
-		padding: 0.5rem 0.75rem;
-		border-top: 1px solid var(--rule);
+		margin: 0 0.55rem 0;
+		padding: 0.5rem 0.6rem 0.6rem;
+		/* a shallow inset dice tray: a recessed leather well with a raised rim, so
+		   the roll input reads as a real die-cup on the table */
+		border-radius: 10px;
+		border: 1px solid rgba(0, 0, 0, 0.7);
+		background:
+			radial-gradient(130% 110% at 50% -10%, rgba(140, 100, 50, 0.22), transparent 62%),
+			var(--parchment-deep);
+		box-shadow:
+			inset 0 3px 8px rgba(0, 0, 0, 0.65),
+			inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+			0 1px 0 rgba(255, 255, 255, 0.07);
 	}
 	.input .row {
 		display: flex;
@@ -364,13 +375,14 @@
 		gap: 0.3rem;
 	}
 	.input input {
-		border: 1px solid var(--rule);
-		background: var(--parchment-deep);
+		border: 1px solid rgba(0, 0, 0, 0.5);
+		background: rgba(0, 0, 0, 0.22);
 		color: var(--ink);
-		border-radius: 5px;
-		padding: 0.3rem 0.4rem;
+		border-radius: 6px;
+		padding: 0.32rem 0.45rem;
 		font-size: 0.85rem;
 		min-width: 0;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 	}
 	.name {
 		flex: 1;
@@ -380,7 +392,7 @@
 	}
 	.optlabel {
 		width: 100%;
-		margin-top: 0.35rem;
+		margin-top: 0.4rem;
 		box-sizing: border-box;
 	}
 	.secret-toggle {
@@ -389,16 +401,26 @@
 		gap: 0.15rem;
 		cursor: pointer;
 	}
-	.input button {
-		border: 0;
-		background: var(--accent);
-		color: var(--parchment-light);
-		border-radius: 5px;
-		padding: 0.3rem 0.7rem;
+	.input button[type='submit'] {
+		/* the roll action reads as a gold d20 resting in the tray */
+		flex-shrink: 0;
+		width: 2.15rem;
+		height: 2.15rem;
+		padding: 0;
+		border-radius: 50%;
+		border: 1px solid rgba(255, 224, 180, 0.5);
+		background: radial-gradient(circle at 35% 28%, #efc66a, #b07d20 75%);
+		color: #241706;
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 0.95rem;
+		line-height: 1;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 3px 7px rgba(0, 0, 0, 0.5);
 		cursor: pointer;
 	}
-	.input button:hover {
-		background: var(--accent-soft);
+	.input button[type='submit']:hover {
+		background: radial-gradient(circle at 35% 28%, #ffd782, #c9932c 75%);
+		transform: translateY(-1px);
 	}
 	.error {
 		color: var(--danger);

@@ -142,6 +142,16 @@
 		color: var(--ink);
 		font-family: var(--font-body);
 	}
+	/* a fixed corner vignette deepens the edges of the table, drawing the eye to
+	   the candlelight at center. pointer-events:none so it never blocks input. */
+	:global(body::after) {
+		content: '';
+		position: fixed;
+		inset: 0;
+		pointer-events: none;
+		background: radial-gradient(125% 125% at 50% 50%, transparent 56%, rgba(0, 0, 0, 0.44) 100%);
+		z-index: 9999;
+	}
 	/* aged-oak wood grain for the tabletop + a finer paper grain for the sheets */
 	:global(:root) {
 		--wood-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.35' numOctaves='2' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23w)'/%3E%3C/svg%3E");

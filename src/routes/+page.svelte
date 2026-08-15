@@ -182,7 +182,43 @@
 		position: relative;
 		max-width: 58rem;
 		margin: 1.5rem auto;
-		padding: 0 1rem;
+		padding: 1rem;
+		box-sizing: border-box;
+		/* a stitched leather rim around the war table — a carved wood frame holding
+		   the papers in a recessed board */
+		border-radius: 14px;
+		border: 4px solid #3a2a1a;
+		background:
+			radial-gradient(120% 100% at 50% 0%, rgba(150, 110, 55, 0.08), transparent 55%),
+			rgba(15, 10, 5, 0.35);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 28px 60px rgba(0, 0, 0, 0.6);
+	}
+	/* a faint compass-rose watermark so the board isn't empty wood */
+	.table::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%23c8a13d' stroke-width='1.5'%3E%3Ccircle cx='100' cy='100' r='96'/%3E%3Ccircle cx='100' cy='100' r='68' stroke-width='1'/%3E%3Ccircle cx='100' cy='100' r='14' stroke-width='1'/%3E%3C/g%3E%3Cg stroke='%23c8a13d' stroke-width='0'%3E%3Cpath d='M100 4 L108 92 Q100 100 92 92 Z' fill='%23c8a13d' opacity='0.7'/%3E%3Cpath d='M100 196 L92 108 Q100 100 108 108 Z' fill='%23c8a13d' opacity='0.4'/%3E%3Cpath d='M4 100 L92 108 Q100 100 108 92 Z' fill='%23c8a13d' opacity='0.4'/%3E%3Cpath d='M196 100 L108 92 Q100 100 92 108 Z' fill='%23c8a13d' opacity='0.4'/%3E%3Cpath d='M31 31 L99 94 Q100 100 94 99 Z' fill='%23c8a13d' opacity='0.3'/%3E%3Cpath d='M169 31 L101 94 Q100 100 106 99 Z' fill='%23c8a13d' opacity='0.3'/%3E%3Cpath d='M169 169 L101 106 Q100 100 106 101 Z' fill='%23c8a13d' opacity='0.3'/%3E%3Cpath d='M31 169 L99 106 Q100 100 94 101 Z' fill='%23c8a13d' opacity='0.3'/%3E%3C/g%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: 50% 46%;
+		background-size: 440px;
+		opacity: 0.06;
+		pointer-events: none;
+		z-index: 0;
+	}
+	/* the stitched seam just inside the leather rim */
+	.table::after {
+		content: '';
+		position: absolute;
+		inset: 8px;
+		border: 1px dashed rgba(212, 161, 60, 0.3);
+		border-radius: 9px;
+		pointer-events: none;
+		z-index: 0;
+	}
+	.table > * {
+		position: relative;
+		z-index: 1;
 	}
 	/* heraldic crest band across the top of the tablecloth */
 	.crest-band {
@@ -203,6 +239,16 @@
 	}
 	.crest-sigil {
 		flex-shrink: 0;
+		animation: candle-glow 5.5s ease-in-out infinite;
+	}
+	@keyframes candle-glow {
+		0%,
+		100% {
+			filter: drop-shadow(0 0 5px rgba(220, 170, 90, 0.45));
+		}
+		50% {
+			filter: drop-shadow(0 0 16px rgba(230, 180, 100, 0.85));
+		}
 	}
 	.crest-txt {
 		display: flex;
