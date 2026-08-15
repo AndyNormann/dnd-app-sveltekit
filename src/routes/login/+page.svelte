@@ -9,7 +9,7 @@
 <svelte:head><title>DM login</title></svelte:head>
 
 <main class="table">
-	<div class="panel sheet dogear">
+	<div class="panel sheet deckle">
 		<div class="crest">
 			<Seal size={70} />
 			<h1 class="sheet-ink">The DM's Seal</h1>
@@ -49,7 +49,7 @@
 	.panel {
 		width: 100%;
 		max-width: 24rem;
-		padding: 2.2rem 2rem 1.8rem;
+		padding: 2.4rem 2.2rem 1.9rem;
 		text-align: center;
 	}
 	.crest {

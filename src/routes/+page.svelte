@@ -143,25 +143,28 @@
 	{:else}
 		<ul class="grid">
 			{#each data.campaigns as c, i (c.id)}
-				<li class="sheet card dogear" style={`--rot:${(i % 5) - 2}deg`}>
-					<a href={`/c/${c.id}`} class="title">{c.title}</a>
-					<span class="meta">
-						<span class="time sheet-ink-soft">Edited {relTime(c.updated_at || c.created_at)}</span>
-						<span class="counts sheet-ink-soft">{c.maps} map{c.maps === 1 ? '' : 's'} · {c.rolls} roll{c.rolls === 1 ? '' : 's'}</span>
-					</span>
-					<span class="actions">
-						<a href={`/c/${c.id}/play`} class="play" title="Open the player view">Open player view</a>
-						<form
-							method="POST"
-							action="?/delete"
-							use:enhance={({ cancel }) => {
-								if (!confirm(`Delete "${c.title}"? This removes its maps and rolls too.`)) cancel();
-							}}
-						>
-							<input type="hidden" name="id" value={c.id} />
-							<button type="submit" class="delete" title="Delete campaign" aria-label="Delete campaign">✕</button>
-						</form>
-					</span>
+				<li class="card" style={`--rot:${(i % 5) - 2}deg`}>
+					<div class="sheet deckle card-sheet">
+						<Seal size={34} tone="small" class="card-seal" title="sealed missive" />
+						<a href={`/c/${c.id}`} class="title">{c.title}</a>
+						<span class="meta">
+							<span class="time sheet-ink-soft">Edited {relTime(c.updated_at || c.created_at)}</span>
+							<span class="counts sheet-ink-soft">{c.maps} map{c.maps === 1 ? '' : 's'} · {c.rolls} roll{c.rolls === 1 ? '' : 's'}</span>
+						</span>
+						<span class="actions">
+							<a href={`/c/${c.id}/play`} class="play" title="Open the player view">Open player view</a>
+							<form
+								method="POST"
+								action="?/delete"
+								use:enhance={({ cancel }) => {
+									if (!confirm(`Delete "${c.title}"? This removes its maps and rolls too.`)) cancel();
+								}}
+							>
+								<input type="hidden" name="id" value={c.id} />
+								<button type="submit" class="delete" title="Delete campaign" aria-label="Delete campaign">✕</button>
+							</form>
+						</span>
+					</div>
 				</li>
 			{/each}
 		</ul>
@@ -371,17 +374,53 @@
 		gap: 1.1rem;
 		padding: 0.5rem;
 	}
+	/* each card is a small pile of papers: the li holds two offset sheets behind
+	   the deckled top sheet, so the grid reads as scattered correspondence. */
 	.card {
+		position: relative;
+		list-style: none;
+		transform: rotate(var(--rot, 0deg));
+		transition: transform 0.2s ease;
+		padding: 0;
+	}
+	.card::before,
+	.card::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(165deg, rgba(255, 255, 255, 0.14), transparent 34%),
+			var(--paper);
+		border: 1px solid var(--paper-edge);
+		box-shadow: var(--paper-shadow);
+		pointer-events: none;
+	}
+	.card::before {
+		transform: translate(4px, -3px) rotate(1.5deg);
+	}
+	.card::after {
+		transform: translate(-3px, 2px) rotate(-1deg);
+	}
+	.card-sheet {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: 0.8rem;
-		padding: 1.2rem 1.3rem 1rem;
-		transform: rotate(var(--rot, 0deg));
-		transition: transform 0.18s ease, box-shadow 0.18s ease;
+		padding: 1.3rem 1.3rem 1rem;
+		z-index: 1;
 	}
 	.card:hover {
 		transform: rotate(0deg) translateY(-3px);
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), inset 0 0 40px rgba(110, 80, 30, 0.08), 0 14px 30px rgba(0, 0, 0, 0.6);
+	}
+	.card:hover .card-sheet {
+		filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.5));
+	}
+	.card-seal {
+		position: absolute;
+		top: -10px;
+		right: 10px;
+		z-index: 2;
+		transform: rotate(8deg);
 	}
 	.title {
 		font-size: 1.2rem;

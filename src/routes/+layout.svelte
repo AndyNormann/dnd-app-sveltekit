@@ -195,6 +195,35 @@
 	:global(.sheet a) {
 		color: #7a5c14;
 	}
+	/* torn, deckled cut-paper edges — the strongest 'old paper' cue. clip-path cuts
+	   the crisp rectangle into a ragged sheet; the drop-shadow follows the torn
+	   silhouette so the paper still casts a believable shadow onto the table. */
+	:global(.deckle) {
+		border-radius: 0;
+		box-shadow: none;
+		clip-path: polygon(
+			1.1% 0.9%, 6% 0.3%, 11% 1.2%, 17% 0.4%, 23% 1.0%, 29% 0.2%, 35% 1.1%, 41% 0.4%,
+			47% 0.9%, 53% 0.2%, 59% 1.2%, 65% 0.4%, 71% 1.0%, 77% 0.3%, 83% 1.1%, 89% 0.5%,
+			95% 0.8%, 99.4% 1.2%, 99.6% 6%, 99.1% 12%, 99.6% 18%, 99.1% 24%, 99.6% 30%, 99.1% 36%,
+			99.6% 42%, 99.1% 48%, 99.6% 54%, 99.1% 60%, 99.6% 66%, 99.1% 72%, 99.6% 78%, 99.1% 84%,
+			99.6% 90%, 99.2% 96%, 95% 99.4%, 89% 99.6%, 83% 99.1%, 77% 99.6%, 71% 99.1%, 65% 99.6%,
+			59% 99.1%, 53% 99.6%, 47% 99.1%, 41% 99.6%, 35% 99.1%, 29% 99.6%, 23% 99.1%, 17% 99.6%,
+			11% 99.1%, 6% 99.5%, 1.0% 99.2%, 0.4% 94%, 0.9% 88%, 0.3% 82%, 0.9% 76%, 0.3% 70%,
+			0.9% 64%, 0.3% 58%, 0.9% 52%, 0.3% 46%, 0.9% 40%, 0.3% 34%, 0.9% 28%, 0.3% 22%,
+			0.9% 16%, 0.4% 10%
+		);
+		filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
+	}
+	/* faint ruled journal lines for a page you write on. The line spacing tracks
+	   the editor's 1.9rem line-height so text sits on the rules. */
+	:global(.ruled) {
+		background-image: repeating-linear-gradient(
+			transparent 0,
+			transparent 1.9rem,
+			rgba(90, 70, 20, 0.07) 1.9rem,
+			rgba(90, 70, 20, 0.07) calc(1.9rem + 1px)
+		) !important;
+	}
 	/* dog-eared corner on parchment sheets */
 	:global(.sheet.dogear::after) {
 		content: '';

@@ -95,8 +95,17 @@
 	.mdx-host {
 		height: 100%;
 		overflow: auto;
-		/* the editor is the page the DM writes on: cream paper with a soft lit glow */
-		background: radial-gradient(90% 65% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 60%), var(--paper);
+		/* the editor is the page the DM writes on: cream paper with a soft lit glow
+		   and faint ruled journal lines that the text sits on */
+		background:
+			radial-gradient(90% 65% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 60%),
+			repeating-linear-gradient(
+				transparent 0,
+				transparent 1.9rem,
+				rgba(90, 70, 20, 0.06) 1.9rem,
+				rgba(90, 70, 20, 0.06) calc(1.9rem + 1px)
+			),
+			var(--paper);
 		color: var(--paper-ink);
 	}
 	.loading {
