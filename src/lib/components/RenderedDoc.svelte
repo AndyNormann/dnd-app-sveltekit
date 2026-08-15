@@ -256,7 +256,7 @@
 		float: left;
 		line-height: 0.85;
 		padding: 0.05em 0.12em 0 0;
-		color: #7a5c14;
+		color: var(--accent);
 	}
 	/* ornamental divider: type --- in markdown. --page-bg is set by the host page. */
 	.rendered :global(hr) {
@@ -310,13 +310,13 @@
 		background: rgba(122, 92, 20, 0.18);
 	}
 	.rendered :global(a.wiki-link) {
-		color: #7a5c14;
+		color: var(--accent);
 		text-decoration: none;
 		border-bottom: 1px solid #b59a5a;
 		cursor: pointer;
 	}
 	.rendered :global(.wiki-missing) {
-		color: #8a6d1a;
+		color: var(--accent);
 		border-bottom: 1px dashed #b59a5a;
 	}
 	/* stat-block: classic 5e monster panel via blockquote */
@@ -324,14 +324,14 @@
 		margin: 1.4rem 0;
 		padding: 0.7rem 1.1rem;
 		background: rgba(122, 92, 20, 0.08);
-		border-top: 3px solid #7a5c14;
-		border-bottom: 3px solid #7a5c14;
+		border-top: 3px solid var(--accent);
+		border-bottom: 3px solid var(--accent);
 		box-shadow: var(--shadow);
 		color: var(--paper-ink);
 	}
 	.rendered :global(blockquote p:first-child strong:first-child) {
 		font-family: var(--font-display);
-		color: #7a5c14;
+		color: var(--accent);
 		font-size: 1.15em;
 	}
 </style>

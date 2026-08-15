@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Seal from '$lib/components/Seal.svelte';
-	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
 	import type { PageData } from './$types';
 
 	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
@@ -33,7 +31,7 @@
 			'input[type=file]'
 		) as HTMLInputElement | null;
 		if (!f?.files || f.files.length === 0) {
-			e.preventDefault(); // don't POST an empty backup
+			e.preventDefault();
 			importErr = 'Choose a backup file to import.';
 		} else {
 			importErr = '';
@@ -56,19 +54,15 @@
 	}
 </script>
 
-<svelte:head><title>D&D Campaigns</title></svelte:head>
+<svelte:head><title>Campaigns</title></svelte:head>
 
-<main class="table">
-	<header class="crest-band">
-		<div class="crest-left"></div>
-		<div class="crest">
-			<div class="crest-sigil"><Seal size={52} /></div>
-			<div class="crest-txt">
-				<h1>The War Table</h1>
-				<span class="tagline">Campaigns of the realm</span>
-			</div>
+<main>
+	<header class="top">
+		<div class="brand">
+			<h1>Campaigns</h1>
+			<span class="tagline">Campaign notes</span>
 		</div>
-		<div class="crest-right">
+		<div class="top-right">
 			{#if data.isDM}
 				<form method="POST" action="/logout" class="auth">
 					<span class="auth-pill on">DM</span>
@@ -81,18 +75,16 @@
 				</a>
 			{/if}
 		</div>
-		<TypeSwitcher />
 	</header>
-	<div class="ornament" aria-hidden="true"><span>✦ ✦ ✦</span></div>
 
 	<div class="row">
-		<form method="POST" action="?/create" use:enhance class="create sheet">
-			<input name="title" placeholder="Name your campaign…" autocomplete="off" />
-			<button type="submit" class="btn-wax">Seal &amp; Create</button>
+		<form method="POST" action="?/create" use:enhance class="create">
+			<input name="title" placeholder="New campaign…" autocomplete="off" />
+			<button type="submit">Create</button>
 		</form>
 
 		<form method="GET" action="/" class="search">
-			<input name="q" placeholder="Search the archives…" bind:value={q} />
+			<input name="q" placeholder="Search…" bind:value={q} />
 			<button type="submit" aria-label="Search">Search</button>
 		</form>
 
@@ -107,7 +99,7 @@
 	</div>
 
 	{#if data.isDM && data.backups && data.backups.length > 0}
-		<details class="backups sheet">
+		<details class="backups">
 			<summary class="bhead">Backups</summary>
 			{#if restoreMsg}<p class="restore-msg">{restoreMsg}</p>{/if}
 			<ul class="bgrid">
@@ -133,38 +125,35 @@
 				{#each data.results as r (r.id)}
 					<li class="sheet card result">
 						<a href={`/c/${r.id}`} class="title">{r.title}</a>
-						<p class="snippet sheet-ink-soft">{r.snippet}</p>
+						<p class="snippet">{r.snippet}</p>
 					</li>
 				{/each}
 			</ul>
 		{/if}
 	{:else if data.campaigns.length === 0}
-		<p class="empty">The table lies bare. Create a campaign to begin.</p>
+		<p class="empty">No campaigns yet. Create one to begin.</p>
 	{:else}
 		<ul class="grid">
-			{#each data.campaigns as c, i (c.id)}
-				<li class="card" style={`--rot:${(i % 5) - 2}deg`}>
-					<div class="sheet deckle card-sheet">
-						<Seal size={34} tone="small" class="card-seal" title="sealed missive" />
-						<a href={`/c/${c.id}`} class="title">{c.title}</a>
-						<span class="meta">
-							<span class="time sheet-ink-soft">Edited {relTime(c.updated_at || c.created_at)}</span>
-							<span class="counts sheet-ink-soft">{c.maps} map{c.maps === 1 ? '' : 's'} · {c.rolls} roll{c.rolls === 1 ? '' : 's'}</span>
-						</span>
-						<span class="actions">
-							<a href={`/c/${c.id}/play`} class="play" title="Open the player view">Open player view</a>
-							<form
-								method="POST"
-								action="?/delete"
-								use:enhance={({ cancel }) => {
-									if (!confirm(`Delete "${c.title}"? This removes its maps and rolls too.`)) cancel();
-								}}
-							>
-								<input type="hidden" name="id" value={c.id} />
-								<button type="submit" class="delete" title="Delete campaign" aria-label="Delete campaign">✕</button>
-							</form>
-						</span>
-					</div>
+			{#each data.campaigns as c (c.id)}
+				<li class="card">
+					<a href={`/c/${c.id}`} class="title">{c.title}</a>
+					<span class="meta">
+						<span class="time">Edited {relTime(c.updated_at || c.created_at)}</span>
+						<span class="counts">{c.maps} map{c.maps === 1 ? '' : 's'} · {c.rolls} roll{c.rolls === 1 ? '' : 's'}</span>
+					</span>
+					<span class="actions">
+						<a href={`/c/${c.id}/play`} class="play" title="Open the player view">Player view</a>
+						<form
+							method="POST"
+							action="?/delete"
+							use:enhance={({ cancel }) => {
+								if (!confirm(`Delete "${c.title}"? This removes its maps and rolls too.`)) cancel();
+							}}
+						>
+							<input type="hidden" name="id" value={c.id} />
+							<button type="submit" class="delete" title="Delete campaign" aria-label="Delete campaign">✕</button>
+						</form>
+					</span>
 				</li>
 			{/each}
 		</ul>
@@ -174,116 +163,33 @@
 <style>
 	main {
 		font-family: var(--font-body);
+		max-width: 56rem;
+		margin: 0 auto;
 		padding: 0 1.5rem 5rem;
 	}
-	/* the table surface: a broad parchment-cloth tablecloth over the oak, with a
-	   generous warm centre glow and dark wood margins */
-	.table {
-		position: relative;
-		max-width: 58rem;
-		margin: 1.5rem auto;
-		padding: 1rem;
-		box-sizing: border-box;
-		/* a stitched leather rim around the war table — a carved wood frame holding
-		   the papers in a recessed board */
-		border-radius: 14px;
-		border: 4px solid #3a2a1a;
-		background:
-			radial-gradient(120% 100% at 50% 0%, rgba(150, 110, 55, 0.08), transparent 55%),
-			rgba(15, 10, 5, 0.35);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 28px 60px rgba(0, 0, 0, 0.6);
-	}
-	/* a faint compass-rose watermark so the board isn't empty wood */
-	.table::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%23c8a13d' stroke-width='1.5'%3E%3Ccircle cx='100' cy='100' r='96'/%3E%3Ccircle cx='100' cy='100' r='68' stroke-width='1'/%3E%3Ccircle cx='100' cy='100' r='14' stroke-width='1'/%3E%3C/g%3E%3Cg stroke='%23c8a13d' stroke-width='0'%3E%3Cpath d='M100 4 L108 92 Q100 100 92 92 Z' fill='%23c8a13d' opacity='0.7'/%3E%3Cpath d='M100 196 L92 108 Q100 100 108 108 Z' fill='%23c8a13d' opacity='0.4'/%3E%3Cpath d='M4 100 L92 108 Q100 100 108 92 Z' fill='%23c8a13d' opacity='0.4'/%3E%3Cpath d='M196 100 L108 92 Q100 100 92 108 Z' fill='%23c8a13d' opacity='0.4'/%3E%3Cpath d='M31 31 L99 94 Q100 100 94 99 Z' fill='%23c8a13d' opacity='0.3'/%3E%3Cpath d='M169 31 L101 94 Q100 100 106 99 Z' fill='%23c8a13d' opacity='0.3'/%3E%3Cpath d='M169 169 L101 106 Q100 100 106 101 Z' fill='%23c8a13d' opacity='0.3'/%3E%3Cpath d='M31 169 L99 106 Q100 100 94 101 Z' fill='%23c8a13d' opacity='0.3'/%3E%3C/g%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: 50% 46%;
-		background-size: 440px;
-		opacity: 0.06;
-		pointer-events: none;
-		z-index: 0;
-	}
-	/* the stitched seam just inside the leather rim */
-	.table::after {
-		content: '';
-		position: absolute;
-		inset: 8px;
-		border: 1px dashed rgba(212, 161, 60, 0.3);
-		border-radius: 9px;
-		pointer-events: none;
-		z-index: 0;
-	}
-	.table > * {
-		position: relative;
-		z-index: 1;
-	}
-	/* heraldic crest band across the top of the tablecloth */
-	.crest-band {
+	.top {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		gap: 1rem;
-		padding: 1.2rem 1rem 1.2rem;
+		padding: 1.6rem 0 1.1rem;
 		border-bottom: 1px solid var(--rule);
-		position: relative;
-		background: linear-gradient(180deg, rgba(212, 161, 60, 0.06), transparent);
+		margin-bottom: 1.4rem;
 	}
-	.crest {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-	}
-	.crest-sigil {
-		flex-shrink: 0;
-		animation: candle-glow 5.5s ease-in-out infinite;
-	}
-	@keyframes candle-glow {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 5px rgba(220, 170, 90, 0.45));
-		}
-		50% {
-			filter: drop-shadow(0 0 16px rgba(230, 180, 100, 0.85));
-		}
-	}
-	.crest-txt {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		line-height: 1;
-	}
-	.crest-txt h1 {
+	.brand h1 {
 		margin: 0;
 		font-family: var(--font-display);
 		font-weight: 700;
-		letter-spacing: 0.08em;
-		color: var(--gold);
-		text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
-		font-size: 1.9rem;
+		font-size: 1.7rem;
+		letter-spacing: -0.01em;
+		color: var(--ink);
 	}
 	.tagline {
-		font-size: 0.72rem;
+		font-size: 0.78rem;
 		font-family: var(--font-ui);
-		letter-spacing: 0.32em;
+		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: var(--ink-soft);
-		margin-top: 0.5rem;
-	}
-	.crest-left,
-	.crest-right {
-		flex-shrink: 0;
-		min-width: 6rem;
-	}
-	.crest-right {
-		display: flex;
-		justify-content: flex-end;
-	}
-	.ornament {
-		margin: 1.4rem 0 1.6rem;
 	}
 	.auth {
 		display: inline-flex;
@@ -294,7 +200,7 @@
 	.auth button {
 		border: 1px solid var(--rule);
 		background: var(--parchment-light);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		padding: 0.35rem 0.8rem;
 		color: var(--ink-soft);
 		cursor: pointer;
@@ -306,66 +212,72 @@
 	}
 	.auth-pill {
 		font-size: 0.75rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
+		font-weight: 600;
+		letter-spacing: 0.03em;
 		padding: 0.22rem 0.5rem;
 		border-radius: 99px;
 		border: 1px solid var(--rule);
 		color: var(--ink-soft);
 	}
 	.auth-pill.on {
-		color: #3a120c;
+		color: var(--parchment-light);
 		background: var(--accent);
 		border-color: var(--accent);
 	}
 	.row {
 		display: flex;
-		flex-direction: column;
+		flex-wrap: wrap;
 		gap: 0.8rem;
 		margin-bottom: 1.8rem;
 	}
-	/* the campaign create sheet — a blank parchment waiting for a title */
 	.create {
 		display: flex;
-		gap: 0.6rem;
-		padding: 0.9rem 0.9rem 0.9rem 1.1rem;
+		gap: 0.5rem;
+		flex: 1 1 20rem;
+		padding: 0.4rem;
 	}
 	.create input {
 		flex: 1;
-		padding: 0.55rem 0.6rem;
 		border: none;
-		border-bottom: 1px solid var(--paper-rule);
-		border-radius: 0;
 		background: transparent;
-		color: var(--paper-ink);
-		font-size: 1.05rem;
+		padding: 0.5rem 0.6rem;
+		color: var(--ink);
+		font-size: 1rem;
 		font-family: var(--font-body);
 	}
 	.create input::placeholder {
-		color: var(--paper-ink-soft);
+		color: var(--ink-soft);
 	}
-	.create input:focus {
-		outline: none;
-		border-bottom-color: #7a5c14;
+	.create button,
+	.search button,
+	.import button {
+		padding: 0.5rem 1.1rem;
+		border: 1px solid var(--accent);
+		border-radius: var(--radius-sm);
+		background: var(--accent);
+		color: var(--parchment-light);
+		font-size: 0.9rem;
+		font-family: var(--font-ui);
+		cursor: pointer;
 	}
-	.create .btn-wax {
-		flex-shrink: 0;
-		padding: 0.55rem 1.3rem;
+	.create button:hover,
+	.search button:hover,
+	.import button:hover {
+		background: var(--accent-soft);
+		border-color: var(--accent-soft);
 	}
-	/* search — a slim parchment strip laid on the table */
 	.search {
 		display: flex;
 		gap: 0.5rem;
-		background: rgba(0, 0, 0, 0.25);
-		border: 1px solid var(--rule);
-		border-radius: 8px;
-		padding: 0.4rem 0.4rem 0.4rem 0.7rem;
+		flex: 1 1 18rem;
+		align-items: center;
+		padding: 0.4rem;
 	}
 	.search input {
 		flex: 1;
-		padding: 0.45rem 0.5rem;
 		border: none;
 		background: transparent;
+		padding: 0.45rem 0.5rem;
 		color: var(--ink);
 		font-size: 0.95rem;
 		font-family: var(--font-body);
@@ -373,24 +285,11 @@
 	.search input::placeholder {
 		color: var(--ink-soft);
 	}
-	.search button {
-		padding: 0.45rem 1rem;
-		border: 1px solid var(--gold);
-		border-radius: 6px;
-		background: var(--parchment-light);
-		color: var(--gold);
-		font-size: 0.88rem;
-		font-family: var(--font-ui);
-		cursor: pointer;
-	}
-	.search button:hover {
-		background: var(--gold);
-		color: var(--parchment-deep);
-	}
 	.import {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		padding: 0.4rem;
 	}
 	.import-label {
 		font-size: 0.9rem;
@@ -399,98 +298,52 @@
 		gap: 0.4rem;
 		align-items: center;
 	}
-	.import button {
-		padding: 0.4rem 0.9rem;
-		border: 1px solid var(--rule);
-		border-radius: 6px;
-		background: var(--parchment-light);
-		color: var(--ink-soft);
-		cursor: pointer;
+	.import input[type='file'] {
+		font-size: 0.8rem;
+		padding: 0.3rem;
 	}
 	.import-error {
 		color: var(--danger);
-		margin: 0;
+		margin: 0.2rem 0 0;
+		width: 100%;
 	}
 	.grid {
 		list-style: none;
 		padding: 0;
 		margin: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-		gap: 1.1rem;
-		padding: 0.5rem;
+		grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+		gap: 1rem;
 	}
-	/* each card is a small pile of papers: the li holds two offset sheets behind
-	   the deckled top sheet, so the grid reads as scattered correspondence. */
 	.card {
-		position: relative;
-		list-style: none;
-		transform: rotate(var(--rot, 0deg));
-		transition: transform 0.2s ease;
-		padding: 0;
-	}
-	.card::before,
-	.card::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background:
-			linear-gradient(165deg, rgba(255, 255, 255, 0.14), transparent 34%),
-			var(--paper);
-		border: 1px solid var(--paper-edge);
-		box-shadow: var(--paper-shadow);
-		pointer-events: none;
-	}
-	.card::before {
-		transform: translate(4px, -3px) rotate(1.5deg);
-	}
-	.card::after {
-		transform: translate(-3px, 2px) rotate(-1deg);
-	}
-	.card-sheet {
-		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: 0.8rem;
-		padding: 1.3rem 1.3rem 1rem;
-		z-index: 1;
+		gap: 0.6rem;
+		padding: 1.2rem 1.2rem 1rem;
+		background: var(--paper);
+		border: 1px solid var(--paper-edge);
+		border-radius: var(--radius-md);
+		box-shadow: var(--paper-shadow);
 	}
 	.card:hover {
-		transform: rotate(0deg) translateY(-3px);
-	}
-	.card:hover .card-sheet {
-		filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.5));
-	}
-	.card-seal {
-		position: absolute;
-		top: -10px;
-		right: 10px;
-		z-index: 2;
-		transform: rotate(8deg);
+		box-shadow: var(--shadow-md);
 	}
 	.title {
-		font-size: 1.2rem;
+		font-size: 1.15rem;
 		font-family: var(--font-display);
-		font-weight: 700;
+		font-weight: 600;
 		text-decoration: none;
-		color: var(--paper-ink);
+		color: var(--ink);
 	}
 	.title:hover {
-		color: #7a5c14;
+		color: var(--accent);
 	}
 	.meta {
 		display: flex;
 		flex-direction: column;
 		gap: 0.15rem;
 		font-size: 0.82rem;
-	}
-	.play {
-		font-size: 0.88rem;
-		color: #7a5c14;
-		text-decoration: none;
-	}
-	.play:hover {
-		text-decoration: underline;
+		color: var(--ink-soft);
 	}
 	.actions {
 		display: flex;
@@ -500,10 +353,18 @@
 		border-top: 1px solid var(--paper-rule);
 		padding-top: 0.6rem;
 	}
+	.play {
+		font-size: 0.88rem;
+		color: var(--accent);
+		text-decoration: none;
+	}
+	.play:hover {
+		text-decoration: underline;
+	}
 	.delete {
 		border: 0;
 		background: none;
-		color: var(--paper-ink-soft);
+		color: var(--ink-soft);
 		cursor: pointer;
 		font-size: 0.9rem;
 		padding: 0.2rem;
@@ -513,9 +374,8 @@
 	}
 	.empty {
 		color: var(--ink-soft);
-		font-style: italic;
 		text-align: center;
-		padding: 2rem 0;
+		padding: 3rem 0;
 	}
 	.results {
 		list-style: none;
@@ -523,29 +383,32 @@
 		margin: 0;
 		display: grid;
 		gap: 1rem;
-		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
 	}
 	.result {
 		padding: 1rem 1.1rem;
 	}
 	.snippet {
-		color: var(--paper-ink-soft);
+		color: var(--ink-soft);
 		font-size: 0.9rem;
 		margin: 0.4rem 0;
 	}
 	.backups {
 		margin-bottom: 1.6rem;
 		padding: 1rem 1.2rem;
+		background: var(--paper);
+		border: 1px solid var(--paper-edge);
+		border-radius: var(--radius-md);
 	}
 	.bhead {
-		font-family: var(--font-display);
-		font-weight: 700;
-		font-size: 1rem;
-		color: var(--paper-ink);
+		font-family: var(--font-ui);
+		font-weight: 600;
+		font-size: 0.95rem;
+		color: var(--ink);
 		cursor: pointer;
 	}
 	.restore-msg {
-		color: #7a5c14;
+		color: var(--accent);
 		font-size: 0.9rem;
 		margin: 0.6rem 0 0.4rem;
 	}
@@ -562,18 +425,18 @@
 		flex-direction: column;
 		gap: 0.4rem;
 		padding: 0.7rem 0.9rem;
-		background: rgba(0, 0, 0, 0.12);
+		background: var(--parchment);
 		border: 1px solid var(--paper-rule);
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 	}
 	.bname {
 		font-size: 0.82rem;
-		color: var(--paper-ink);
+		color: var(--ink);
 		word-break: break-all;
 	}
 	.bmeta {
 		font-size: 0.78rem;
-		color: var(--paper-ink-soft);
+		color: var(--ink-soft);
 	}
 	.bactions {
 		display: flex;
@@ -584,18 +447,15 @@
 		font-size: 0.8rem;
 		padding: 0.25rem 0.6rem;
 		border: 1px solid var(--paper-rule);
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 		background: transparent;
-		color: var(--paper-ink-soft);
+		color: var(--ink-soft);
 		cursor: pointer;
 		text-decoration: none;
 	}
 	.bactions a:hover,
 	.bactions button:hover {
-		border-color: #7a5c14;
-		color: var(--paper-ink);
-	}
-	.bactions .bdel {
-		color: #7a5c14;
+		border-color: var(--accent);
+		color: var(--accent);
 	}
 </style>

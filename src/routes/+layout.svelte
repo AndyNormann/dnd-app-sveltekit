@@ -1,28 +1,8 @@
 <script lang="ts">
-	import '@fontsource/cinzel/500.css';
-	import '@fontsource/cinzel/600.css';
-	import '@fontsource/cinzel/700.css';
-	import '@fontsource/literata/400.css';
-	import '@fontsource/literata/500.css';
-	import '@fontsource/literata/600.css';
-	import '@fontsource/literata/700.css';
-	import '@fontsource/literata/400-italic.css';
-	import '@fontsource/eb-garamond/400.css';
-	import '@fontsource/eb-garamond/500.css';
-	import '@fontsource/eb-garamond/600.css';
-	import '@fontsource/eb-garamond/700.css';
-	import '@fontsource/eb-garamond/400-italic.css';
 	import '@fontsource/source-serif-4/400.css';
+	import '@fontsource/source-serif-4/500.css';
 	import '@fontsource/source-serif-4/600.css';
 	import '@fontsource/source-serif-4/700.css';
-	import '@fontsource/lora/400.css';
-	import '@fontsource/lora/500.css';
-	import '@fontsource/lora/600.css';
-	import '@fontsource/lora/700.css';
-	import '@fontsource/lora/400-italic.css';
-	import '@fontsource/crimson-pro/400.css';
-	import '@fontsource/crimson-pro/600.css';
-	import '@fontsource/crimson-pro/700.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
@@ -36,165 +16,67 @@
 
 <style>
 	:global(:root) {
-		--font-display: 'Cinzel', 'Source Serif 4', 'Georgia', serif;
-		--font-body: 'Source Serif 4', 'Georgia', serif;
-		--font-ui: 'Source Serif 4', 'Georgia', serif;
-		--text-base: 1.35rem;
-		--type-root: 17.5px;
+		/* chrome + reading are clean: system-ui for the app UI, Source Serif 4 for
+		   the notes/editor prose. One warm accent. */
+		--font-display: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+		--font-ui: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+		--font-body: 'Source Serif 4', 'Georgia', 'Times New Roman', serif;
+		--type-root: 16px;
 		font-size: var(--type-root);
 	}
-	/* Theme — candlelit dark-parchment: the app reads as an old tome open on a
-	   lantern-lit table. Brass-gold is the D&D metal (interactive + links); a
-	   seal-red marks danger; moss-green marks success; hairline rules are warm
-	   bronze. Warm umber surfaces + a candlelight vignette replace flat brown. */
-	/* Theme — the War Table: a dark aged-oak / leather tabletop, warm chrome, and
-	   cream parchment sheets as the reading material laid out on it. Gold trim + wax
-	   seals sit ON the paper. Two token families: the table/chrome (--parchment/--ink)
-	   and the paper documents (--paper/--paper-ink). */
+	/* Sleek, flat, light notes-app palette. Every surface is a soft warm paper; a
+	   single hairline and one terracotta accent carry the hierarchy. */
 	:global(:root) {
-		/* the tabletop (dark, warm, moody) */
-		--parchment: #241c13;
-		--parchment-deep: #19120a;
-		--parchment-light: #332818;
-		--ink: #e9dcbd;
-		--ink-soft: #b3a183;
-		--rule: #443522;
-		--board-bg: #201710;
-		--board-grid: rgba(233, 220, 189, 0.10);
-		--accent: #d4a13c;
-		--accent-soft: #e2be6b;
-		--gold: #dcb25a;
-		--section-hl: rgba(212, 161, 60, 0.14);
-		--danger: #e8896f;
-		--success: #58b366;
+		--parchment: #f7f5ef; /* app background (warm paper) */
+		--parchment-deep: #efebe1; /* sidebar / recessed tier */
+		--parchment-light: #ffffff; /* raised surface */
+		--ink: #26231e; /* primary text */
+		--ink-soft: #6f6e67; /* secondary text */
+		--rule: #e2dccf; /* hairline border */
+		--board-bg: #f1eee5; /* combat/map board */
+		--board-grid: rgba(38, 35, 30, 0.10);
+		--accent: #b34d1e; /* warm terracotta — links + interactive */
+		--accent-soft: #c96a3a;
+		--gold: #b34d1e; /* gold UI now follows the accent */
+		--section-hl: rgba(179, 77, 30, 0.08);
+		--danger: #c0392b;
+		--success: #2f8f4f;
 		--success-deep: #1f5d2b;
-		--ok-text: #f2e7cd;
-		/* parchment sheets — the documents laid on the table (light, aged, readable) */
-		--paper: #efe2c2;
-		--paper-deep: #e3d2a9;
-		--paper-edge: #d8c393;
-		--paper-ink: #3a2e1b;
-		--paper-ink-soft: #6f6043;
-		--paper-rule: #cfbd92;
-		--paper-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
-		/* wood-tuned elevation shadows (deep warm falloff off the table) */
-		--shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-		--shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
-		--shadow-lg: 0 8px 26px rgba(0, 0, 0, 0.62);
-		--shadow-glow: 0 0 20px rgba(0, 0, 0, 0.5);
+		--ok-text: #1f6b34;
+		/* flat cards / sheets */
+		--paper: #ffffff;
+		--paper-deep: #f4f1e9;
+		--paper-edge: #e2dccf;
+		--paper-ink: #26231e;
+		--paper-ink-soft: #6f6e67;
+		--paper-rule: #e2dccf;
+		--paper-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.08);
+		/* elevation shadows for light surfaces */
+		--shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+		--shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
+		--shadow-glow: 0 0 16px rgba(179, 77, 30, 0.18);
 		/* coherent radius scale + player-token ring cue */
-		--radius-sm: 5px;
-		--radius-md: 9px;
+		--radius-sm: 6px;
+		--radius-md: 10px;
 		--radius-lg: 14px;
-		--token-ring: rgba(212, 161, 60, 0.9);
-	}
-		/* Typography presets — switched by the TypeSwitcher (data-type / data-size). */
-	:global(:root[data-type='garamond']) {
-		--font-display: 'EB Garamond', 'Georgia', serif;
-		--font-body: 'EB Garamond', 'Georgia', serif;
-		--font-ui: 'EB Garamond', 'Georgia', serif;
-	}
-	:global(:root[data-type='source']) {
-		/* the default pairing: D&D display (Cinzel) over a readable book serif */
-		--font-display: 'Cinzel', 'Source Serif 4', 'Georgia', serif;
-		--font-body: 'Source Serif 4', 'Georgia', serif;
-		--font-ui: 'Source Serif 4', 'Georgia', serif;
-	}
-	:global(:root[data-type='lora']) {
-		--font-display: 'Lora', 'Georgia', serif;
-		--font-body: 'Lora', 'Georgia', serif;
-		--font-ui: 'Lora', 'Georgia', serif;
-	}
-	:global(:root[data-type='crimson']) {
-		--font-display: 'Crimson Pro', 'Georgia', serif;
-		--font-body: 'Crimson Pro', 'Georgia', serif;
-		--font-ui: 'Crimson Pro', 'Georgia', serif;
-	}
-	:global(:root[data-type='modern']) {
-		--font-display: 'Cinzel', 'Georgia', serif;
-		--font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-	}
-	:global(:root[data-type='plain']) {
-		--font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
-		--font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
-		--font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-	}
-	:global(:root[data-size='compact']) {
-		--type-root: 15px;
-	}
-	:global(:root[data-size='standard']) {
-		--type-root: 16px;
-	}
-	:global(:root[data-size='large']) {
-		--type-root: 17.5px;
+		--token-ring: #b34d1e;
 	}
 	:global(body) {
 		margin: 0;
 		background: var(--parchment);
-		/* the war table: a warm candlelit oak surface with a soft leather grain,
-		   glowing from the lantern above and sinking to deep shadow at the edges */
-		background-image:
-			radial-gradient(1100px 700px at 50% -6%, rgba(212, 178, 120, 0.12), transparent 58%),
-			radial-gradient(1400px 900px at 50% 110%, rgba(0, 0, 0, 0.55), transparent 62%),
-			var(--wood-grain);
-		background-attachment: fixed;
 		color: var(--ink);
 		font-family: var(--font-body);
+		-webkit-font-smoothing: antialiased;
 	}
-	/* a fixed corner vignette deepens the edges of the table, drawing the eye to
-	   the candlelight at center. pointer-events:none so it never blocks input. */
-	:global(body::after) {
-		content: '';
-		position: fixed;
-		inset: 0;
-		pointer-events: none;
-		background: radial-gradient(125% 125% at 50% 50%, transparent 56%, rgba(0, 0, 0, 0.44) 100%);
-		z-index: 9999;
-	}
-	/* aged-oak wood grain for the tabletop + a finer paper grain for the sheets */
-	:global(:root) {
-		--wood-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'360'%20height%3D'360'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'p'%20x1%3D'0'%20y1%3D'0'%20x2%3D'0'%20y2%3D'1'%3E%3Cstop%20offset%3D'0'%20stop-color%3D'%234a3a26'%2F%3E%3Cstop%20offset%3D'0.45'%20stop-color%3D'%233a2c1b'%2F%3E%3Cstop%20offset%3D'1'%20stop-color%3D'%2322180e'%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D'w'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.012%200.22'%20numOctaves%3D'3'%20seed%3D'7'%20result%3D'grain'%2F%3E%3CfeColorMatrix%20in%3D'grain'%20type%3D'matrix'%20values%3D'0%200%200%200%200.34%200%200%200%200%200.25%200%200%200%200%200.15%200%200%200%200.5%200'%20result%3D'streak'%2F%3E%3CfeComposite%20in%3D'streak'%20in2%3D'SourceGraphic'%20operator%3D'over'%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D'360'%20height%3D'360'%20fill%3D'url(%23p)'%2F%3E%3Crect%20width%3D'360'%20height%3D'360'%20filter%3D'url(%23w)'%2F%3E%3C%2Fsvg%3E");
-		--paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
-		--ink-divider: '✦';
-	}
-	/* scroll-ornament divider: ✦ between hairline rules */
-	:global(.ornament) {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		color: var(--gold);
-		font-size: 0.8rem;
-		letter-spacing: 0.2em;
-		text-align: center;
-	}
-	:global(.ornament::before),
-	:global(.ornament::after) {
-		content: '';
-		flex: 1;
-		height: 1px;
-		background: linear-gradient(90deg, transparent, var(--gold), transparent);
-	}
-	:global(.ornament span) {
-		font-family: var(--font-display);
-		text-shadow: 0 0 8px rgba(220, 178, 90, 0.35);
-	}
-	/* a parchment sheet — the reading material laid on the table. Light, aged,
-	   dog-eared corners, warm edge, deep paper-cast shadow. */
+	/* a plain flat card — the universal sheet/surface. */
 	:global(.sheet) {
 		position: relative;
-		color: var(--paper-ink);
-		background:
-			linear-gradient(165deg, rgba(255, 255, 255, 0.18), transparent 34%),
-			radial-gradient(120% 90% at 100% 0%, rgba(120, 90, 40, 0.10), transparent 40%),
-			var(--paper);
-		background-image:
-			linear-gradient(165deg, rgba(255, 255, 255, 0.16), transparent 34%),
-			var(--paper-grain),
-			var(--paper);
+		background: var(--paper);
 		border: 1px solid var(--paper-edge);
-		border-radius: 3px;
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), inset 0 0 40px rgba(110, 80, 30, 0.10), var(--paper-shadow);
+		border-radius: var(--radius-md);
+		box-shadow: var(--paper-shadow);
+		color: var(--paper-ink);
 	}
 	:global(.sheet .sheet-ink) {
 		color: var(--paper-ink);
@@ -203,88 +85,10 @@
 		color: var(--paper-ink-soft);
 	}
 	:global(.sheet a) {
-		color: #7a5c14;
+		color: var(--accent);
 	}
-	/* torn, deckled cut-paper edges — the strongest 'old paper' cue. clip-path cuts
-	   the crisp rectangle into a ragged sheet; the drop-shadow follows the torn
-	   silhouette so the paper still casts a believable shadow onto the table. */
-	:global(.deckle) {
-		border-radius: 0;
-		box-shadow: none;
-		clip-path: polygon(
-			1.1% 0.9%, 6% 0.3%, 11% 1.2%, 17% 0.4%, 23% 1.0%, 29% 0.2%, 35% 1.1%, 41% 0.4%,
-			47% 0.9%, 53% 0.2%, 59% 1.2%, 65% 0.4%, 71% 1.0%, 77% 0.3%, 83% 1.1%, 89% 0.5%,
-			95% 0.8%, 99.4% 1.2%, 99.6% 6%, 99.1% 12%, 99.6% 18%, 99.1% 24%, 99.6% 30%, 99.1% 36%,
-			99.6% 42%, 99.1% 48%, 99.6% 54%, 99.1% 60%, 99.6% 66%, 99.1% 72%, 99.6% 78%, 99.1% 84%,
-			99.6% 90%, 99.2% 96%, 95% 99.4%, 89% 99.6%, 83% 99.1%, 77% 99.6%, 71% 99.1%, 65% 99.6%,
-			59% 99.1%, 53% 99.6%, 47% 99.1%, 41% 99.6%, 35% 99.1%, 29% 99.6%, 23% 99.1%, 17% 99.6%,
-			11% 99.1%, 6% 99.5%, 1.0% 99.2%, 0.4% 94%, 0.9% 88%, 0.3% 82%, 0.9% 76%, 0.3% 70%,
-			0.9% 64%, 0.3% 58%, 0.9% 52%, 0.3% 46%, 0.9% 40%, 0.3% 34%, 0.9% 28%, 0.3% 22%,
-			0.9% 16%, 0.4% 10%
-		);
-		filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
-	}
-	/* dog-eared corner on parchment sheets */
-	:global(.sheet.dogear::after) {
-		content: '';
-		position: absolute;
-		top: 0;
-		right: 0;
-		width: 18px;
-		height: 18px;
-		background: linear-gradient(225deg, var(--paper-deep) 0 47%, transparent 50%);
-		border-bottom-left-radius: 3px;
-	}
-	:global(.filigree) {
-		position: relative;
-	}
-	:global(.filigree::before),
-	:global(.filigree::after) {
-		content: '';
-		position: absolute;
-		width: 14px;
-		height: 14px;
-		border-color: var(--gold);
-		border-style: solid;
-		border-width: 0;
-		opacity: 0.7;
-		pointer-events: none;
-	}
-	:global(.filigree::before) {
-		top: 6px;
-		left: 6px;
-		border-top-width: 2px;
-		border-left-width: 2px;
-		border-top-left-radius: 4px;
-	}
-	:global(.filigree::after) {
-		bottom: 6px;
-		right: 6px;
-		border-bottom-width: 2px;
-		border-right-width: 2px;
-		border-bottom-right-radius: 4px;
-	}
-	/* a wax-seal-red raised action that reads as the table's confirm press */
-	:global(.btn-wax) {
-		font-family: var(--font-ui);
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		color: var(--parchment-light);
-		background: linear-gradient(180deg, #e8795f, #8b2020);
-		border: 1px solid #5f1412;
-		border-radius: 6px;
-		box-shadow: inset 0 1px 0 rgba(255, 220, 200, 0.4), 0 2px 6px rgba(0, 0, 0, 0.4);
-		cursor: pointer;
-	}
-	:global(.btn-wax:hover) {
-		filter: brightness(1.1);
-	}
-	:global(.btn-wax:active) {
-		box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
-	}
-	/* Browser surfaces belong to the theme too — selection, scrollbars, caret. */
 	:global(::selection) {
-		background: rgba(212, 161, 60, 0.35);
+		background: rgba(179, 77, 30, 0.20);
 		color: var(--ink);
 	}
 	:global(*::-webkit-scrollbar) {
@@ -292,45 +96,53 @@
 		height: 12px;
 	}
 	:global(*::-webkit-scrollbar-track) {
-		background: var(--parchment-deep);
+		background: transparent;
 	}
 	:global(*::-webkit-scrollbar-thumb) {
 		background: var(--rule);
-		border: 3px solid var(--parchment-deep);
+		border: 3px solid var(--parchment);
 		border-radius: 999px;
 	}
 	:global(*::-webkit-scrollbar-thumb:hover) {
-		background: var(--gold);
+		background: var(--accent);
 	}
 	:global(a) {
 		color: var(--accent);
 	}
-	/* Browser-default white form controls punch out of the dark theme. */
 	:global(input),
 	:global(select),
 	:global(textarea) {
-		background: var(--parchment-deep);
+		background: var(--parchment-light);
 		color: var(--ink);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius-sm);
+		padding: 0.45rem 0.6rem;
 		font-family: var(--font-ui);
+		font-size: 0.95rem;
+	}
+	:global(input:focus),
+	:global(select:focus),
+	:global(textarea:focus) {
+		outline: none;
+		border-color: var(--accent);
 	}
 	:global(input[type='range']) {
 		accent-color: var(--accent);
 		background: transparent;
+		border: none;
+		padding: 0;
 	}
 	:global(input[type='color']) {
-		background: var(--parchment-deep);
+		background: var(--parchment-light);
 		border: 1px solid var(--rule);
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 		padding: 2px;
 	}
-	/* UI controls share one face; Cinzel is reserved for titles only. */
 	:global(button) {
 		font-family: var(--font-ui);
 	}
-	/* Keyboard focus must always be visible, on every custom-styled control.
-	   Gold contrasts against both the dark bg and the indigo accent fills. */
 	:global(:focus-visible) {
-		outline: 2px solid var(--gold);
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 	@media (prefers-reduced-motion: reduce) {

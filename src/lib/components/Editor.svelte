@@ -64,7 +64,7 @@
 		color: var(--paper-ink);
 	}
 	:global(.cm-host .cm-content) {
-		caret-color: #7a5c14;
+		caret-color: var(--accent);
 	}
 	:global(.cm-host .cm-gutters) {
 		background: rgba(122, 92, 20, 0.07);
@@ -76,32 +76,32 @@
 	}
 	:global(.cm-host .cm-activeLineGutter) {
 		background: rgba(122, 92, 20, 0.10);
-		color: #7a5c14;
+		color: var(--accent);
 	}
 	:global(.cm-host .cm-selectionBackground),
 	:global(.cm-host ::selection) {
-		background: rgba(212, 161, 60, 0.35);
+		background: rgba(179, 77, 30, 0.35);
 	}
 	:global(.cm-host .cm-cursor) {
-		border-left-color: #7a5c14;
+		border-left-color: var(--accent);
 	}
 	:global(.cm-host .cm-cursor-secondary) {
-		border-left-color: #7a5c14;
+		border-left-color: var(--accent);
 	}
 	:global(.cm-host span.cm-heading) {
-		color: #7a5c14;
+		color: var(--accent);
 		font-weight: 600;
 	}
 	:global(.cm-host span.cm-header),
 	:global(.cm-host span.cm-strong) {
-		color: #7a5c14;
+		color: var(--accent);
 	}
 	:global(.cm-host span.cm-em) {
-		color: #8a6d1a;
+		color: var(--accent);
 	}
 	:global(.cm-host span.cm-link),
 	:global(.cm-host span.cm-url) {
-		color: #7a5c14;
+		color: var(--accent);
 	}
 	:global(.cm-host span.cm-quote) {
 		color: var(--paper-ink-soft);

@@ -5,8 +5,7 @@
 	import CombatLog from '$lib/components/CombatLog.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
-	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
-	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
+		import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
 	import type { CombatUnit, CombatDrawing, BoardConfig } from '$lib/server/db';
 
@@ -91,8 +90,7 @@
 	<span class="you" title="You are connected as this character">Playing as {data.character.name}</span>
 	<a href={`/p/${data.token}`} class="tab">Notes</a>
 	<a href={`/p/${data.token}/combat`} class="tab" class:active={true}>Combat</a>
-	<span class="tabs-actions"><TypeSwitcher /></span>
-</nav>
+	</nav>
 
 <A11yLive bind:this={a11y} />
 

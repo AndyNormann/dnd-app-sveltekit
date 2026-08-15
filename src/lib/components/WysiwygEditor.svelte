@@ -124,13 +124,13 @@
 		padding: 0.6rem 1rem;
 		background: rgba(122, 92, 20, 0.08);
 		border: 0;
-		border-top: 3px solid #7a5c14;
-		border-bottom: 3px solid #7a5c14;
+		border-top: 3px solid var(--accent);
+		border-bottom: 3px solid var(--accent);
 		color: var(--paper-ink);
 	}
 	:global(.mdx-host .ProseMirror blockquote p:first-child strong:first-child) {
 		font-family: var(--font-display);
-		color: #7a5c14;
+		color: var(--accent);
 		font-size: 1.15em;
 	}
 	:global(.mdx-host .ProseMirror pre) {
@@ -144,7 +144,7 @@
 	:global(.mdx-host .ProseMirror code) {
 		font-family: ui-monospace, monospace;
 		background: rgba(0, 0, 0, 0.06);
-		color: #7a5c14;
+		color: var(--accent);
 		padding: 0.1em 0.3em;
 		border-radius: 4px;
 	}
@@ -229,7 +229,7 @@
 		color: #5a4107;
 	}
 	:global(.wiki-dec) {
-		color: #7a5c14;
+		color: var(--accent);
 		border-bottom: 1px solid #b59a5a;
 		cursor: pointer;
 	}
@@ -299,7 +299,7 @@
 	}
 	:global(.dnd-wiki-item:hover),
 	:global(.dnd-wiki-item.sel) {
-		background: rgba(212, 161, 60, 0.14);
+		background: rgba(179, 77, 30, 0.14);
 		color: var(--accent-soft);
 	}
 	:global(.dnd-wiki-none) {

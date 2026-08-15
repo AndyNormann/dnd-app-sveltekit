@@ -5,8 +5,7 @@
 	import RollLog from '$lib/components/RollLog.svelte';
 	import DocumentList from '$lib/components/DocumentList.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
-	import TypeSwitcher from '$lib/components/TypeSwitcher.svelte';
-	import { parseHeadings } from '$lib/markdown';
+		import { parseHeadings } from '$lib/markdown';
 	import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { DocumentSummary } from '$lib/server/db';
 	import type { PageData } from './$types';
@@ -432,7 +431,6 @@
 				<span class="menu-sep" role="separator"></span>
 				<div class="menu-type">
 					<span class="menu-label">Typography</span>
-					<TypeSwitcher />
 				</div>
 			</div>
 		{/if}
@@ -562,7 +560,7 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.6rem 1rem;
-		background: linear-gradient(180deg, #2b2216, var(--parchment));
+		background: var(--parchment);
 		border-bottom: 1px solid var(--rule);
 		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 		font-family: var(--font-ui);
@@ -813,14 +811,7 @@
 	.source {
 		position: relative;
 		color: var(--paper-ink);
-		background:
-			linear-gradient(165deg, rgba(255, 255, 255, 0.18), transparent 34%),
-			radial-gradient(120% 90% at 100% 0%, rgba(120, 90, 40, 0.10), transparent 40%),
-			var(--paper);
-		background-image:
-			linear-gradient(165deg, rgba(255, 255, 255, 0.16), transparent 34%),
-			var(--paper-grain),
-			var(--paper);
+		background: var(--paper);
 	}
 	.conn {
 		width: 0.6rem;
@@ -843,7 +834,7 @@
 	}
 	.empty-hint h2 {
 		font-family: var(--font-display);
-		color: #7a5c14;
+		color: var(--accent);
 		margin: 0 0 0.4rem;
 	}
 	.empty-hint p {

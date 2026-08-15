@@ -398,3 +398,41 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
 - [x] **10. Stale `# Heading` hint copy** — the empty-state hint now notes that
       headings come from the `/` menu (H1/H2/H3) and that typing `#` stays plain
       text.
+
+## Sleek notes-app overhaul (drop the War Table / stylized look)
+
+Pivot the whole visual identity from the dark aged-oak "War Table" (wood grain,
+candlelight vignette, brass gold, wax seals, torn deckle edges, ornaments) to a
+clean, flat, light Bear-like notes app. One light palette, hairline borders, one
+warm accent, system-ui chrome + serif editor prose. The document model (F1-F5) is
+untouched — this is visual + copy only.
+
+- [x] **T1. Retarget theme tokens (the single lever)** — in `+layout.svelte`,
+      keep every `--var` name but change its value: `--parchment`→light app bg,
+      `--parchment-deep/--parchment-light`→surface tiers, `--ink`/`--ink-soft`→
+      near-black text/muted, `--rule`→hairline border, `--accent`/`--gold`→the
+      warm accent (user: warmer), `--danger`/`--success` retuned for light. This
+      recolors all ~192 refs automatically. Delete the `data-type`/`data-size`
+      font-preset blocks.
+- [x] **T2. Strip decorative classes** — remove from `+layout.svelte`:
+      `--wood-grain`, `--paper-grain`, `--ink-divider`, the body candlelight
+      gradients + `body::after` vignette, `.deckle`, `.dogear`, `.filigree`,
+      `.ornament`, `.btn-wax`; rebuild `.sheet` as a plain white card. Body is a
+      flat light background. Fonts: drop Cinzel/Garamond/Crimson/Lora/EB-Garamond
+      imports, keep one serif (Source Serif 4) for editor prose; UI = system-ui.
+- [x] **T3. Remove TypeSwitcher** — delete `TypeSwitcher.svelte`, its import +
+      render in the 6 routes, and its `data-type`/`data-size` CSS. Typography is
+      now fixed (sans chrome, serif editor). Rewrite `typography.e2e.ts`.
+- [x] **T4. De-fancier the pages** — home (`+page.svelte`): drop the leather
+      `.table` rim, compass-rose `::before`, stitched `::after`, `crest-band`
+      glow, `.ornament` ✦, `Seal`, `btn-wax "Seal & Create"`→plain
+      "Create campaign", `.card` rotation/shadow piles, `sheet-ink-*` classes →
+      flat cards. Login: `panel sheet deckle`, "The DM's Seal", ornament, `btn-wax
+      "Unseal"` → plain centered card + "Log in". DM/player/combat/roster pages:
+      strip `TypeSwitcher`, `Seal`, `paper-grain` backgrounds, hardcoded gold
+      borders; switch `--gold`→accent. Delete `Seal.svelte`.
+- [x] **T5. Component + test sweep** — in the ~14 components replace hardcoded
+      gold/wood hexes (`#7a5c14`, `#3a2a1a`, `rgba(...gold)` etc.) with
+      `var(--accent)`/`var(--border)`; ensure CombatBoard/MapView grid + token
+      colors read on light. Rewrite `theme.e2e.ts` for light surfaces. Run
+      `bun run check` + full e2e, then commit.

@@ -16,22 +16,24 @@ const lum = (c: string) => {
 	return m ? +m[1] : 0;
 };
 
-test('war-table theme: dark oak page, parchment editor with dark ink', async ({ browser }) => {
+test('sleek light theme: light page, white editor, dark ink, serif editor body', async ({ browser }) => {
 	const { page, request } = await loginDM(browser);
-	// the page is the dark oak table with warm light chrome text
+	// the page is the light warm-paper surface with near-black text
 	const home = await page.evaluate(() => ({
 		bg: getComputedStyle(document.body).backgroundColor,
 		text: getComputedStyle(document.body).color,
-		paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(),
-		paperInk: getComputedStyle(document.documentElement).getPropertyValue('--paper-ink').trim()
+		bodyFont: getComputedStyle(document.body).fontFamily,
+		ui: getComputedStyle(document.documentElement).getPropertyValue('--font-ui').trim(),
+		accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
 	}));
-	expect(lum(home.bg)).toBeLessThan(80); // oak table is dark
-	expect(lum(home.text)).toBeGreaterThan(180); // chrome text is warm light
-	expect(home.paper).toBeTruthy();
-	expect(home.paperInk).toBeTruthy();
+	expect(lum(home.bg)).toBeGreaterThan(230); // paper page is light
+	expect(lum(home.text)).toBeLessThan(60); // near-black ink
+	expect(home.bodyFont).toContain('Source Serif');
+	expect(home.ui).toContain('system-ui');
+	expect(home.accent).toBeTruthy();
 
 	const res = await request.post('/?/create', {
-		form: { title: 'Dark' },
+		form: { title: 'Light' },
 		headers: { Origin: 'http://localhost:4173' },
 		maxRedirects: 0
 	});
@@ -58,8 +60,8 @@ test('war-table theme: dark oak page, parchment editor with dark ink', async ({ 
 			heading: get(host.querySelector('h1'), 'color')
 		};
 	});
-	expect(lum(dump.pageBg)).toBeLessThan(80); // oak page stays dark
-	expect(lum(dump.editorBg)).toBeGreaterThan(170); // the editor is cream parchment
-	expect(lum(dump.text)).toBeLessThan(120); // ink is dark on the paper
-	expect(lum(dump.heading)).toBeLessThan(120); // headings are dark ink too
+	expect(lum(dump.pageBg)).toBeGreaterThan(230); // light page
+	expect(lum(dump.editorBg)).toBeGreaterThan(230); // white editor
+	expect(lum(dump.text)).toBeLessThan(60); // dark ink on the paper
+	expect(lum(dump.heading)).toBeLessThan(120); // headings are readable ink/accent
 });
