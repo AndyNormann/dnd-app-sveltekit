@@ -12,7 +12,9 @@
 		initialDrawings = [],
 		initialConfig,
 		activeUnitId = null,
-		onClearBoard = null
+		onClearBoard = null,
+		onClearDrawings = null,
+		onClearTokens = null
 	}: {
 		campaignId: string;
 		dm?: boolean;
@@ -22,6 +24,8 @@
 		initialConfig: BoardConfig;
 		activeUnitId?: string | null;
 		onClearBoard?: (() => void) | null;
+		onClearDrawings?: (() => void) | null;
+		onClearTokens?: (() => void) | null;
 	} = $props();
 
 	const CELL = 40;
@@ -712,8 +716,11 @@
 			<button type="button" class:on={tool === 'half-cover'} onclick={() => (tool = 'half-cover')} aria-label="Mark half cover">◩ Half cover</button>
 			<button type="button" class:on={tool === 'difficult-terrain'} onclick={() => (tool = 'difficult-terrain')} aria-label="Mark difficult terrain">〰 Difficult terrain</button>
 			<button type="button" onclick={undoLastStroke} aria-label="Undo last board marking or stroke">↩ Undo</button>
-			{#if onClearBoard}
-				<button type="button" class="danger" onclick={onClearBoard}>🗑 Clear board</button>
+			{#if onClearDrawings}
+				<button type="button" class="danger" onclick={onClearDrawings}>🧹 Clear drawings</button>
+			{/if}
+			{#if onClearTokens}
+				<button type="button" class="danger" onclick={onClearTokens}>🎯 Clear tokens</button>
 			{/if}
 			<span class="colors">
 				{#each COLORS as c}
@@ -967,6 +974,7 @@
 		box-shadow: var(--shadow-md);
 	}
 	.board-viewport {
+		margin-inline: auto;
 		overflow: auto;
 		max-width: 100%;
 		touch-action: pan-x pan-y;

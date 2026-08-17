@@ -55,16 +55,20 @@
 		});
 	}
 
-	async function clearBoard() {
-		if (!confirm('Clear all combat tokens, drawings, and initiative? This cannot be undone.')) return;
+	async function clearDrawings() {
+		if (!confirm('Clear all board drawings? This cannot be undone.')) return;
 		errorMsg = '';
-		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'clear' })
-		});
-		if (res.ok) showToast('Board cleared');
-		else errorMsg = 'Could not clear the board';
+		const res = await fetch(`/c/${data.campaignId}/combat/drawings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) });
+		if (res.ok) showToast('Drawings cleared');
+		else errorMsg = 'Could not clear drawings';
+	}
+
+	async function clearTokens() {
+		if (!confirm('Clear all combat tokens? This cannot be undone.')) return;
+		errorMsg = '';
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'clear-tokens' }) });
+		if (res.ok) showToast('Tokens cleared');
+		else errorMsg = 'Could not clear tokens';
 	}
 
 	// --- encounter save/load + ready signalling ---
@@ -227,7 +231,8 @@
 				initialDrawings={drawings}
 				initialConfig={boardConfig}
 				activeUnitId={data.activeUnitId}
-				onClearBoard={clearBoard}
+				onClearDrawings={clearDrawings}
+				onClearTokens={clearTokens}
 			/>
 		</section>
 

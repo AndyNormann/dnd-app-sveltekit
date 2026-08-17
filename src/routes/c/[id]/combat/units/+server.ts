@@ -1,5 +1,6 @@
 import {
 	getCampaign,
+	clearCombatUnits,
 	getMonster,
 	getCollection,
 	listCombatUnits,
@@ -26,6 +27,12 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const c = getCampaign(params.id);
 	if (!c) throw error(404, 'Campaign not found');
 	const body = (await request.json()) as Record<string, unknown>;
+
+	if (body.action === 'clear-tokens') {
+		clearCombatUnits(params.id);
+		emitUnits(params.id);
+		return json({ ok: true });
+	}
 
 	if (body.action === 'clear') {
 		const r = clearBoard(params.id);
