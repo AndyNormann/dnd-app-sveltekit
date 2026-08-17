@@ -351,13 +351,15 @@
 		color: var(--accent-soft);
 	}
 	.combat {
-		max-width: 96rem;
-		margin: 1rem auto;
-		padding: 0 1rem;
+		width: 100%;
+		max-width: none;
+		margin: 0;
+		padding: 0;
 		display: grid;
-		grid-template-columns: minmax(15rem, 19rem) 1fr minmax(15rem, 19rem);
+		grid-template-columns: var(--outline-w, 13rem) minmax(0, 1fr) var(--rolls-w, 19rem);
 		gap: 1rem;
 		align-items: start;
+		box-sizing: border-box;
 	}
 	.col {
 		display: flex;
