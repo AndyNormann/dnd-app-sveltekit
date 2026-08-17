@@ -162,10 +162,11 @@
 	   apart in the tracker and tie back to the board */
 	.dot {
 		flex: none;
-		width: 0.6rem;
-		height: 0.6rem;
+		width: 0.5rem;
+		height: 0.5rem;
 		border-radius: 50%;
 		border: 1px solid rgba(0, 0, 0, 0.2);
+		margin-left: 0.35rem;
 	}
 	.dot-none {
 		background: var(--rule);
