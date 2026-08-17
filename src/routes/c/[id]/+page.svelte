@@ -542,7 +542,9 @@
 		color: var(--ink-soft);
 		font-size: 0.85rem;
 		white-space: nowrap;
-		max-width: 10rem;
+		width: 16rem;
+		max-width: 16rem;
+		flex: none;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}

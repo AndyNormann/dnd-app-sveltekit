@@ -335,7 +335,9 @@
 		color: var(--accent);
 	}
 	.crumb {
+		width: 16rem;
 		max-width: 16rem;
+		flex: none;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
