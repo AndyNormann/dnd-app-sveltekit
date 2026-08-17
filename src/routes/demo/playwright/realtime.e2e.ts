@@ -111,8 +111,7 @@ test('realtime: DM sharing a document reveals it live to an open player portal',
 
 test('realtime: a DM edit reaches an open player portal and a fresh portal self-heals via snapshot', async ({
 	browser
-}) => {
-	const anon = await browser.newContext();
+}) => {	const anon = await browser.newContext();
 	const { dm, cookieHeader } = await loginDM(browser);
 	const id = await createCampaign(dm.request);
 	const docId = await getOrCreateDocument(dm, id, cookieHeader);
@@ -131,6 +130,35 @@ test('realtime: a DM edit reaches an open player portal and a fresh portal self-
 	// fresh portal gets v2 via snapshot
 	const fresh = await openPortal(anon, token);
 	await expect(fresh.locator('.rendered')).toContainText('Version two');
+
+	await anon.close();
+	await dm.close();
+});
+
+test('realtime: unsharing the current document moves an open player away from it', async ({ browser }) => {
+	const anon = await browser.newContext();
+	const { dm, cookieHeader } = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	// two documents: one that stays shared, one the player is reading
+	const docA = await getOrCreateDocument(dm, id, cookieHeader);
+	await writeDoc(dm, id, docA, '# Quest Log\nVersion one.', cookieHeader);
+	await shareDoc(dm, id, docA, cookieHeader);
+	const createRes = await dm.request.post(`/c/${id}/documents`, { data: {}, headers: { cookie: cookieHeader } });
+	const { id: docB } = (await createRes.json()) as { id: string };
+	await writeDoc(dm, id, docB, '# Secondary\nMore notes.', cookieHeader);
+	await shareDoc(dm, id, docB, cookieHeader);
+	const token = await createPlayer(dm, id, 'Aria', cookieHeader);
+
+	// open the portal on docB (the second shared doc, titled 'Untitled')
+	const portal = await anon.newPage();
+	await portal.goto(`/p/${token}?doc=${docB}`);
+	await expect(portal.getByText('Playing as')).toBeVisible();
+	await portal.waitForTimeout(800);
+	await expect(portal.locator('.doc-title')).toContainText('Untitled');
+
+	// DM unshares docB -> the open player is moved away to the other shared doc
+	await shareDoc(dm, id, docB, cookieHeader, false);
+	await expect(portal.locator('.doc-title')).toContainText('E2E Campaign', { timeout: 6000 });
 
 	await anon.close();
 	await dm.close();

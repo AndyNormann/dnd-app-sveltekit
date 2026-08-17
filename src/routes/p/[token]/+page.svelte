@@ -34,11 +34,20 @@
 		es.onerror = () => (connected = false);
 		const feed: FeedHandlers = {
 			onDocuments: (ds) => {
-				documents = ds.filter((d) => d.shared === 1);
-				if (!currentDocId && documents.length > 0) {
+			documents = ds.filter((d) => d.shared === 1);
+			// if the player's current document was just unshared, move them away
+			if (currentDocId && !documents.some((d) => d.id === currentDocId)) {
+				currentDocId = '';
+				html = '';
+				if (documents.length > 0) {
 					location.href = `/p/${data.token}?doc=${documents[0].id}`;
 				}
-			},
+				return;
+			}
+			if (!currentDocId && documents.length > 0) {
+				location.href = `/p/${data.token}?doc=${documents[0].id}`;
+			}
+		},
 			onDocumentUpdated: (documentId, h) => {
 				if (documentId === currentDocId) html = h;
 			},
@@ -57,6 +66,14 @@
 				documents = s.documents.filter((d) => d.shared === 1);
 				maps = s.maps;
 				doc?.applySnapshot(s.maps, s.tokens);
+				// if the current document is no longer shared, move away from it
+				if (currentDocId && !documents.some((d) => d.id === currentDocId)) {
+					currentDocId = '';
+					html = '';
+					if (documents.length > 0) {
+						location.href = `/p/${data.token}?doc=${documents[0].id}`;
+					}
+				}
 			},
 			onMapAdded: (m) => {
 				if (!maps.some((x) => x.id === m.id)) maps = [...maps, m];
