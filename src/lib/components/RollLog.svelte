@@ -63,14 +63,20 @@
 		scrollToEnd();
 	}
 
-	/** Ask the server to reveal a secret roll to players, then clear its secret flag locally. */
+	/** Reveal a secret roll only after the server confirms it. */
 	export async function revealRoll(roll: RollData) {
-		await fetch(`/c/${campaignId}/roll/${roll.id}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'reveal' })
-		});
-		rolls = rolls.map((r) => (r.id === roll.id ? { ...r, secret: false } : r));
+		errorMsg = '';
+		try {
+			const res = await fetch(`/c/${campaignId}/roll/${roll.id}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'reveal' })
+			});
+			if (!res.ok) throw new Error('reveal failed');
+			rolls = rolls.map((r) => (r.id === roll.id ? { ...r, secret: false } : r));
+		} catch {
+			errorMsg = 'Could not show that roll to players. It is still secret.';
+		}
 	}
 
 	/** Replace the whole roll list (e.g. on SSE snapshot after a reconnect). */
@@ -200,7 +206,7 @@
 					<span class="who">{r.roller}{r.secret ? ' 🤫' : ''}</span>
 					<span class="total">{r.result}</span>
 					{#if dm && r.secret}
-						<button type="button" class="reveal" title="Show to players" onclick={() => revealRoll(r)}>
+						<button type="button" class="reveal" title="Show to players" aria-label="Show this secret roll to players" onclick={() => revealRoll(r)}>
 							👁
 						</button>
 					{/if}
@@ -218,7 +224,8 @@
 				<input class="expr" placeholder="2d6+3" bind:value={expression} maxlength="100" />
 				{#if dm}
 					<label class="secret-toggle" title="Hide from players">
-						<input type="checkbox" bind:checked={secret} /> 🤫
+						<input type="checkbox" bind:checked={secret} />
+						<span>{secret ? 'Secret rolls ON' : 'Secret'}</span>
 					</label>
 				{/if}
 				<button type="submit" title="Roll (d20)" aria-label="Roll">⚔</button>

@@ -229,6 +229,7 @@
 			documents = documents.map((x) => (x.id === d.id ? { ...x, title: next } : x));
 		} else {
 			docTitle = d.title;
+			showToast('Title could not be renamed', 'err');
 		}
 	}
 
@@ -236,6 +237,7 @@
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
 		if (!file) return;
+		try {
 		const bitmap = await createImageBitmap(file);
 		const fd = new FormData();
 		fd.append('file', file);
@@ -266,8 +268,14 @@
 					saveTimer = setTimeout(save, 0);
 				}, 0);
 			}
+		} else {
+			showToast('Map upload failed', 'err');
 		}
-		input.value = '';
+		} catch {
+			showToast('Map upload failed', 'err');
+		} finally {
+			input.value = '';
+		}
 	}
 
 	function onDeleted() {
