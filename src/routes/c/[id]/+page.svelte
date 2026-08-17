@@ -352,30 +352,7 @@
 	</span>
 	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
 	<span class="gsep" aria-hidden="true"></span>
-	{#if doc}
-		{#if editingTitle}
-			<!-- svelte-ignore a11y_autofocus -->
-			<input
-				class="title-input"
-				bind:value={docTitle}
-				onblur={saveTitle}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') saveTitle();
-					if (e.key === 'Escape') {
-						docTitle = doc?.title ?? docTitle;
-						editingTitle = false;
-					}
-				}}
-				autofocus
-			/>
-		{:else}
-			<h1>
-				<button type="button" class="title-btn" title="Rename document" onclick={() => (editingTitle = true)}>
-					{docTitle}
-				</button>
-			</h1>
-		{/if}
-	{/if}
+
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab" class:active={true}>Notes</a>
 		<a href={`/c/${data.campaignId}/combat`} class="tab">Combat</a>
@@ -453,6 +430,7 @@
 				activeId={doc?.id ?? ''}
 				dm
 				onDeleted={onDeleted}
+				onRenamed={(title) => (docTitle = title)}
 			/>
 	</aside>
 	<div

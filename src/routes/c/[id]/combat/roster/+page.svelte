@@ -220,7 +220,6 @@
 	</span>
 	<span class="crumb" title={title}>{title}</span>
 	<span class="gsep" aria-hidden="true"></span>
-	<h1>Roster</h1>
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab">Notes</a>
 		<a href={`/c/${data.campaignId}/combat`} class="tab">Combat</a>

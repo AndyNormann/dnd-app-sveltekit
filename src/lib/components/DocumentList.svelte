@@ -7,7 +7,8 @@
 		campaignId,
 		dm = false,
 		base = `/c/${campaignId}`,
-		onDeleted = () => {}
+		onDeleted = () => {},
+		onRenamed = (_title: string) => {}
 	}: {
 		documents?: DocumentSummary[];
 		activeId?: string;
@@ -15,7 +16,27 @@
 		dm?: boolean;
 		base?: string;
 		onDeleted?: () => void;
+		onRenamed?: (title: string) => void;
 	} = $props();
+
+	let editingId = $state<string | null>(null);
+	let draftTitle = $state('');
+
+	function beginRename(d: DocumentSummary) {
+		editingId = d.id;
+		draftTitle = d.title;
+	}
+
+	async function finishRename(d: DocumentSummary) {
+		const title = draftTitle.trim();
+		if (!title || title === d.title) { editingId = null; return; }
+		const res = await fetch(`/c/${campaignId}/documents/${d.id}`, {
+			method: 'POST', headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'rename', title })
+		});
+		if (res.ok) onRenamed(title);
+		editingId = null;
+	}
 
 	let dragId = $state<string | null>(null);
 
@@ -84,11 +105,18 @@
 				ondragover={(e) => e.preventDefault()}
 				ondrop={(e) => drop(e, d.id)}
 			>
-				<a class="doc-link" href={`${base}?doc=${d.id}`} title={d.title}>
-					<span class="doc-name">{d.title}</span>
-				</a>
+				{#if dm && editingId === d.id}
+					<input class="doc-rename" bind:value={draftTitle} onblur={() => finishRename(d)} onkeydown={(e) => { if (e.key === 'Enter') finishRename(d); if (e.key === 'Escape') editingId = null; }} aria-label={`Rename ${d.title}`} autofocus />
+				{:else}
+					<a class="doc-link" href={`${base}?doc=${d.id}`} title={d.title}>
+						<span class="doc-name">{d.title}</span>
+					</a>
+				{/if}
 				{#if dm}
 					<span class="doc-actions">
+						{#if editingId !== d.id}
+							<button type="button" class="rename" title="Rename document" aria-label={`Rename ${d.title}`} onclick={(e) => { e.preventDefault(); e.stopPropagation(); beginRename(d); }}>✎</button>
+						{/if}
 						<button
 							type="button"
 							class="share"
@@ -186,6 +214,18 @@
 	.doc-link:hover {
 		color: var(--ink);
 	}
+	.doc-rename {
+		min-width: 0;
+		width: 100%;
+		padding: 0.25rem 0.35rem;
+		border: 1px solid var(--accent);
+		border-radius: 4px;
+		background: var(--parchment-light);
+		color: var(--ink);
+		font: inherit;
+	}
+	.rename { color: var(--ink-soft); }
+	.rename:hover { color: var(--accent); }
 	.doc-actions {
 		display: inline-flex;
 		gap: 0.1rem;
