@@ -178,23 +178,7 @@
 
 <A11yLive bind:this={a11y} />
 
-<header class="bar">
-	<a href="/" class="back">←</a>
-	<span class="status-pill" class:ok={connected} class:error={!connected}>
-		{connected ? 'Live' : 'Reconnecting'}
-	</span>
-	<span class="crumb" title={data.title}>{data.title}</span>
-	<span class="gsep" aria-hidden="true"></span>
-	<nav class="tabs">
-		<a href={`/c/${data.campaignId}`} class="tab">Notes</a>
-		<a href={`/c/${data.campaignId}/combat`} class="tab" class:active={true}>Combat</a>
-		<a href={`/c/${data.campaignId}/combat/roster`} class="tab">Roster</a>
-	</nav>
-	<div class="spacer"></div>
-	<form method="POST" action="/logout" class="logout">
-		<button type="submit" title="Log out as DM">Log out</button>
-	</form>
-</header>
+
 
 <main class="combat">
 	<section class="panel rail left">

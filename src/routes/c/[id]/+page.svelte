@@ -319,6 +319,8 @@
 		};
 		document.addEventListener('pointerdown', closeMore);
 		window.addEventListener('pagehide', flushPendingSave);
+		const addMapFromHeader = (e: Event) => uploadMap((e as CustomEvent).detail as Event);
+		window.addEventListener('campaign-add-map', addMapFromHeader);
 		offline = !navigator.onLine;
 		const goOnline = () => {
 			offline = false;
@@ -333,6 +335,7 @@
 			es.close();
 			document.removeEventListener('pointerdown', closeMore);
 			window.removeEventListener('pagehide', flushPendingSave);
+			window.removeEventListener('campaign-add-map', addMapFromHeader);
 			window.removeEventListener('online', goOnline);
 			window.removeEventListener('offline', goOffline);
 		};
@@ -345,62 +348,7 @@
 
 <svelte:head><title>{docTitle} — {data.campaignTitle} — DM</title></svelte:head>
 
-<header class="bar">
-	<a href="/" class="back">←</a>
-	<span class="status-pill" class:ok={connected} class:error={!connected}>
-		{connected ? 'Live' : 'Reconnecting'}
-	</span>
-	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
-	<span class="gsep" aria-hidden="true"></span>
 
-	<nav class="tabs">
-		<a href={`/c/${data.campaignId}`} class="tab" class:active={true}>Notes</a>
-		<a href={`/c/${data.campaignId}/combat`} class="tab">Combat</a>
-		<a href={`/c/${data.campaignId}/combat/roster`} class="tab">Roster</a>
-	</nav>
-	<span class="save-state" class:error={saveState === 'error' || saveState === 'conflict'}>
-		{#if offline}Offline · will save when back
-		{:else if queued}Queued…
-		{:else if saveState === 'saving'}Saving…
-		{:else if saveState === 'saved'}Saved ✓
-		{:else if saveState === 'conflict'}Out of sync ·
-			<button type="button" class="reload" onclick={() => location.reload()}>Reload</button>
-			<button type="button" class="reload keep" onclick={() => save(true)}>Keep mine</button>
-		{/if}
-	</span>
-	<div class="spacer"></div>
-	<span class="gsep" aria-hidden="true"></span>
-	<label class="upload">
-		Add map
-		<input type="file" accept="image/*" onchange={uploadMap} class="visually-hidden" />
-	</label>
-	<div class="more">
-		<button
-			type="button"
-			class="toggle"
-			class:on={more}
-			title="More actions"
-			aria-label="More actions"
-			aria-haspopup="menu"
-			aria-expanded={more}
-			onclick={() => (more = !more)}
-			>⋮</button
-		>
-		{#if more}
-			<div class="menu" role="menu">
-				<a role="menuitem" href={`/c/${data.campaignId}/export`} onclick={() => (more = false)}>Export</a>
-				<span class="menu-sep" role="separator"></span>
-				<div class="menu-type">
-					<span class="menu-label">Typography</span>
-				</div>
-			</div>
-		{/if}
-	</div>
-	<span class="gsep" aria-hidden="true"></span>
-	<form method="POST" action="/logout" class="logout">
-		<button type="submit" title="Log out as DM">Log out</button>
-	</form>
-</header>
 
 <div
 	class="layout"
