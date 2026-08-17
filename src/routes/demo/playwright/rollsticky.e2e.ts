@@ -72,7 +72,11 @@ test('player portal roll input stays docked at the visible bottom when scrolled'
 	const portal = await dm.ctx.newPage();
 	await portal.goto(`/p/${link_token}`);
 	await portal.waitForSelector('.rail.rolls .input');
-	await portal.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+	// the portal is a fixed-height layout; main scrolls internally while the rolls rail stays pinned
+	await portal.evaluate(() => {
+		const main = document.querySelector('main')!;
+		main.scrollTop = main.scrollHeight / 2;
+	});
 	await portal.waitForTimeout(200);
 	const pBottom = await portal.locator('.rail.rolls .input').evaluate((el) => {
 		const r = el.getBoundingClientRect();
@@ -80,5 +84,42 @@ test('player portal roll input stays docked at the visible bottom when scrolled'
 	});
 	expect(pBottom.bottom).toBeGreaterThan(pBottom.vh - 10);
 	expect(pBottom.bottom).toBeLessThanOrEqual(pBottom.vh + 1);
+	await dm.ctx.close();
+});
+
+test('player portal roll input stays visible even with short content (no scroll room)', async ({
+	browser
+}) => {
+	const dm = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	// short document + player character
+	const list = await dm.request.get(`/c/${id}/documents`, { headers: { Origin: ORIGIN } });
+	const { documents } = (await list.json()) as { documents: { id: string }[] };
+	const docId = documents[0].id;
+	await dm.request.post(`/c/${id}/documents/${docId}/content`, {
+		headers: { Origin: ORIGIN },
+		data: { content: '# Only Heading\n\nShort text.\n' }
+	});
+	await dm.request.post(`/c/${id}/documents/${docId}`, {
+		headers: { Origin: ORIGIN },
+		data: { action: 'share', shared: true }
+	});
+	const chr = await dm.request.post(`/c/${id}/characters`, {
+		headers: { Origin: ORIGIN },
+		data: { name: 'Aria' }
+	});
+	const { link_token } = (await chr.json()) as { link_token: string };
+
+	const portal = await dm.ctx.newPage();
+	await portal.goto(`/p/${link_token}`);
+	await portal.waitForSelector('.rail.rolls .optlabel');
+	// at the top of a short page the rail must not overflow past the viewport bottom
+	const pBottom = await portal.locator('.rail.rolls .optlabel').evaluate((el) => {
+		const r = el.getBoundingClientRect();
+		return { bottom: r.bottom, top: r.top, vh: window.innerHeight };
+	});
+	expect(pBottom.bottom).toBeGreaterThanOrEqual(pBottom.vh - 30);
+	expect(pBottom.bottom).toBeLessThanOrEqual(pBottom.vh + 1);
+	expect(pBottom.top).toBeGreaterThanOrEqual(0);
 	await dm.ctx.close();
 });

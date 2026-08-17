@@ -155,25 +155,23 @@
 	.page {
 		display: grid;
 		grid-template-columns: 13rem minmax(0, 50rem) 18rem;
+		grid-template-rows: 1fr;
+		height: calc(100vh - 3.3rem);
 		justify-content: center;
 		gap: 1.25rem;
 		font-family: var(--font-body);
 		padding: 0 1rem;
+		position: relative;
+		overflow: hidden;
 	}
 	.rail {
-		position: sticky;
-		top: 1rem;
-		align-self: start;
-		max-height: calc(100vh - 2rem);
+		min-height: 0;
 		overflow-y: auto;
 		padding-top: 1.5rem;
 	}
 	.rail.rolls {
-		position: sticky;
-		top: 1rem;
-		align-self: start;
-		max-height: none;
-		height: calc(100vh - 1rem);
+		min-height: 0;
+		height: 100%;
 		box-sizing: border-box;
 		overflow: hidden;
 		border-left: 1px solid var(--rule);
@@ -187,10 +185,12 @@
 		border-radius: var(--radius-md);
 		box-shadow: var(--paper-shadow);
 		padding: 1.5rem 2.5rem 4rem;
-		margin: 1rem 0 3rem;
+		margin: 0.6rem 0;
 		line-height: 1.6;
 		min-width: 0;
+		min-height: 0;
 		position: relative;
+		overflow-y: auto;
 	}
 	.conn {
 		position: absolute;
@@ -226,6 +226,8 @@
 		.page {
 			grid-template-columns: 1fr;
 			justify-content: stretch;
+			height: auto;
+			overflow: visible;
 		}
 		.rail {
 			display: none;
@@ -235,6 +237,8 @@
 		}
 		main {
 			padding: 1rem 1.25rem 3rem;
+			overflow-y: visible;
+			height: auto;
 		}
 	}
 </style>
