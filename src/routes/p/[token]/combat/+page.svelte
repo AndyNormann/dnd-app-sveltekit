@@ -227,22 +227,13 @@
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-md);
 	}
-	.activity-title {
-		padding: 0.6rem 0.8rem;
-		font-family: var(--font-display);
-		font-weight: 600;
-		color: var(--accent);
-		border-bottom: 1px solid var(--rule);
-	}
-	.activity-stream :global(.clog),
-	.activity-stream :global(.roll-log) {
+	.activity-sidebar :global(.roll-log) {
 		border: 0;
 		border-radius: 0;
 		box-shadow: none;
 		background: transparent;
+		height: min(32rem, calc(100vh - 8rem));
 	}
-	.activity-stream :global(.clog) { border-bottom: 1px solid var(--rule); }
-	.activity-stream :global(.roll-log) { height: min(32rem, calc(100vh - 8rem)); }
 
 	@media (max-width: 72rem) {
 		.layout {
@@ -252,6 +243,9 @@
 			position: static;
 			max-height: none;
 			overflow: visible;
+		}
+		.activity-sidebar :global(.roll-log) {
+			height: min(22rem, 55vh);
 		}
 	}
 	.campaign-title {
