@@ -249,9 +249,12 @@
 		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
 	</section>
 
-	<section class="panel rail right sidebar">
-		<CombatLog bind:this={combatLog} initial={data.logs} />
-		<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
+	<section class="panel rail right sidebar activity-sidebar">
+		<div class="activity-title">📜 Activity</div>
+		<div class="activity-stream">
+			<CombatLog bind:this={combatLog} initial={data.logs} />
+			<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
+		</div>
 	</section>
 </main>
 
@@ -373,6 +376,31 @@
 		min-height: 0;
 		flex: 1;
 	}
+	.activity-sidebar {
+		gap: 0;
+		overflow: hidden;
+		background: var(--parchment-light);
+		border: 1px solid var(--rule);
+		border-top: 3px solid var(--gold);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-md);
+	}
+	.activity-title {
+		padding: 0.6rem 0.8rem;
+		font-family: var(--font-display);
+		font-weight: 600;
+		color: var(--accent);
+		border-bottom: 1px solid var(--rule);
+	}
+	.activity-stream :global(.clog),
+	.activity-stream :global(.roll-log) {
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		background: transparent;
+	}
+	.activity-stream :global(.clog) { border-bottom: 1px solid var(--rule); }
+	.activity-stream :global(.roll-log) { height: min(32rem, calc(100vh - 8rem)); }
 
 	@media (max-width: 72rem) {
 		.combat {
