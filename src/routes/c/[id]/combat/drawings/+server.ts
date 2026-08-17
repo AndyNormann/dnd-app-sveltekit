@@ -41,13 +41,17 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	const color = String(body.color ?? '#222').slice(0, 20);
 	const width = Math.max(1, Number(body.width) || 4);
 	const mode = body.mode === 'erase' ? 'erase' : 'draw';
+	const rawKind = String(body.kind ?? 'stroke');
+	const kind = (['stroke', 'full-cover', 'half-cover', 'difficult-terrain'] as const).includes(rawKind as never)
+		? (rawKind as 'stroke' | 'full-cover' | 'half-cover' | 'difficult-terrain')
+		: 'stroke';
 	const pts = Array.isArray(body.points) ? (body.points as [number, number][]) : [];
 	if (!pts.length) throw error(400, 'No points');
 	const capped = pts.map(([x, y]) => [
 		Number(x) || 0,
 		Number(y) || 0
 	] as [number, number]);
-	const drawing = addCombatDrawing(params.id, color, width, mode, capped);
+	const drawing = addCombatDrawing(params.id, color, width, mode, capped, kind);
 	broadcast(params.id, {
 		type: 'combat-drawings-updated',
 		drawings: listCombatDrawings(params.id)

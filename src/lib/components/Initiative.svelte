@@ -20,6 +20,7 @@
 	let entries = $state<InitEntry[]>([...initial]);
 	let round = $state(initialRound);
 	let open = $state(true);
+	let actionError = $state('');
 
 	/** Apply the latest list + round from the server (SSE). */
 	export function applyEntries(next: InitEntry[], nextRound: number = round) {
@@ -28,11 +29,13 @@
 	}
 
 	async function post(url: string, payload: unknown) {
-		await fetch(url, {
+		const res = await fetch(url, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload)
 		});
+		if (!res.ok) actionError = 'Could not update initiative';
+		return res;
 	}
 
 	function setHp(entry: InitEntry, delta: number) {
@@ -57,8 +60,11 @@
 	export function advance() {
 		nextTurn();
 	}
-	function clear() {
-		post(`/c/${campaignId}/initiative`, { action: 'clear' });
+	async function clear() {
+		if (!confirm('Clear the initiative order? This cannot be undone.')) return;
+		actionError = '';
+		const res = await post(`/c/${campaignId}/initiative`, { action: 'clear' });
+		if (res.ok) actionError = '';
 	}
 </script>
 
@@ -67,6 +73,7 @@
 		⚔ Initiative · Round {round} {open ? '▾' : '▴'}
 	</button>
 	{#if open}
+		{#if actionError}<p class="error" role="alert">{actionError}</p>{/if}
 		<div class="list">
 			{#if entries.length === 0}
 				<p class="empty">No combatants yet.</p>

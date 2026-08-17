@@ -399,6 +399,13 @@ instance. SQLite + `svelte-adapter-bun`. **No collaborative editing.**
       headings come from the `/` menu (H1/H2/H3) and that typing `#` stays plain
       text.
 
+## Current playability QoL batch
+
+- [x] **P1. Player notes rolling UX** — keep RollLog and inline dice rolling fully live in the fixed-link player Notes portal.
+- [x] **P2. Destructive-action safety** — confirmations for clear board, clear initiative, and character deletion; do not optimistically claim success before the request succeeds.
+- [x] **P3. Combat accessibility** — keyboard/focus access for combat controls and tokens, readable labels, and live status announcements.
+- [x] **P4. Combat conditions and map zones** — maintain token conditions and allow persistent full-cover, half-cover, and difficult-terrain markings on the combat board, visible to players and DM.
+
 ## Sleek notes-app overhaul (drop the War Table / stylized look)
 
 Pivot the whole visual identity from the dark aged-oak "War Table" (wood grain,

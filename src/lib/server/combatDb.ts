@@ -152,6 +152,8 @@ export interface CombatDrawing {
 	color: string;
 	width: number;
 	mode: 'draw' | 'erase';
+	/** stroke for freehand ink, or a persistent board marking. */
+	kind: 'stroke' | 'full-cover' | 'half-cover' | 'difficult-terrain';
 	points: [number, number][];
 	created_at: number;
 }
@@ -161,12 +163,13 @@ export function addCombatDrawing(
 	color: string,
 	width: number,
 	mode: 'draw' | 'erase',
-	points: [number, number][]
+	points: [number, number][],
+	kind: CombatDrawing['kind'] = 'stroke'
 ): CombatDrawing {
 	const id = nanoid(12);
 	db.query(
-		'INSERT INTO combat_drawings (id, campaign_id, color, width, mode, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-	).run(id, campaignId, color, width, mode, JSON.stringify(points), Date.now());
+		'INSERT INTO combat_drawings (id, campaign_id, color, width, mode, kind, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+	).run(id, campaignId, color, width, mode, kind, JSON.stringify(points), Date.now());
 	return db.query('SELECT * FROM combat_drawings WHERE id = ?').get(id) as CombatDrawing;
 }
 
@@ -175,6 +178,7 @@ export function listCombatDrawings(campaignId: string): CombatDrawing[] {
 		.query('SELECT * FROM combat_drawings WHERE campaign_id = ? ORDER BY created_at')
 		.all(campaignId) as Omit<CombatDrawing, 'points'>[]).map((r) => ({
 		...r,
+		kind: ((r as unknown as { kind?: string }).kind || 'stroke') as CombatDrawing['kind'],
 		points: (JSON.parse((r as unknown as { points: string }).points) || []) as [number, number][]
 	})) as CombatDrawing[];
 }
@@ -221,8 +225,8 @@ export function restoreCombatUnit(u: CombatUnit): void {
 /** Re-insert a saved combat drawing (used when loading an encounter). */
 export function restoreCombatDrawing(d: CombatDrawing): void {
 	db.query(
-		'INSERT INTO combat_drawings (id, campaign_id, color, width, mode, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-	).run(d.id, d.campaign_id, d.color, d.width, d.mode, JSON.stringify(d.points), Date.now());
+		'INSERT INTO combat_drawings (id, campaign_id, color, width, mode, kind, points, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+	).run(d.id, d.campaign_id, d.color, d.width, d.mode, d.kind ?? 'stroke', JSON.stringify(d.points), Date.now());
 }
 
 

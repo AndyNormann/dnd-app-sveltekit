@@ -68,7 +68,7 @@
 
 	/** Wipe the roll history for real: POST the DM-only clear, then drop it locally and offer Undo. */
 	export async function clearRolls() {
-		if (!dm) return;
+		if (!dm || !confirm('Clear the roll history? This can be undone briefly.')) return;
 		const res = await fetch(`/c/${campaignId}/roll`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },

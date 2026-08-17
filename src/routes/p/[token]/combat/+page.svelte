@@ -31,6 +31,9 @@
 	const isMyTurn = $derived(activeUnitId != null && activeUnitId === myUnitId);
 	let ready = $state(myUnitId != null && data.readyIds.includes(myUnitId));
 	let a11y: A11yLive;
+	$effect(() => {
+		if (activeName) a11y?.announce(isMyTurn ? `Your turn. ${activeName} is active.` : `${activeName}'s turn.`);
+	});
 
 	async function toggleReady() {
 		if (!myUnitId) return;
@@ -117,7 +120,7 @@
 		</section>
 		<section class="col">
 			{#if activeName}
-				<div class="turn-banner" class:mine={isMyTurn}>
+				<div class="turn-banner" class:mine={isMyTurn} aria-live="polite">
 					{#if isMyTurn}✨ Your turn — go!{:else}⏳ Waiting on {activeName}…{/if}
 				</div>
 			{/if}

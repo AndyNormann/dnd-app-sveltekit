@@ -146,6 +146,7 @@ db.exec(`
 		color TEXT NOT NULL,
 		width REAL NOT NULL DEFAULT 4,
 		mode TEXT NOT NULL DEFAULT 'draw',
+		kind TEXT NOT NULL DEFAULT 'stroke',
 		points TEXT NOT NULL,
 		created_at INTEGER NOT NULL
 	);
@@ -212,6 +213,13 @@ db.exec(`
 	}
 	if (!mapCols.includes('active_layer')) {
 		db.exec(`ALTER TABLE maps ADD COLUMN active_layer INTEGER NOT NULL DEFAULT 0`);
+	}
+	// Combat board markings were added after the initial stroke-only schema.
+	const drawingCols = (db.query('PRAGMA table_info(combat_drawings)').all() as { name: string }[]).map(
+		(c) => c.name
+	);
+	if (!drawingCols.includes('kind')) {
+		db.exec(`ALTER TABLE combat_drawings ADD COLUMN kind TEXT NOT NULL DEFAULT 'stroke'`);
 	}
 	// migrate pre-rev databases: add rev (optimistic-concurrency guard) to campaigns
 	const campCols = (db.query('PRAGMA table_info(campaigns)').all() as { name: string }[]).map(

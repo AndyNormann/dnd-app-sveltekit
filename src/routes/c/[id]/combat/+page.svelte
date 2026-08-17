@@ -27,7 +27,7 @@
 	let rollLog: RollLog;
 	let initiative: Initiative;
 	let board: CombatBoard;
-	let activeName = $state('');
+	let activeName = $state(data.initiative.find((entry) => entry.active === 1)?.name ?? '');
 	let round = $state(data.initiativeRound);
 
 	let collections = $state<CollectionRow[]>(data.collections);
@@ -36,6 +36,9 @@
 	let readyIds = $state<string[]>(data.readyIds);
 	let a11y: A11yLive;
 	let errorMsg = $state('');
+	$effect(() => {
+		if (activeName) a11y?.announce(`Round ${round}. ${activeName}'s turn.`);
+	});
 	let toast = $state<string | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout>;
 
@@ -54,14 +57,16 @@
 		});
 	}
 
-	function clearBoard() {
+	async function clearBoard() {
+		if (!confirm('Clear all combat tokens, drawings, and initiative? This cannot be undone.')) return;
 		errorMsg = '';
-		fetch(`/c/${data.campaignId}/combat/units`, {
+		const res = await fetch(`/c/${data.campaignId}/combat/units`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'clear' })
 		});
-		showToast('Board cleared');
+		if (res.ok) showToast('Board cleared');
+		else errorMsg = 'Could not clear the board';
 	}
 
 	// --- encounter save/load + ready signalling ---
@@ -220,7 +225,7 @@
 		<section class="panel board">
 			{#if activeName}
 			{#key activeName}
-				<div class="turn-status">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
+				<div class="turn-status" aria-live="polite">Round <b>{round}</b> · {activeName}'s turn <kbd>N</kbd></div>
 			{/key}
 		{/if}
 			{#if playerCount > 0}

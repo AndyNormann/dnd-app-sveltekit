@@ -14,6 +14,7 @@
 	let collections = $state<CollectionRow[]>(data.collections);
 	let newColName = $state('');
 	let colErr = $state('');
+	let actionError = $state('');
 
 	// character form
 	let charName = $state('');
@@ -77,12 +78,17 @@
 	}
 
 	async function deleteCharacter(id: string) {
-		await fetch(`/c/${data.campaignId}/characters/${id}`, {
+		const character = characters.find((c) => c.id === id);
+		if (!character || !confirm(`Delete ${character.name}? This also removes its combat link.`)) return;
+		actionError = '';
+		const res = await fetch(`/c/${data.campaignId}/characters/${id}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'delete' })
 		});
+		if (!res.ok) { actionError = 'Could not delete character'; return; }
 		characters = characters.filter((c) => c.id !== id);
+		showToast('Character deleted');
 	}
 
 	async function addMonster(e: Event) {
@@ -149,12 +155,16 @@
 	}
 
 	async function deleteMonster(id: string) {
-		await fetch(`/c/${data.campaignId}/monsters/${id}`, {
+		const monster = monsters.find((m) => m.id === id);
+		if (!monster || !confirm(`Delete ${monster.name}?`)) return;
+		const res = await fetch(`/c/${data.campaignId}/monsters/${id}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ action: 'delete' })
 		});
+		if (!res.ok) { actionError = 'Could not delete monster'; return; }
 		monsters = monsters.filter((m) => m.id !== id);
+		showToast('Monster deleted');
 	}
 
 	async function refreshCharacters() {
@@ -219,6 +229,7 @@
 </header>
 
 <main class="roster">
+	{#if actionError}<p class="error" role="alert">{actionError}</p>{/if}
 	<section class="panel">
 		<h2>Characters</h2>
 		<form class="add-char" onsubmit={addCharacter}>

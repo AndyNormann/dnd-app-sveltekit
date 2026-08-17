@@ -30,7 +30,7 @@
 	let units = $state<CombatUnit[]>(initialUnits);
 	let drawings = $state<CombatDrawing[]>(initialDrawings);
 	let config = $state<BoardConfig>(initialConfig);
-	let tool = $state<'draw' | 'erase' | 'measure' | 'dmg' | 'ping'>(dm ? 'draw' : 'measure');
+	let tool = $state<'draw' | 'erase' | 'measure' | 'dmg' | 'ping' | 'full-cover' | 'half-cover' | 'difficult-terrain'>(dm ? 'draw' : 'measure');
 	let color = $state('#f0c040');
 	let errorMsg = $state('');
 	let selectedId = $state<string | null>(null);
@@ -159,6 +159,7 @@
 	}
 	export function applyDrawings(next: CombatDrawing[]) {
 		drawings = next;
+		scheduleRedraw();
 	}
 	export function applyConfig(next: BoardConfig) {
 		config = next;
@@ -212,6 +213,35 @@
 		ctx.fillStyle = th.bg;
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		for (const d of drawings) {
+			if (d.mode !== 'erase' && d.kind !== 'stroke') {
+				const alpha = d.kind === 'full-cover' ? 0.42 : d.kind === 'half-cover' ? 0.27 : 0.2;
+				ctx.fillStyle = d.color;
+				ctx.globalAlpha = alpha;
+				for (const [px, py] of d.points) {
+					ctx.fillRect(Math.floor(px) * CELL, Math.floor(py) * CELL, CELL, CELL);
+				}
+				ctx.globalAlpha = 1;
+				if (d.kind === 'full-cover' || d.kind === 'half-cover') {
+					ctx.strokeStyle = d.color;
+					ctx.globalAlpha = 0.8;
+					ctx.lineWidth = 2;
+					for (const [px, py] of d.points) {
+						ctx.beginPath();
+						if (d.kind === 'full-cover') {
+							ctx.moveTo(Math.floor(px) * CELL, Math.floor(py) * CELL);
+							ctx.lineTo(Math.floor(px + 1) * CELL, Math.floor(py + 1) * CELL);
+							ctx.moveTo(Math.floor(px + 1) * CELL, Math.floor(py) * CELL);
+							ctx.lineTo(Math.floor(px) * CELL, Math.floor(py + 1) * CELL);
+						} else {
+							ctx.moveTo(Math.floor(px) * CELL, Math.floor(py + 1) * CELL);
+							ctx.lineTo(Math.floor(px + 1) * CELL, Math.floor(py) * CELL);
+						}
+						ctx.stroke();
+					}
+					ctx.globalAlpha = 1;
+				}
+				continue;
+			}
 			ctx.strokeStyle = d.mode === 'erase' ? th.bg : d.color;
 			ctx.fillStyle = d.mode === 'erase' ? th.bg : d.color;
 			ctx.lineWidth = d.width;
@@ -332,6 +362,11 @@
 			selectedId = null;
 			return;
 		}
+		if (dm && (tool === 'full-cover' || tool === 'half-cover' || tool === 'difficult-terrain')) {
+			const cell: [number, number] = [Math.max(0, Math.min(config.grid_cols - 1, Math.floor(pos[0]))), Math.max(0, Math.min(config.grid_rows - 1, Math.floor(pos[1])))];
+			postTerrain(tool, cell);
+			return;
+		}
 		if (tool === 'measure') {
 			measureStart = pos;
 			measureEnd = pos;
@@ -383,6 +418,7 @@
 						color,
 						width: 4,
 						mode: tool,
+						kind: 'stroke',
 						points: currentPoints,
 						created_at: Date.now()
 					}
@@ -496,6 +532,20 @@
 		if (!res.ok) condErr = 'Could not save conditions';
 	}
 
+	async function postTerrain(kind: 'full-cover' | 'half-cover' | 'difficult-terrain', cell: [number, number]) {
+		errorMsg = '';
+		const res = await fetch(`/c/${campaignId}/combat/drawings`, {
+			method: 'POST', headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ color: kind === 'full-cover' ? '#e74c3c' : kind === 'half-cover' ? '#f0c040' : '#3498db', width: 2, mode: 'draw', kind, points: [cell] })
+		});
+		if (!res.ok) errorMsg = 'Could not save map marking';
+		else {
+			const d = await res.json() as CombatDrawing;
+			drawings = [...drawings, d];
+			scheduleRedraw();
+		}
+	}
+
 	async function postStroke(mode: 'draw' | 'erase', points: [number, number][]) {
 		errorMsg = '';
 		const res = await fetch(`/c/${campaignId}/combat/drawings`, {
@@ -509,6 +559,32 @@
 	function tokenPos(u: CombatUnit) {
 		const t = dragTemp[u.id];
 		return t ?? { x: u.x, y: u.y };
+	}
+
+	async function keyboardMove(e: KeyboardEvent, u: CombatUnit) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			selectedId = u.id;
+			e.stopPropagation();
+			return;
+		}
+		if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+		e.preventDefault();
+		if (!dm && (u.id !== myUnit?.id || !isMyTurn)) {
+			errorMsg = !isMyTurn ? "It isn't your turn yet." : 'You can only move your own token.';
+			return;
+		}
+		const target = { x: u.x + (e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0), y: u.y + (e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0) };
+		if (target.x < 0 || target.y < 0 || target.x >= config.grid_cols || target.y >= config.grid_rows) return;
+		if (!dm && usedCells + 1 > budgetCells) {
+			errorMsg = 'Movement limit reached';
+			return;
+		}
+		const res = await fetch(`/c/${campaignId}/combat/units/${u.id}`, {
+			method: 'POST', headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'move', x: target.x, y: target.y })
+		});
+		if (!res.ok) errorMsg = res.status === 409 ? 'Movement limit reached' : 'Move failed';
 	}
 
 	function startDrag(u: CombatUnit) {
@@ -632,7 +708,10 @@
 			<button type="button" class:on={tool === 'measure'} onclick={() => (tool = 'measure')}>📏 Measure</button>
 			<button type="button" class:on={tool === 'dmg'} onclick={() => (tool = 'dmg')}>💔 HP</button>
 			<button type="button" class:on={tool === 'ping'} onclick={() => (tool = 'ping')}>📌 Ping</button>
-			<button type="button" onclick={undoLastStroke}>↩ Undo</button>
+			<button type="button" class:on={tool === 'full-cover'} onclick={() => (tool = 'full-cover')} aria-label="Mark full cover">🧱 Full cover</button>
+			<button type="button" class:on={tool === 'half-cover'} onclick={() => (tool = 'half-cover')} aria-label="Mark half cover">◩ Half cover</button>
+			<button type="button" class:on={tool === 'difficult-terrain'} onclick={() => (tool = 'difficult-terrain')} aria-label="Mark difficult terrain">〰 Difficult terrain</button>
+			<button type="button" onclick={undoLastStroke} aria-label="Undo last board marking or stroke">↩ Undo</button>
 			{#if onClearBoard}
 				<button type="button" class="danger" onclick={onClearBoard}>🗑 Clear board</button>
 			{/if}
@@ -689,6 +768,9 @@
 			{@const pos = tokenPos(u)}
 			<div
 				class="token"
+				tabindex="0"
+				role="button"
+				aria-label={`${u.name}${u.alive === 0 ? ', down' : ''}${conditionsList(u).length ? `, conditions: ${conditionsList(u).join(', ')}` : ''}`}
 				class:player={u.kind === 'player'}
 				class:myturn={u.id === myUnit?.id}
 				class:active={u.id === activeId}
@@ -696,6 +778,7 @@
 				class:sel={u.id === selectedId}
 				style="left:{pos.x * CELL}px;top:{pos.y * CELL}px"
 				onmousedown={startDrag(u)}
+				onkeydown={(e) => keyboardMove(e, u)}
 				onpointerdown={(e) => e.stopPropagation()}
 				title={u.name}
 			>
@@ -796,7 +879,7 @@
 	</div>
 	</div>
 
-	{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
+	{#if errorMsg}<p class="error" role="alert" aria-live="assertive">{errorMsg}</p>{/if}
 </div>
 
 <style>
@@ -989,10 +1072,10 @@
 		top: 0;
 		left: 50%;
 		transform: translateX(-50%);
-		font-size: 0.65rem;
+		font-size: 0.72rem;
 		line-height: 1.1;
-		color: var(--ink);
-		background: rgba(255, 255, 255, 0.92);
+		color: #161616;
+		background: rgba(255, 255, 255, 0.94);
 		padding: 0 0.15rem;
 		border-radius: 3px;
 		white-space: nowrap;
