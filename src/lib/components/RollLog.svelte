@@ -1,14 +1,21 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import type { RollData } from '$lib/types';
+	import type { CombatLogEntry } from '$lib/server/db';
 
 	let {
 		campaignId,
 		dm = false,
-		initial = []
-	}: { campaignId: string; dm?: boolean; initial?: RollData[] } = $props();
+		initial = [],
+		initialCombat = []
+	}: { campaignId: string; dm?: boolean; initial?: RollData[]; initialCombat?: CombatLogEntry[] } = $props();
 
 	let rolls = $state<RollData[]>([...initial]);
+	let combat = $state<CombatLogEntry[]>([...initialCombat]);
+	let activity = $derived([
+		...rolls.map((r) => ({ kind: 'roll' as const, id: r.id, at: r.created_at, value: r })),
+		...combat.map((e) => ({ kind: 'combat' as const, id: `combat-${e.id}`, at: e.created_at, value: e }))
+	].sort((a, b) => a.at - b.at));
 	let open = $state(true);
 	let expression = $state('');
 	let label = $state('');
@@ -36,6 +43,12 @@
 	/** Whether the DM's secret toggle is currently checked (always false for players). */
 	export function isSecret(): boolean {
 		return dm && secret;
+	}
+
+	/** Add a combat event to the same chronological activity stream. */
+	export function addCombatLog(entry: CombatLogEntry) {
+		combat = [entry, ...combat.filter((e) => e.id !== entry.id)].slice(0, 80);
+		scrollToEnd();
 	}
 
 	/** Append a roll arriving over SSE (update in place if it already exists). */
@@ -161,7 +174,7 @@
 				<line x1="50" y1="96" x2="24" y2="68" />
 			</g>
 		</svg>
-		Rolls {open ? '▾' : '▴'}
+		Activity {open ? '▾' : '▴'}
 	</button>
 		{#if dm && rolls.length > 0}
 			<button type="button" class="clear" title="Wipe the roll history" onclick={clearRolls}>Clear</button>
@@ -175,10 +188,14 @@
 	{/if}
 	{#if open}
 		<div class="list" bind:this={listEl}>
-			{#if rolls.length === 0}
-				<p class="empty">No rolls yet.</p>
+			{#if activity.length === 0}
+				<p class="empty">No activity yet.</p>
 			{/if}
-			{#each rolls as r (r.id)}
+			{#each activity as item (item.id)}
+				{#if item.kind === 'combat'}
+					<div class="activity-event">{item.value.text}</div>
+				{:else}
+					{@const r = item.value}
 				<div class="roll" class:secret={r.secret}>
 					<span class="who">{r.roller}{r.secret ? ' 🤫' : ''}</span>
 					<span class="total">{r.result}</span>
@@ -190,6 +207,7 @@
 					{#if r.label}<span class="label">{r.label}</span>{/if}
 					<span class="detail">{r.breakdown}</span>
 				</div>
+				{/if}
 			{/each}
 		</div>
 		<form class="input" onsubmit={submit}>
@@ -298,6 +316,11 @@
 		color: var(--ink-soft);
 		font-style: italic;
 		margin: 0.4rem 0;
+	}
+	.activity-event {
+		padding: 0.35rem 0;
+		border-top: 1px solid var(--rule);
+		color: var(--ink-soft);
 	}
 	.roll {
 		display: grid;

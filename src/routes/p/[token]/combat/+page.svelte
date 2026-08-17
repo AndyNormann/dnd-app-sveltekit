@@ -2,8 +2,7 @@
 	import { onMount } from 'svelte';
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
-	import CombatLog from '$lib/components/CombatLog.svelte';
-	import RollLog from '$lib/components/RollLog.svelte';
+		import RollLog from '$lib/components/RollLog.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
 		import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
@@ -23,7 +22,6 @@
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
 	let initiative: Initiative;
 	let board: CombatBoard;
-	let log: CombatLog;
 	let rollLog: RollLog;
 	let activeName = $state(data.initiative.find((x: { active: number }) => x.active === 1)?.name ?? '');
 	let activeUnitId = $state<string | null>(data.activeUnitId);
@@ -67,7 +65,7 @@
 			},
 			applyCombatReady: (r) => (ready = myUnitId != null && r.includes(myUnitId)),
 			applyCombatLog: (entry) => {
-				log?.add(entry);
+				rollLog?.addCombatLog(entry);
 				a11y?.announce(entry.text);
 			},
 			addRoll: (roll) => { if (!roll.secret) rollLog?.addRoll(roll); },
@@ -146,11 +144,7 @@
 			{/if}
 		</section>
 		<section class="rail right sidebar activity-sidebar">
-			<div class="activity-title">📜 Activity</div>
-			<div class="activity-stream">
-				<CombatLog bind:this={log} initial={data.logs} />
-				<RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
-			</div>
+			<RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} initialCombat={data.logs} />
 		</section>
 	</div>
 </main>
