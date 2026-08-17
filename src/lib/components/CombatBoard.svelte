@@ -894,8 +894,8 @@
 		font-family: var(--font-ui);
 		/* a clean card frame around the grid */
 		padding: 0.7rem;
-		background: var(--parchment-light);
-		border: 1px solid var(--rule);
+		background: #3a2a1c;
+		border: 1px solid #5a4230;
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-md);
 	}
@@ -975,6 +975,10 @@
 	}
 	.board-viewport {
 		margin-inline: auto;
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		background: #2b2017;
 		overflow: auto;
 		max-width: 100%;
 		touch-action: pan-x pan-y;
