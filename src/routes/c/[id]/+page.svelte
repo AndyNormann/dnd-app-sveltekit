@@ -278,7 +278,6 @@
 	onMount(() => {
 		try {
 			const saved = JSON.parse(localStorage.getItem(uiKey) ?? '{}');
-			if (typeof saved.showOutline === 'boolean') showOutline = saved.showOutline;
 			if (typeof saved.outlineW === 'number') outlineW = saved.outlineW;
 			if (typeof saved.rollsW === 'number') rollsW = saved.rollsW;
 		} catch {
@@ -353,14 +352,6 @@
 	</span>
 	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
 	<span class="gsep" aria-hidden="true"></span>
-	<button
-		type="button"
-		class="toggle"
-		class:on={showOutline}
-		title="Toggle document list (Ctrl+.)"
-		aria-label="Toggle document list"
-		onclick={toggleOutline}>☰</button
-	>
 	<button
 		type="button"
 		class="toggle"
@@ -445,11 +436,9 @@
 
 <div
 	class="layout"
-	class:no-rail={!showOutline}
 	style={`--outline-w: ${outlineW}rem; --rolls-w: ${rollsW}rem`}
 >
-	{#if showOutline}
-		<aside class="rail">
+	<aside class="rail">
 			<details class="find">
 				<summary>Find in this document</summary>
 				<input class="find-input" placeholder="Search…" bind:value={find} />
@@ -474,15 +463,14 @@
 				dm
 				onDeleted={onDeleted}
 			/>
-		</aside>
-		<div
-			class="rh rh-outline"
-			role="separator"
-			aria-orientation="vertical"
-			title="Drag to resize document list"
-			onmousedown={startResize('outline')}
-		></div>
-	{/if}
+	</aside>
+	<div
+		class="rh rh-outline"
+		role="separator"
+		aria-orientation="vertical"
+		title="Drag to resize document list"
+		onmousedown={startResize('outline')}
+	></div>
 	<div class="split">
 		<section class="pane source">
 			{#if doc}
@@ -493,7 +481,7 @@
 							Type <code># Heading</code>, roll like <code>2d6+3</code>, link another document with
 							<code>[[Quest]]</code> or <code>[[Quest#Step2]]</code>, or press <code>/</code> for a command menu
 							(incl. adding a map, or <code>H1/H2/H3</code> to make a heading — typing <code>#</code> stays plain text).
-							<span class="khint">Shortcuts: <code>Ctrl+\</code> source · <code>Ctrl+.</code> document list</span>
+							<span class="khint">Shortcut: <code>Ctrl+\</code> source</span>
 						</p>
 					</div>
 				{/if}
@@ -748,9 +736,6 @@
 		height: calc(100vh - 3.3rem);
 		position: relative;
 		overflow: hidden;
-	}
-	.layout.no-rail {
-		grid-template-columns: 1fr var(--rolls-w, 19rem);
 	}
 	.rh {
 		position: absolute;
