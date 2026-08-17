@@ -723,23 +723,26 @@
 	.source-mode-toggle {
 		position: absolute;
 		top: 0.75rem;
-		left: 0.75rem;
+		right: 0.75rem;
 		z-index: 10;
 		opacity: 0;
 		transform: translateY(-0.2rem);
 		transition: opacity 0.15s ease, transform 0.15s ease;
-		padding: 0.35rem 0.6rem;
-		border: 1px solid var(--rule);
-		border-radius: 6px;
-		background: color-mix(in srgb, var(--paper) 88%, var(--accent));
-		color: var(--ink-soft);
-		font: 0.78rem var(--font-ui);
+		padding: 0.25rem 0.45rem;
+		border: 1px solid color-mix(in srgb, var(--rule) 55%, transparent);
+		border-radius: 5px;
+		background: color-mix(in srgb, var(--paper) 94%, var(--ink));
+		color: color-mix(in srgb, var(--ink-soft) 70%, transparent);
+		font: 0.7rem var(--font-ui);
 		cursor: pointer;
 	}
-	.source:hover .source-mode-toggle,
+	.source-mode-toggle:hover,
 	.source-mode-toggle:focus-visible {
-		opacity: 1;
+		opacity: 0.82;
 		transform: translateY(0);
+	}
+	.source-mode-toggle.on {
+		opacity: 0.68;
 	}
 	.source-mode-toggle.on {
 		color: var(--accent);
