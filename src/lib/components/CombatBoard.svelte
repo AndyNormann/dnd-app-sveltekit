@@ -516,6 +516,7 @@
 			e.preventDefault();
 			e.stopPropagation();
 			if (tool === 'ping') return; // ping tool: no dragging
+			if (tool === 'measure') return; // measure tool: no dragging
 			if (tool === 'dmg') {
 				// damage tool: select the token (players only their own), don't drag
 				if (!dm && u.id !== myUnit?.id) return;
@@ -990,8 +991,8 @@
 		transform: translateX(-50%);
 		font-size: 0.65rem;
 		line-height: 1.1;
-		color: var(--parchment-deep);
-		background: rgba(255, 255, 255, 0.88);
+		color: var(--ink);
+		background: rgba(255, 255, 255, 0.92);
 		padding: 0 0.15rem;
 		border-radius: 3px;
 		white-space: nowrap;
@@ -1007,8 +1008,8 @@
 		transform: translateX(-50%);
 		font-size: 0.65rem;
 		line-height: 1.1;
-		color: var(--parchment-deep);
-		background: rgba(255, 255, 255, 0.88);
+		color: var(--ink);
+		background: rgba(255, 255, 255, 0.92);
 		padding: 0 0.2rem;
 		border-radius: 3px;
 		white-space: nowrap;
