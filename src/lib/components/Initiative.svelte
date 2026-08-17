@@ -117,7 +117,7 @@
 <style>
 	.initiative {
 		width: min(100%, 28rem);
-		margin: 1rem auto;
+		margin: 1.25rem 0 1rem 1.25rem;
 		padding: 0.35rem;
 		box-sizing: border-box;
 		background: var(--parchment-light);

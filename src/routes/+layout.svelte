@@ -32,7 +32,7 @@
 		--ink: #26231e; /* primary text */
 		--ink-soft: #6f6e67; /* secondary text */
 		--rule: #e2dccf; /* hairline border */
-		--board-bg: #ddd6c7; /* combat/map board — close to the grid tone, just lighter */
+		--board-bg: #ebe6dc; /* combat/map board — light parchment, close to the grid tone */
 		--board-grid: rgba(38, 35, 30, 0.16);
 		--accent: #b34d1e; /* warm terracotta — links + interactive */
 		--accent-soft: #c96a3a;
