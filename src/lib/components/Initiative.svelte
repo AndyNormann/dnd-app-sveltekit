@@ -74,6 +74,11 @@
 			{#each entries as e (e.id)}
 				{@const unit = units.find((u) => u.id === e.unit_id)}
 				<div class="entry" class:active={e.active === 1} class:dead={!!unit && unit.alive === 0}>
+					{#if unit}
+						<span class="dot" style="background:{unit.color}" title={unit.kind === 'player' ? 'Player' : 'Monster'}></span>
+					{:else}
+						<span class="dot dot-none" aria-hidden="true"></span>
+					{/if}
 					{#if dm}
 						<button type="button" class="rr" title="Re-roll this initiative" aria-label="Re-roll initiative" onclick={() => reroll(e)}>⟳</button>
 						<button type="button" class="rm" title="Remove" aria-label="Remove" onclick={() => remove(e)}>✕</button>
@@ -152,6 +157,18 @@
 		padding: 0.3rem 0.2rem;
 		border-top: 1px solid var(--rule);
 		transition: background 0.15s ease;
+	}
+	/* a small dot matching the unit's token colour, so players and monsters read
+	   apart in the tracker and tie back to the board */
+	.dot {
+		flex: none;
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 50%;
+		border: 1px solid rgba(0, 0, 0, 0.2);
+	}
+	.dot-none {
+		background: var(--rule);
 	}
 	.entry.active {
 		background: rgba(179, 77, 30, 0.10);
