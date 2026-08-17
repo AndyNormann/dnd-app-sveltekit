@@ -21,8 +21,7 @@
 		--font-display: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
 		--font-ui: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
 		--font-body: 'Source Serif 4', 'Georgia', 'Times New Roman', serif;
-		--type-root: 16px;
-		font-size: var(--type-root);
+		font-size: 16px;
 	}
 	/* Sleek, flat, light notes-app palette. Every surface is a soft warm paper; a
 	   single hairline and one terracotta accent carry the hierarchy. */
