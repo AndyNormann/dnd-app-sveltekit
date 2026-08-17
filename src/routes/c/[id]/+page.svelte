@@ -352,15 +352,6 @@
 	</span>
 	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
 	<span class="gsep" aria-hidden="true"></span>
-	<button
-		type="button"
-		class="toggle"
-		class:on={sourceMode}
-		title="Toggle raw markdown source (Ctrl+\)"
-		aria-label="Toggle raw markdown source"
-		onclick={toggleSource}>✎</button
-	>
-	<span class="gsep" aria-hidden="true"></span>
 	{#if doc}
 		{#if editingTitle}
 			<!-- svelte-ignore a11y_autofocus -->
@@ -473,6 +464,16 @@
 	></div>
 	<div class="split">
 		<section class="pane source">
+			<button
+				type="button"
+				class="source-mode-toggle"
+				class:on={sourceMode}
+				aria-pressed={sourceMode}
+				title={sourceMode ? 'Switch to visual editor (Ctrl+\\)' : 'Switch to raw markdown (Ctrl+\\)'}
+				onclick={toggleSource}
+			>
+				{sourceMode ? 'Visual editor' : 'Markdown'}
+			</button>
 			{#if doc}
 				{#if content.trim() === '' && !sourceMode}
 					<div class="empty-hint">
@@ -790,6 +791,31 @@
 		position: relative;
 		color: var(--paper-ink);
 		background: var(--paper);
+	}
+	.source-mode-toggle {
+		position: absolute;
+		top: 0.75rem;
+		left: 0.75rem;
+		z-index: 10;
+		opacity: 0;
+		transform: translateY(-0.2rem);
+		transition: opacity 0.15s ease, transform 0.15s ease;
+		padding: 0.35rem 0.6rem;
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--paper) 88%, var(--accent));
+		color: var(--ink-soft);
+		font: 0.78rem var(--font-ui);
+		cursor: pointer;
+	}
+	.source:hover .source-mode-toggle,
+	.source-mode-toggle:focus-visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	.source-mode-toggle.on {
+		color: var(--accent);
+		border-color: var(--accent);
 	}
 	.conn {
 		width: 0.6rem;
