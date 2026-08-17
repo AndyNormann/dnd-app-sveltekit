@@ -32,8 +32,8 @@
 		--ink: #26231e; /* primary text */
 		--ink-soft: #6f6e67; /* secondary text */
 		--rule: #e2dccf; /* hairline border */
-		--board-bg: #f1eee5; /* combat/map board */
-		--board-grid: rgba(38, 35, 30, 0.10);
+		--board-bg: #ddd6c7; /* combat/map board — close to the grid tone, just lighter */
+		--board-grid: rgba(38, 35, 30, 0.16);
 		--accent: #b34d1e; /* warm terracotta — links + interactive */
 		--accent-soft: #c96a3a;
 		--gold: #b34d1e; /* gold UI now follows the accent */
