@@ -341,7 +341,7 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: var(--outline-w, 13rem) minmax(0, 1fr) var(--rolls-w, 19rem);
+		grid-template-columns: 18rem minmax(0, 1fr) var(--rolls-w, 19rem);
 		gap: 1rem;
 		align-items: start;
 		box-sizing: border-box;

@@ -116,7 +116,10 @@
 
 <style>
 	.initiative {
-		width: 100%;
+		width: min(100%, 28rem);
+		margin: 1rem auto;
+		padding: 0.35rem;
+		box-sizing: border-box;
 		background: var(--parchment-light);
 		border: 1px solid var(--rule);
 		border-top: 1px solid var(--gold);
