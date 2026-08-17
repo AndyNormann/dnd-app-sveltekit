@@ -3,6 +3,7 @@
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
+	import RollLog from '$lib/components/RollLog.svelte';
 	import LiveStamp from '$lib/components/LiveStamp.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
 		import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
@@ -23,6 +24,7 @@
 	let initiative: Initiative;
 	let board: CombatBoard;
 	let log: CombatLog;
+	let rollLog: RollLog;
 	let activeName = $state(data.initiative.find((x: { active: number }) => x.active === 1)?.name ?? '');
 	let activeUnitId = $state<string | null>(data.activeUnitId);
 	const myUnitId = $derived(units.find((u) => u.character_id === data.character.id)?.id ?? null);
@@ -65,6 +67,9 @@
 				log?.add(entry);
 				a11y?.announce(entry.text);
 			},
+			addRoll: (roll) => { if (!roll.secret) rollLog?.addRoll(roll); },
+			setRolls: (rolls) => rollLog?.setRolls(rolls),
+			applySnapshot: (snapshot) => { title = snapshot.title; rollLog?.setRolls(snapshot.rolls); },
 			applyCombatUnits: (u) => {
 				units = u;
 				board?.applyUnits(u);
@@ -137,8 +142,9 @@
 				>
 			{/if}
 		</section>
-		<section class="rail right">
+		<section class="rail right sidebar">
 			<CombatLog bind:this={log} initial={data.logs} />
+			<RollLog bind:this={rollLog} campaignId={data.campaignId} initial={data.rolls} />
 		</section>
 	</div>
 </main>
@@ -201,6 +207,18 @@
 		max-height: calc(100vh - 2rem);
 		overflow-y: auto;
 	}
+	.sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-height: 0;
+		align-self: stretch;
+	}
+	.sidebar :global(.roll-log) {
+		min-height: 0;
+		flex: 1;
+	}
+
 	@media (max-width: 72rem) {
 		.layout {
 			grid-template-columns: 1fr;

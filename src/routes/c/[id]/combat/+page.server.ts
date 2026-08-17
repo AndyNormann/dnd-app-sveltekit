@@ -9,7 +9,8 @@ import {
 	listCombatDrawings,
 	getBoardConfig,
 	getActiveUnitId,
-	listCombatLogs
+	listCombatLogs,
+	listRolls
 } from '$lib/server/db';
 import { isDM } from '$lib/server/auth';
 import { getReadyUnitIds } from '$lib/server/combatReady';
@@ -37,6 +38,7 @@ export const load: PageServerLoad = ({ params, cookies, url }) => {
 		boardConfig: getBoardConfig(params.id),
 		activeUnitId: getActiveUnitId(params.id),
 		logs: listCombatLogs(params.id),
+		rolls: listRolls(params.id, true).map((r) => ({ ...r, secret: !!r.secret, label: r.label ?? undefined })),
 		readyIds: getReadyUnitIds(params.id)
 	};
 };

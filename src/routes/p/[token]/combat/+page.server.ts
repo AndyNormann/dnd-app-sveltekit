@@ -7,7 +7,8 @@ import {
 	listCombatDrawings,
 	getBoardConfig,
 	getActiveUnitId,
-	listCombatLogs
+	listCombatLogs,
+	listRolls
 } from '$lib/server/db';
 import { PLAYER_COOKIE } from '$lib/server/player';
 import { getReadyUnitIds } from '$lib/server/combatReady';
@@ -39,6 +40,7 @@ export const load: PageServerLoad = ({ params, cookies }) => {
 		boardConfig: getBoardConfig(ch.campaign_id),
 		activeUnitId: getActiveUnitId(ch.campaign_id),
 		logs: listCombatLogs(ch.campaign_id),
+		rolls: listRolls(ch.campaign_id, false).map((r) => ({ ...r, secret: !!r.secret, label: r.label ?? undefined })),
 		readyIds: getReadyUnitIds(ch.campaign_id)
 	};
 };

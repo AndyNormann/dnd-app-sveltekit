@@ -3,6 +3,7 @@
 	import CombatBoard from '$lib/components/CombatBoard.svelte';
 	import Initiative from '$lib/components/Initiative.svelte';
 	import CombatLog from '$lib/components/CombatLog.svelte';
+	import RollLog from '$lib/components/RollLog.svelte';
 	import A11yLive from '$lib/components/A11yLive.svelte';
 		import { applyFeedEvent, type FeedHandlers } from '$lib/feed';
 	import type { PageData } from './$types';
@@ -23,6 +24,7 @@
 	let boardConfig = $state<BoardConfig>(data.boardConfig);
 	let monsters = $state<Monster[]>(data.monsters);
 	let combatLog: CombatLog;
+	let rollLog: RollLog;
 	let initiative: Initiative;
 	let board: CombatBoard;
 	let activeName = $state('');
@@ -131,6 +133,9 @@
 				combatLog?.add(entry);
 				a11y?.announce(entry.text);
 			},
+			addRoll: (roll) => rollLog?.addRoll(roll),
+			setRolls: (rolls) => rollLog?.setRolls(rolls),
+			applySnapshot: (snapshot) => { title = snapshot.title; rollLog?.setRolls(snapshot.rolls); },
 			applyCombatDrawings: (d) => {
 				drawings = d;
 				board?.applyDrawings(d);
@@ -239,8 +244,9 @@
 		{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
 	</section>
 
-	<section class="panel rail right">
+	<section class="panel rail right sidebar">
 		<CombatLog bind:this={combatLog} initial={data.logs} />
+		<RollLog bind:this={rollLog} campaignId={data.campaignId} dm initial={data.rolls} />
 	</section>
 </main>
 
@@ -351,6 +357,18 @@
 	.board {
 		overflow-x: auto;
 	}
+	.sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-height: 0;
+		align-self: stretch;
+	}
+	.sidebar :global(.roll-log) {
+		min-height: 0;
+		flex: 1;
+	}
+
 	@media (max-width: 72rem) {
 		.combat {
 			grid-template-columns: 1fr;
