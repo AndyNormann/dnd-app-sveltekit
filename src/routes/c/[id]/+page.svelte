@@ -356,7 +356,9 @@
 
 <header class="bar">
 	<a href="/" class="back">←</a>
-	<span class="conn" class:on={connected} title={connected ? 'Realtime connected' : 'Realtime disconnected'}></span>
+	<span class="status-pill" class:ok={connected} class:error={!connected}>
+		{connected ? 'Live' : 'Reconnecting'}
+	</span>
 	<span class="crumb" title={data.campaignTitle}>{data.campaignTitle}</span>
 	<span class="gsep" aria-hidden="true"></span>
 	<button
@@ -493,8 +495,8 @@
 		<section class="pane source">
 			{#if doc}
 				{#if content.trim() === '' && !sourceMode}
-					<div class="empty-hint" aria-hidden="true">
-						<h2>Start writing…</h2>
+					<div class="empty-hint">
+						<h2>Start your campaign chronicle</h2>
 						<p>
 							Type <code># Heading</code>, roll like <code>2d6+3</code>, link another document with
 							<code>[[Quest]]</code> or <code>[[Quest#Step2]]</code>, or press <code>/</code> for a command menu
@@ -521,8 +523,8 @@
 				{/if}
 			{:else}
 				<div class="empty-hint">
-					<h2>No documents yet</h2>
-					<p>Use <code>+</code> in the document list to create your first document.</p>
+					<h2>Your adventure starts here</h2>
+					<p>Use <code>+</code> in the document list to create your first note, location, or quest.</p>
 				</div>
 			{/if}
 		</section>

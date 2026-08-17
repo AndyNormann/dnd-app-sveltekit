@@ -63,11 +63,66 @@
 	}
 	:global(body) {
 		margin: 0;
-		background: var(--parchment);
+		background:
+			radial-gradient(circle at 12% 8%, rgba(179, 77, 30, 0.045), transparent 28rem),
+			linear-gradient(105deg, rgba(255, 255, 255, 0.32), transparent 38%, rgba(120, 78, 35, 0.035)),
+			var(--parchment);
 		color: var(--ink);
 		font-family: var(--font-body);
 		-webkit-font-smoothing: antialiased;
 	}
+	:global(body::before) {
+		content: '';
+		position: fixed;
+		inset: 0;
+		pointer-events: none;
+		opacity: 0.22;
+		background-image: radial-gradient(rgba(73, 45, 22, 0.11) 0.55px, transparent 0.55px);
+		background-size: 7px 7px;
+		mix-blend-mode: multiply;
+		z-index: 100;
+	}
+	:global(button) {
+		border: 1px solid var(--rule);
+		border-radius: var(--radius-sm);
+		background: var(--parchment-light);
+		color: var(--ink);
+		padding: 0.42rem 0.7rem;
+		cursor: pointer;
+		transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+	}
+	:global(button:hover:not(:disabled)) {
+		background: color-mix(in srgb, var(--accent) 8%, var(--parchment-light));
+		border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
+	}
+	:global(button:active:not(:disabled)) {
+		transform: translateY(1px);
+	}
+	:global(button:disabled) {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+	:global(.status-pill) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		border: 1px solid var(--rule);
+		border-radius: 999px;
+		padding: 0.18rem 0.55rem;
+		font: 600 0.72rem/1 var(--font-ui);
+		letter-spacing: 0.02em;
+		background: color-mix(in srgb, var(--parchment-light) 72%, transparent);
+	}
+	:global(.status-pill::before) {
+		content: '';
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 50%;
+		background: var(--ink-soft);
+	}
+	:global(.status-pill.ok::before) { background: var(--success); }
+	:global(.status-pill.warn::before) { background: var(--gold); }
+	:global(.status-pill.error::before) { background: var(--danger); }
 	/* a plain flat card — the universal sheet/surface. */
 	:global(.sheet) {
 		position: relative;
