@@ -29,7 +29,6 @@
 		clearTimeout(toastTimer);
 		toastTimer = setTimeout(() => (toast = null), 2600);
 	}
-	let showOutline = $state(true);
 	let outlineW = $state(13); // rem, outline rail width
 	let rollsW = $state(19); // rem, rolls rail width
 	let sourceMode = $state(false);
@@ -93,11 +92,7 @@
 	});
 
 	function persistUi() {
-		localStorage.setItem(uiKey, JSON.stringify({ showOutline, outlineW, rollsW }));
-	}
-	function toggleOutline() {
-		showOutline = !showOutline;
-		persistUi();
+		localStorage.setItem(uiKey, JSON.stringify({ outlineW, rollsW }));
 	}
 	function toggleSource() {
 		sourceMode = !sourceMode;
@@ -135,9 +130,6 @@
 		if (e.key === '\\') {
 			e.preventDefault();
 			toggleSource();
-		} else if (e.key === '.') {
-			e.preventDefault();
-			toggleOutline();
 		}
 	}
 
