@@ -202,7 +202,8 @@
 					<div class="activity-event">{item.value.text}</div>
 				{:else}
 					{@const r = item.value}
-				<div class="roll" class:secret={r.secret}>
+				<div class="roll" class:secret={r.secret} class:critical={r.breakdown.includes('🎉')} class:fumble={r.breakdown.includes('💀')}>
+					{#if r.breakdown.includes('🎉')}<span class="moment" aria-label="Critical hit">Critical hit!</span>{:else if r.breakdown.includes('💀')}<span class="moment" aria-label="Fumble">Fumble!</span>{/if}
 					<span class="who">{r.roller}{r.secret ? ' 🤫' : ''}</span>
 					<span class="total">{r.result}</span>
 					{#if dm && r.secret}
@@ -352,6 +353,26 @@
 	}
 	.roll.secret {
 		background: var(--parchment-deep);
+	}
+	.roll.critical,
+	.roll.fumble {
+		position: relative;
+		animation: roll-land 1.2s ease-out, fate-flash 900ms ease-out;
+	}
+	.moment {
+		grid-column: 1 / -1;
+		font-family: var(--font-display);
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--accent);
+	}
+	.fumble .moment { color: var(--danger); }
+	@keyframes fate-flash {
+		0% { text-shadow: 0 0 0 transparent; }
+		35% { text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+		100% { text-shadow: 0 0 0 transparent; }
 	}
 	.who {
 		font-weight: 600;
