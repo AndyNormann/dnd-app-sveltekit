@@ -173,7 +173,8 @@
 		top: 1rem;
 		align-self: start;
 		max-height: none;
-		height: calc(100vh - 2rem);
+		height: calc(100vh - 1rem);
+		box-sizing: border-box;
 		overflow: hidden;
 		border-left: 1px solid var(--rule);
 		padding: 0.5rem 0 0 0.75rem;

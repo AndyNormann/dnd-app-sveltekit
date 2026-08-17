@@ -46,3 +46,39 @@ test('roll input stays docked at the visible bottom on the DM notes page', async
 	expect(dmBottom.bottom).toBeLessThanOrEqual(dmBottom.vh + 1);
 	await dm.ctx.close();
 });
+
+test('player portal roll input stays docked at the visible bottom when scrolled', async ({ browser }) => {
+	const dm = await loginDM(browser);
+	const id = await createCampaign(dm.request);
+	// long first document, shared, plus a player character
+	const list = await dm.request.get(`/c/${id}/documents`, { headers: { Origin: ORIGIN } });
+	const { documents } = (await list.json()) as { documents: { id: string }[] };
+	const docId = documents[0].id;
+	const body = Array.from({ length: 40 }, (_, i) => `# Heading ${i}\n\nParagraph text.\n\n`).join('');
+	await dm.request.post(`/c/${id}/documents/${docId}/content`, {
+		headers: { Origin: ORIGIN },
+		data: { content: body }
+	});
+	await dm.request.post(`/c/${id}/documents/${docId}`, {
+		headers: { Origin: ORIGIN },
+		data: { action: 'share', shared: true }
+	});
+	const chr = await dm.request.post(`/c/${id}/characters`, {
+		headers: { Origin: ORIGIN },
+		data: { name: 'Aria' }
+	});
+	const { link_token } = (await chr.json()) as { link_token: string };
+
+	const portal = await dm.ctx.newPage();
+	await portal.goto(`/p/${link_token}`);
+	await portal.waitForSelector('.rail.rolls .input');
+	await portal.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+	await portal.waitForTimeout(200);
+	const pBottom = await portal.locator('.rail.rolls .input').evaluate((el) => {
+		const r = el.getBoundingClientRect();
+		return { bottom: r.bottom, vh: window.innerHeight };
+	});
+	expect(pBottom.bottom).toBeGreaterThan(pBottom.vh - 10);
+	expect(pBottom.bottom).toBeLessThanOrEqual(pBottom.vh + 1);
+	await dm.ctx.close();
+});
