@@ -69,7 +69,7 @@
 </script>
 
 <div class="initiative" class:open>
-	<button type="button" class="header" onclick={() => (open = !open)}>
+	<button type="button" class="header" aria-expanded={open} onclick={() => (open = !open)}>
 		⚔ Initiative · Round {round} {open ? '▾' : '▴'}
 	</button>
 	{#if open}
@@ -95,9 +95,9 @@
 					<span class="in">({e.init})</span>
 					{#if dm}
 						<span class="hp">
-							<button type="button" onclick={() => setHp(e, -1)}>−</button>
+							<button type="button" aria-label={`Decrease ${e.name} HP`} onclick={() => setHp(e, -1)}>−</button>
 							{unit ? unit.hp : e.hp}{unit && unit.max_hp ? `/${unit.max_hp}` : ''}
-							<button type="button" onclick={() => setHp(e, 1)}>+</button>
+							<button type="button" aria-label={`Increase ${e.name} HP`} onclick={() => setHp(e, 1)}>+</button>
 						</span>
 					{:else if e.unit_id === viewerUnitId && unit}
 						<span class="hp">{unit.hp}{unit.max_hp ? `/${unit.max_hp}` : ''}</span>

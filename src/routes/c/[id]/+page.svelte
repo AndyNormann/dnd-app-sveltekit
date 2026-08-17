@@ -900,9 +900,17 @@
 			grid-template-rows: auto;
 			height: auto;
 		}
-		.rail,
+		.rail:not(.rolls),
 		.rh {
 			display: none;
+		}
+		.rail.rolls {
+			display: block;
+			grid-column: 1;
+			max-height: 18rem;
+			border-top: 1px solid var(--rule);
+			padding-top: 0.5rem;
+			order: 3;
 		}
 		.bar {
 			flex-wrap: wrap;

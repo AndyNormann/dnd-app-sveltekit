@@ -66,7 +66,7 @@
 				color: charColor
 			})
 		});
-		if (!res.ok) return;
+		if (!res.ok) { actionError = 'Could not create character'; return; }
 		const ch = (await res.json()) as CharacterRow;
 		characters = [...characters, ch];
 		charName = '';
@@ -105,7 +105,7 @@
 				color: monColor
 			})
 		});
-		if (!res.ok) return;
+		if (!res.ok) { actionError = 'Could not create monster'; return; }
 		const m = (await res.json()) as Monster;
 		monsters = [...monsters, m];
 		monName = '';
@@ -233,12 +233,12 @@
 	<section class="panel">
 		<h2>Characters</h2>
 		<form class="add-char" onsubmit={addCharacter}>
-			<input class="nm" placeholder="Character" bind:value={charName} maxlength="60" />
-			<input class="pn" placeholder="Player name" bind:value={charPlayer} maxlength="60" />
-			<input class="num" placeholder="Speed" title="Speed (ft)" bind:value={charSpeed} maxlength="4" />
-			<input class="num" placeholder="Init+" title="Init bonus" bind:value={charInit} maxlength="4" />
-			<input class="num" placeholder="Max HP" bind:value={charHp} maxlength="6" />
-			<input class="color" type="color" bind:value={charColor} title="Token color" />
+			<input class="nm" aria-label="Character name" placeholder="Character" bind:value={charName} maxlength="60" />
+			<input class="pn" aria-label="Player name" placeholder="Player name" bind:value={charPlayer} maxlength="60" />
+			<input class="num" aria-label="Speed in feet" placeholder="Speed" title="Speed (ft)" bind:value={charSpeed} maxlength="4" />
+			<input class="num" aria-label="Initiative bonus" placeholder="Init+" title="Init bonus" bind:value={charInit} maxlength="4" />
+			<input class="num" aria-label="Maximum hit points" placeholder="Max HP" bind:value={charHp} maxlength="6" />
+			<input class="color" aria-label="Character token color" type="color" bind:value={charColor} title="Token color" />
 			<button type="submit">Add</button>
 		</form>
 		{#if characters.length === 0}
@@ -260,11 +260,11 @@
 	<section class="panel">
 		<h2>Monsters</h2>
 		<form class="add-char" onsubmit={editingMonId ? saveMonsterEdit : addMonster}>
-			<input class="nm" placeholder="Monster name" bind:value={monName} maxlength="60" />
-			<input class="num" placeholder="Speed" title="Speed (ft)" bind:value={monSpeed} maxlength="4" />
-			<input class="num" placeholder="Init+" title="Init bonus" bind:value={monInit} maxlength="4" />
-			<input class="num" placeholder="Max HP" bind:value={monHp} maxlength="6" />
-			<input class="color" type="color" bind:value={monColor} title="Token color" />
+			<input class="nm" aria-label="Monster name" placeholder="Monster name" bind:value={monName} maxlength="60" />
+			<input class="num" aria-label="Monster speed in feet" placeholder="Speed" title="Speed (ft)" bind:value={monSpeed} maxlength="4" />
+			<input class="num" aria-label="Monster initiative bonus" placeholder="Init+" title="Init bonus" bind:value={monInit} maxlength="4" />
+			<input class="num" aria-label="Monster maximum hit points" placeholder="Max HP" bind:value={monHp} maxlength="6" />
+			<input class="color" aria-label="Monster token color" type="color" bind:value={monColor} title="Token color" />
 			{#if editingMonId}
 				<button type="submit">Save</button>
 				<button type="button" onclick={cancelEditMonster}>Cancel</button>
@@ -553,8 +553,7 @@
 		bottom: 1.25rem;
 		background: var(--parchment-light);
 		color: var(--ink);
-		border: 1px solid var(--gold);
-		border-left: 4px solid var(--success);
+		border: 1px solid var(--success);
 		border-radius: var(--radius-md);
 		padding: 0.6rem 1rem;
 		box-shadow: var(--shadow-lg);

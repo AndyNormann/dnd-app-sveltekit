@@ -145,7 +145,7 @@
 
 <div class="roll-log" class:open>
 		<div class="headrow">
-<button type="button" class="header" onclick={() => (open = !open)}>
+<button type="button" class="header" aria-expanded={open} onclick={() => (open = !open)}>
 		<svg class="d20" viewBox="0 0 100 100" aria-hidden="true">
 			<g fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round">
 				<polygon points="50,4 89,26 89,74 50,96 11,74 11,26" />

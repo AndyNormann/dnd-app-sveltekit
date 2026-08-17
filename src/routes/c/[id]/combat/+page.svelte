@@ -378,6 +378,9 @@
 		.combat {
 			grid-template-columns: 1fr;
 		}
+		.combat > .col:nth-child(2) {
+			order: -1;
+		}
 		.rail {
 			position: static;
 			max-height: none;
@@ -385,6 +388,8 @@
 		}
 	}
 	@media (max-width: 48rem) {
+		.combat { padding: 0 0.6rem; gap: 0.6rem; }
+		.panel { padding: 0.7rem; }
 		.bar {
 			flex-wrap: wrap;
 		}
@@ -538,8 +543,7 @@
 		z-index: 2000;
 		padding: 0.6rem 1rem;
 		background: var(--parchment-light);
-		border: 1px solid var(--gold);
-		border-left: 4px solid var(--success);
+		border: 1px solid var(--success);
 		border-radius: var(--radius-md);
 		box-shadow: var(--shadow-lg);
 		font-family: var(--font-body);
