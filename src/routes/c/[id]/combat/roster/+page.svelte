@@ -215,8 +215,12 @@
 
 <header class="bar">
 	<a href="/" class="back">←</a>
-	<span class="conn" class:on={connected} title={connected ? 'Realtime connected' : 'Realtime disconnected'}></span>
-	<h1>{title}</h1>
+	<span class="status-pill" class:ok={connected} class:error={!connected}>
+		{connected ? 'Live' : 'Reconnecting'}
+	</span>
+	<span class="crumb" title={title}>{title}</span>
+	<span class="gsep" aria-hidden="true"></span>
+	<h1>Roster</h1>
 	<nav class="tabs">
 		<a href={`/c/${data.campaignId}`} class="tab">Notes</a>
 		<a href={`/c/${data.campaignId}/combat`} class="tab">Combat</a>
@@ -330,6 +334,18 @@
 		font-size: 1.1rem;
 		margin: 0;
 		color: var(--accent);
+	}
+	.crumb {
+		max-width: 16rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-weight: 600;
+	}
+	.gsep {
+		width: 1px;
+		height: 1.4rem;
+		background: var(--rule);
 	}
 	.back {
 		text-decoration: none;
